@@ -106,7 +106,7 @@
   },
   "dependencies": {
     "@electron/remote": "2.1.3",
-    "@lumine-code/etch": "https://github.com/lumine-code/etch.git#9c74208ad932e0694cb3f7ad575e7205154dea8f",
+    "@lumine-code/etch": "https://github.com/lumine-code/etch.git#ab36096d3ec06484e8d6ed18402554879648831d",
     "@lumine-code/fs-plus": "https://github.com/lumine-code/fs-plus.git#94566356cd8b77123d71fac024e63bff7cec434b",
     "@lumine-code/season": "https://github.com/lumine-code/season.git#ec9adb297202dd01a425113a4edc2c189d82c14e",
     "@lumine-code/underscore-plus": "https://github.com/lumine-code/underscore-plus.git#91bdb6152d7b3f86f198917707e258af5470db9f",
