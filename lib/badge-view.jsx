@@ -3,9 +3,9 @@ const { CompositeDisposable, Disposable } = require("atom");
 const etch = require("@lumine-code/etch");
 const { STATUS_DOT_TYPES } = require("./status-dots");
 
-// Renders a package badge (e.g. Pulsar's "Outdated" / "Made for Pulsar") as a
-// small colored dot. The badge title and text are shown in a hover tooltip, and
-// clicking a badge that carries a link opens it in the browser.
+// Renders a package badge as a small colored dot. The badge title and text are
+// shown in a hover tooltip, and clicking a badge that carries a link opens it
+// in the browser.
 module.exports = class BadgeView {
   constructor(badge) {
     this.badge = badge;

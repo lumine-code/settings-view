@@ -48,18 +48,6 @@
   gap: var(--component-padding);
 }
 
-/* Not flex: let the checkbox align to the label via its own vertical-align:
-   middle, exactly like the standard settings checkboxes. margin-left: auto
-   still pushes the label to the right within the flex actions row. */
-.settings-view .pulsar-toggle {
-  margin-left: auto;
-  cursor: pointer;
-}
-
-.settings-view .pulsar-toggle .input-checkbox {
-  margin: 0 0.5em 0 0;
-}
-
 /* Icon-only button, pushed to the right of the filter group; it wraps onto its
    own line when the search row runs out of width. */
 .settings-view .search-container .check-updates-button {

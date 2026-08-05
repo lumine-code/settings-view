@@ -23,7 +23,6 @@ module.exports = class InstallPanel {
     this.disposables = new CompositeDisposable();
     this.sourceDisposables = new CompositeDisposable();
     this.catalogClient = this.packageManager.getCatalogClient();
-    this.pulsarClient = this.packageManager.getPulsarClient();
     this.catalogPackages = [];
     this.catalogPackageCards = [];
     this.browsePackageCards = [];
@@ -44,8 +43,8 @@ module.exports = class InstallPanel {
 
     this.disposables.add(atom.tooltips.add(this.refs.addCatalogButton, { title: "Add catalog" }));
     // Install failures are surfaced as notifications centrally (see SettingsView).
-    // Catalog fetch and Pulsar search failures below are panel-local; those still
-    // raise their own notifications, tracked here so a re-run can dismiss a stale one.
+    // Catalog fetch failures below are panel-local; those still raise their own
+    // notifications, tracked here so a re-run can dismiss a stale one.
     this.catalogFetchNotifications = [];
     this.disposables.add(
       this.packageManager.on("package-installed theme-installed", ({ pack }) => {
@@ -119,23 +118,9 @@ module.exports = class InstallPanel {
         this.catalogPromise = this.loadCatalog({ cacheOnly: true });
       }),
     );
-    this.disposables.add(
-      atom.config.observe("settings-view.includePulsarPackageResults", (include) => {
-        this.refs.includePulsarCheckbox.checked = !!include;
-      }),
-    );
-
     this.renderCatalogSources();
     // Populated on first show (see beforeShow); until then nothing is loaded.
     this.catalogPromise = Promise.resolve({ schemaVersion: 1, packages: [] });
-  }
-
-  didToggleIncludePulsar() {
-    atom.config.set(
-      "settings-view.includePulsarPackageResults",
-      this.refs.includePulsarCheckbox.checked,
-    );
-    this.performSearch();
   }
 
   destroy() {
@@ -218,15 +203,6 @@ module.exports = class InstallPanel {
                     Restore Defaults
                   </button>
                 </div>
-                <label className="pulsar-toggle">
-                  <input
-                    ref="includePulsarCheckbox"
-                    className="input-checkbox"
-                    type="checkbox"
-                    onchange={this.didToggleIncludePulsar.bind(this)}
-                  />
-                  <span>Include results from the Pulsar package registry</span>
-                </label>
               </div>
               <div ref="catalogProgress" className="catalog-progress text-subtle" />
               <div
@@ -364,8 +340,7 @@ module.exports = class InstallPanel {
     this.page = 1;
     if (query) {
       // Download the catalogs on the first search if the user never clicked
-      // Fetch — otherwise a search would only surface live Pulsar results and
-      // silently miss the community catalogs.
+      // Fetch — otherwise a search would silently find nothing at all.
       if (!this.catalogFetched && this.getCatalogSources().length) {
         this.catalogPromise = this.loadCatalog();
       }
@@ -710,10 +685,6 @@ module.exports = class InstallPanel {
     else this.renderBrowseList();
   }
 
-  isPulsarSearchEnabled() {
-    return atom.config.get("settings-view.includePulsarPackageResults") === true;
-  }
-
   // Scores a package against the query by name and keywords only. Descriptions
   // are deliberately excluded: fuzzy-matching prose produced noisy hits (e.g.
   // "ui" matching a syntax theme whose description mentions "Seti UI").
@@ -746,9 +717,9 @@ module.exports = class InstallPanel {
   addResultCard(pack, byOrigin, results) {
     const key = packageOrigin(pack);
     if (key && byOrigin.has(key)) {
-      // A duplicate (e.g. the same repository surfaced by the Pulsar registry)
-      // does not add a second card, but its catalog provenance is recorded on
-      // the card that is kept.
+      // A duplicate (the same repository listed by a second catalog) does not
+      // add a second card, but its catalog provenance is recorded on the card
+      // that is kept.
       const index = byOrigin.get(key);
       results[index] = this.mergeCatalogProvenance(results[index], pack);
       return;
@@ -793,13 +764,6 @@ module.exports = class InstallPanel {
     this.refs.searchMessage.style.display = "";
   }
 
-  clearPulsarError() {
-    if (this.pulsarErrorNotification) {
-      this.pulsarErrorNotification.dismiss();
-      this.pulsarErrorNotification = null;
-    }
-  }
-
   dismissCatalogFetchNotifications() {
     if (!this.catalogFetchNotifications) return;
     for (const notification of this.catalogFetchNotifications) notification.dismiss();
@@ -815,46 +779,17 @@ module.exports = class InstallPanel {
     this.clearPackageCards(this.catalogPackageCards);
     this.refs.resultsContainer.innerHTML = "";
     this.refs.searchMessage.style.display = "none";
-    this.clearPulsarError();
 
     if (this.catalogIndexing) this.renderIncompleteSearch(query);
     await this.catalogPromise;
     if (generation !== this.searchGeneration) return [];
     this.refs.searchMessage.style.display = "none";
 
-    // Local community catalog results first, deduplicated by repository.
+    // Community catalog results, deduplicated by repository.
     const byOrigin = new Map();
     const results = [];
     for (const pack of this.scoreCatalog(query)) {
       this.addResultCard(pack, byOrigin, results);
-    }
-
-    // Opt-in live search of the Pulsar registry, appended and deduped by repo.
-    if (this.isPulsarSearchEnabled()) {
-      let pulsarResults = [];
-      try {
-        pulsarResults = await this.pulsarClient.search(query);
-        pulsarResults = (
-          await Promise.all(
-            pulsarResults.map((pack) =>
-              this.catalogClient
-                .hydrateSource(pack.installSource || pack.repository, "pulsar")
-                .catch(() => null),
-            ),
-          )
-        ).filter(Boolean);
-      } catch (error) {
-        if (generation === this.searchGeneration) {
-          this.pulsarErrorNotification = atom.notifications.addError(
-            "Pulsar registry search failed.",
-            { dismissable: true, detail: error.message },
-          );
-        }
-      }
-      if (generation !== this.searchGeneration) return results;
-      for (const pack of pulsarResults) {
-        if (this.matchesFilter(pack)) this.addResultCard(pack, byOrigin, results);
-      }
     }
 
     if (results.length === 0) {

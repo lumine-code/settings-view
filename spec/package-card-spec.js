@@ -455,19 +455,6 @@ describe("PackageCard", function () {
     });
   });
 
-  it("marks Pulsar-sourced packages with a purple dot", function () {
-    setPackageStatusSpies({ installed: false, disabled: false });
-    card = new PackageCard(
-      { name: "hydrogen", repository: "nteract/hydrogen", source: "pulsar" },
-      new SettingsView(),
-      packageManager,
-    );
-    jasmine.attachToDOM(card.element);
-    const dot = card.refs.badges.querySelector(".package-badge-dot");
-    expect(dot).not.toBeNull();
-    expect(dot.classList.contains("badge-dot-pulsar")).toBe(true);
-  });
-
   it("shows the owner/repo reference so same-named packages are distinguishable", function () {
     setPackageStatusSpies({ installed: false, disabled: false });
     card = new PackageCard(
@@ -504,7 +491,7 @@ describe("PackageCard", function () {
     expect(tooltip).toContain("first catalog wins");
   });
 
-  it("lists every source (including Pulsar) with bold labels in the repo tooltip", function () {
+  it("lists every source with bold labels in the repo tooltip", function () {
     setPackageStatusSpies({ installed: false, disabled: false });
     card = new PackageCard(
       {
@@ -514,7 +501,7 @@ describe("PackageCard", function () {
         status: "ready",
         catalogSelectors: [
           { catalogSource: "owner/catalog", selector: { type: "latest", value: null } },
-          { catalogSource: "pulsar", selector: { type: "latest", value: null } },
+          { catalogSource: "other/catalog", selector: { type: "latest", value: null } },
         ],
       },
       new SettingsView(),
@@ -525,7 +512,7 @@ describe("PackageCard", function () {
     expect(tooltip).toContain("<strong>Origin:</strong>");
     expect(tooltip).toContain("<strong>Catalogs:</strong>");
     expect(tooltip).toContain("owner/catalog");
-    expect(tooltip).toContain("Pulsar registry");
+    expect(tooltip).toContain("other/catalog");
   });
 
   it("disables install with a hover note when no compatible version exists", function () {
@@ -1605,18 +1592,6 @@ describe("PackageCard", function () {
       expect(dot.classList.contains("badge-dot-stale")).toBe(true);
     });
 
-    it("shows a purple dot for a Pulsar-registry listing", function () {
-      setPackageStatusSpies({ installed: false, disabled: false });
-      card = new PackageCard(
-        { name: "x-pkg", repository: "owner/x-pkg", version: "1.0.0", source: "pulsar" },
-        new SettingsView(),
-        packageManager,
-      );
-      const dot = card.refs.badges.querySelector(".package-badge-dot");
-      expect(dot).not.toBeNull();
-      expect(dot.classList.contains("badge-dot-pulsar")).toBe(true);
-    });
-
     it("shows no dot for a healthy record", function () {
       setPackageStatusSpies({ installed: false, disabled: false });
       card = new PackageCard(
@@ -1715,24 +1690,6 @@ describe("PackageCard", function () {
       ).toBeUndefined();
     });
 
-    it("treats a record hydrated from the Pulsar registry as Pulsar-sourced", function () {
-      setPackageStatusSpies({ installed: false, disabled: false });
-      card = new PackageCard(
-        {
-          name: "x-pkg",
-          repository: "owner/x-pkg",
-          version: "1.0.0",
-          status: "ready",
-          catalogSources: ["pulsar"],
-        },
-        new SettingsView(),
-        packageManager,
-      );
-      const dot = card.refs.badges.querySelector(".package-badge-dot");
-      expect(dot).not.toBeNull();
-      expect(dot.classList.contains("badge-dot-pulsar")).toBe(true);
-    });
-
     it("shows every applicable dot at once", function () {
       setPackageStatusSpies({ installed: false, disabled: false });
       card = new PackageCard(
@@ -1742,14 +1699,14 @@ describe("PackageCard", function () {
           version: "1.0.0",
           status: "stale",
           error: "boom",
-          source: "pulsar",
+          originWarning: "installed from a different repository",
           selectorConflict: true,
         },
         new SettingsView(),
         packageManager,
       );
       const titles = card.badgeViews.map((view) => view.badge.title);
-      expect(titles).toEqual(["Stale", "Selector conflict", "Pulsar registry"]);
+      expect(titles).toEqual(["Stale", "Origin", "Selector conflict"]);
     });
   });
 

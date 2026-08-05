@@ -229,9 +229,6 @@
       &.badge-dot-symlink {
         background-color: var(--package-dot-symlink);
       }
-      &.badge-dot-pulsar {
-        background-color: var(--package-dot-pulsar);
-      }
       &.badge-dot-warn {
         background-color: var(--package-dot-stale);
       }

@@ -372,10 +372,8 @@ module.exports = class PackageCard {
     return this.labelForSelector(this.currentSelector());
   }
 
-  // Every catalog a package is available from, including the Pulsar registry
-  // when it also surfaced the same repository.
+  // Every catalog a package is available from.
   catalogSourcesText() {
-    const label = (source) => (source === "pulsar" ? "Pulsar registry" : source);
     const selectors = this.pack.catalogSelectors || [];
     if (selectors.length) {
       return selectors
@@ -384,11 +382,11 @@ module.exports = class PackageCard {
             !selector || selector.type === "latest"
               ? "latest/default"
               : `${selector.type}:${selector.value}`;
-          return `${label(catalogSource)} (${ref})`;
+          return `${catalogSource} (${ref})`;
         })
         .join(" · ");
     }
-    return (this.pack.catalogSources || []).map(label).join(" · ");
+    return (this.pack.catalogSources || []).join(" · ");
   }
 
   // The catalog details shown on hover over the repository reference: origin,
@@ -964,12 +962,11 @@ module.exports = class PackageCard {
     }
   }
 
-  // The card's own status dots, shown ahead of any registry badges. States can
-  // coexist (e.g. a stale record from the Pulsar registry, installed as a
-  // symlink), so each state has its own colour rather than sharing a severity
-  // with the others: the colour is what a dot is recognised by, and it means
-  // the same thing on every card, in every theme. Each dot carries its details
-  // in a hover tooltip.
+  // The card's own status dots, shown ahead of any catalog badges. States can
+  // coexist (e.g. a stale record installed as a symlink), so each state has its
+  // own colour rather than sharing a severity with the others: the colour is
+  // what a dot is recognised by, and it means the same thing on every card, in
+  // every theme. Each dot carries its details in a hover tooltip.
   statusBadges() {
     const badges = [];
     if (this.pack.status === "error") {
@@ -1008,13 +1005,6 @@ module.exports = class PackageCard {
         text: "The catalogs disagree about which version to track; the first one wins.",
       });
     }
-    if (this.isPulsarSourced()) {
-      badges.push({
-        type: "pulsar",
-        title: "Pulsar registry",
-        text: "Listed by the Pulsar package registry.",
-      });
-    }
     const sourceCheckoutBadge = this.sourceCheckoutBadge();
     if (sourceCheckoutBadge) badges.push(sourceCheckoutBadge);
     const symlinkBadge = this.symlinkBadge();
@@ -1033,14 +1023,6 @@ module.exports = class PackageCard {
       title: "From the source checkout",
       text: this.pack.path || "Loaded from the repository, not from a build.",
     };
-  }
-
-  // A Pulsar-registry result carries `source: "pulsar"` directly from the
-  // search client, or "pulsar" among its catalog sources once it has been
-  // hydrated into a catalog-shaped record.
-  isPulsarSourced() {
-    if (this.pack.source === "pulsar") return true;
-    return (this.pack.catalogSources || []).includes("pulsar");
   }
 
   // A dot for a package whose install directory is a symbolic link — a

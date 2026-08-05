@@ -6,14 +6,12 @@ let packageManager;
 let panel;
 let gitUrlInfo;
 let catalogClient;
-let pulsarClient;
 
 describe("InstallPanel", function () {
   beforeEach(function () {
     const settingsView = new SettingsView();
     packageManager = new PackageManager();
     atom.config.set("settings-view.communityPackageCatalogs", ["official/catalog"]);
-    atom.config.set("settings-view.includePulsarPackageResults", false);
     catalogClient = {
       load: jasmine
         .createSpy("load")
@@ -28,20 +26,15 @@ describe("InstallPanel", function () {
       ),
       cancel: jasmine.createSpy("cancel"),
       mergeInstalledUpdates: jasmine.createSpy("mergeInstalledUpdates"),
-      hydrateSource: jasmine.createSpy("hydrateSource").andCallFake((source) =>
+      hydrateSource: jasmine.createSpy("hydrateSource").andCallFake((source, catalogSource) =>
         Promise.resolve({
           name: source.split("/").pop(),
           repository: source,
-          catalogSources: ["pulsar"],
+          catalogSources: [catalogSource ?? "external"],
         }),
       ),
     };
-    pulsarClient = {
-      search: jasmine.createSpy("search").andReturn(Promise.resolve([])),
-      getPackage: jasmine.createSpy("getPackage").andReturn(Promise.resolve(null)),
-    };
     spyOn(packageManager, "getCatalogClient").andReturn(catalogClient);
-    spyOn(packageManager, "getPulsarClient").andReturn(pulsarClient);
     panel = new InstallPanel(settingsView, packageManager);
   });
 
@@ -359,7 +352,7 @@ describe("InstallPanel", function () {
     expect(panel.refs.searchMessage.textContent).toContain("incomplete");
   });
 
-  describe("Pulsar registry results", function () {
+  describe("results from several catalogs", function () {
     beforeEach(function () {
       panel.catalogPackages = [
         {
@@ -371,53 +364,27 @@ describe("InstallPanel", function () {
             { catalogSource: "owner/catalog", selector: { type: "latest", value: null } },
           ],
         },
+        // The same repository listed again by a second catalog, under a
+        // different name: identity is the origin, so this is one package.
+        {
+          name: "shared-fork",
+          repository: "https://github.com/owner/shared",
+          installSource: "owner/shared",
+          catalogSources: ["other/catalog"],
+          catalogSelectors: [
+            { catalogSource: "other/catalog", selector: { type: "latest", value: null } },
+          ],
+        },
       ];
       panel.catalogPromise = Promise.resolve({ schemaVersion: 1, packages: panel.catalogPackages });
     });
 
-    it("does not query Pulsar when the toggle is off", function () {
-      atom.config.set("settings-view.includePulsarPackageResults", false);
-      waitsForPromise(() =>
-        panel.search("shared").then(() => {
-          expect(pulsarClient.search).not.toHaveBeenCalled();
-        }),
-      );
-    });
-
-    it("appends Pulsar results, deduped by repository, when the toggle is on", function () {
-      atom.config.set("settings-view.includePulsarPackageResults", true);
-      pulsarClient.search.andReturn(
-        Promise.resolve([
-          // Same repo as the catalog result — must be deduped out.
-          { name: "shared", repository: "owner/shared", source: "pulsar" },
-          { name: "pulsar-only", repository: "owner/pulsar-only", source: "pulsar" },
-        ]),
-      );
-
-      waitsForPromise(() =>
-        panel.search("shared").then((results) => {
-          expect(pulsarClient.search).toHaveBeenCalledWith("shared");
-          expect(results.map(({ name }) => name)).toEqual(["shared", "pulsar-only"]);
-          expect(results[1].catalogSources).toEqual(["pulsar"]);
-          // The deduped Pulsar duplicate is recorded as an extra source on the
-          // kept catalog card rather than dropped.
-          expect(results[0].catalogSources).toEqual(["owner/catalog", "pulsar"]);
-          expect(panel.refs.resultsContainer.querySelectorAll(".package-card").length).toBe(2);
-        }),
-      );
-    });
-
-    it("surfaces a Pulsar search failure without dropping catalog results", function () {
-      spyOn(atom.notifications, "addError").andCallThrough();
-      atom.config.set("settings-view.includePulsarPackageResults", true);
-      pulsarClient.search.andReturn(Promise.reject(new Error("offline")));
-
+    it("shows one card per repository and records every catalog that lists it", function () {
       waitsForPromise(() =>
         panel.search("shared").then((results) => {
           expect(results.map(({ name }) => name)).toEqual(["shared"]);
-          expect(atom.notifications.addError).toHaveBeenCalled();
-          const [message] = atom.notifications.addError.mostRecentCall.args;
-          expect(message).toContain("Pulsar registry");
+          expect(results[0].catalogSources).toEqual(["owner/catalog", "other/catalog"]);
+          expect(panel.refs.resultsContainer.querySelectorAll(".package-card").length).toBe(1);
         }),
       );
     });
