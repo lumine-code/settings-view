@@ -107,12 +107,17 @@ module.exports = class PackageCard {
     this.updateInterfaceState();
   }
 
-  // True when this card represents the bundled instance itself (a normally
-  // loaded bundled package or the shadow descriptor), as opposed to a community
-  // package that overrides a bundled name — which is a real install and keeps
-  // its buttons.
+  // True when this card represents the bundled instance itself, as opposed to a
+  // copy of that name somewhere else — which is a real install and keeps its
+  // buttons, whether it was installed, linked, or copied in by hand.
   isBundledInstance() {
     if (this.pack.packageKind === "builtin") return true;
+    // An entry that came from disk knows which place it was found in, and that
+    // is the whole answer: a package shipping with the editor and a copy of its
+    // name in the packages directory are different copies, not one package.
+    if (this.pack.tier) return this.pack.tier === "bundled";
+    // A card with no directory behind it — a catalog result — can only go by
+    // the name.
     if (this.pack.apmInstallSource) return false;
     if (this.installedOriginDiffers()) return false;
     return atom.packages.isBundledPackage(this.pack.name);

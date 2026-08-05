@@ -862,6 +862,41 @@ describe("PackageCard", function () {
       expect(card.element).not.toHaveClass("is-shadowed");
     });
 
+    it("keeps the Uninstall button on a linked copy of a bundled name", function () {
+      // Linked or copied in by hand, so there is no install receipt to go by:
+      // what makes this a real install is the directory it was found in.
+      setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
+      spyOn(atom.packages, "isBundledPackage").andCallFake((name) => name === "about");
+      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn(null);
+      card = new PackageCard(
+        {
+          name: "about",
+          version: "1.0.0",
+          path: "/tmp/.lumine/packages/about",
+          directoryName: "about",
+          tier: "community",
+        },
+        new SettingsView(),
+        packageManager,
+      );
+      jasmine.attachToDOM(card.element);
+      expect(card.refs.uninstallButton).toBeVisible();
+      expect(card.isBundledInstance()).toBe(false);
+    });
+
+    it("keeps the bundled copy of that name un-uninstallable", function () {
+      setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
+      spyOn(atom.packages, "isBundledPackage").andCallFake((name) => name === "about");
+      card = new PackageCard(
+        { name: "about", version: "1.0.0", tier: "bundled", packageKind: "builtin" },
+        new SettingsView(),
+        packageManager,
+      );
+      jasmine.attachToDOM(card.element);
+      expect(card.refs.uninstallButton).not.toBeVisible();
+      expect(card.isBundledInstance()).toBe(true);
+    });
+
     it("renders an overridden bundled package as a greyed-out informational card", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: true });
       spyOn(atom.packages, "isBundledPackage").andReturn(true);

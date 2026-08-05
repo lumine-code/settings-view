@@ -454,12 +454,18 @@ module.exports = class PackageDetailView {
     this.updateConfigSections();
 
     const loadedPackage = this.getMatchingLoadedPackage();
+    // A copy in the packages directory has source to open even when a package
+    // of its name also ships with the editor: where this copy lives is the
+    // question, not what it is called.
+    const isBundledInstance = this.pack.tier
+      ? this.pack.tier === "bundled"
+      : atom.packages.isBundledPackage(this.pack.name);
     const sourceIsAvailable =
       loadedPackage &&
       loadedPackage.path &&
       ((loadedPackage.metadata.apmInstallSource &&
         loadedPackage.metadata.apmInstallSource.type === "git") ||
-        !atom.packages.isBundledPackage(this.pack.name));
+        !isBundledInstance);
     if (sourceIsAvailable) {
       this.refs.openButton.style.display = "";
     } else {
