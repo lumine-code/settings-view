@@ -1714,7 +1714,10 @@ describe("PackageCard", function () {
     let tmpDir = null;
 
     afterEach(function () {
-      if (tmpDir) fs.rmSync(tmpDir, { recursive: true, force: true });
+      // Retries because Windows keeps a directory non-empty until the last handle on a
+      // child closes, and `force` swallows only ENOENT.
+      if (tmpDir)
+        fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
       tmpDir = null;
     });
 
