@@ -68,10 +68,10 @@ function createFetch(catalogs = {}) {
 describe("CommunityPackageCatalogClient", function () {
   it("normalizes index.json catalog locations", function () {
     expect(normalizeCatalogSource("owner/catalog")).toBe(
-      "https://raw.githubusercontent.com/owner/catalog/main/index.json",
+      "https://raw.githubusercontent.com/owner/catalog/HEAD/index.json",
     );
     expect(normalizeCatalogSource("https://github.com/owner/catalog.git")).toBe(
-      "https://raw.githubusercontent.com/owner/catalog/main/index.json",
+      "https://raw.githubusercontent.com/owner/catalog/HEAD/index.json",
     );
     expect(normalizeCatalogSource("https://catalog.example/community")).toBe(
       "https://catalog.example/community/index.json",
@@ -354,7 +354,7 @@ describe("CommunityPackageCatalogClient", function () {
         .then((catalog) => {
           expect(catalog.packages[0].name).toBe("sample-package");
           expect(catalog.pendingSources).toEqual([
-            "https://raw.githubusercontent.com/new/catalog/main/index.json",
+            "https://raw.githubusercontent.com/new/catalog/HEAD/index.json",
           ]);
         }),
     );

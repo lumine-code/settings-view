@@ -47,7 +47,7 @@
         "type": "string"
       },
       "default": [
-        "https://raw.githubusercontent.com/lumine-code/packages/main/index.json"
+        "https://raw.githubusercontent.com/lumine-code/packages/HEAD/index.json"
       ]
     },
     "packageUpdateConcurrency": {
