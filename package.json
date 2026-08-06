@@ -105,14 +105,14 @@
     "@lumine-code/season": "github:lumine-code/season#ec9adb297202dd01a425113a4edc2c189d82c14e",
     "@lumine-code/underscore-plus": "github:lumine-code/underscore-plus#91bdb6152d7b3f86f198917707e258af5470db9f",
     "picomatch": "^4.0.5",
-    "semver": "^7.0.0"
+    "semver": "^7.8.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-n": "^18.2.2",
-    "globals": "^17.7.0",
+    "globals": "^17.9.0",
     "prettier": "^3.9.6"
   }
 }
