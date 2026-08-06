@@ -505,6 +505,14 @@ describe("SettingsPanel", () => {
             type: "array",
             default: [],
           },
+          numberArray: {
+            name: "numberArray",
+            title: "Number array",
+            description: "An array of numbers",
+            type: "array",
+            items: { type: "integer" },
+            default: [],
+          },
         },
       };
 
@@ -602,6 +610,27 @@ describe("SettingsPanel", () => {
         atom.config.set("foo.commaValueArray", [", 4"]);
         advanceClock(1000);
         expect(commaValueArrayEditor.getModel().getText()).toBe("\\, 4");
+      });
+    });
+
+    describe("numberArray", () => {
+      // The field is only rendered for an array it can round-trip, and it was
+      // rendered for an empty one whatever the item type. So a setting whose
+      // items coerce to numbers appeared until it had a value, then vanished
+      // from the page and could no longer be edited or cleared.
+      it("stays on the page once it holds numbers", () => {
+        atom.config.set("foo.numberArray", [2307, 7016]);
+        settingsPanel = new SettingsPanel({ namespace: "foo", includeTitle: false });
+        const editor = settingsPanel.element.querySelector('[id="foo.numberArray"]');
+        expect(editor).not.toBeNull();
+        expect(editor.getModel().getText()).toBe("2307, 7016");
+      });
+
+      it("coerces what is typed back to numbers", () => {
+        const editor = settingsPanel.element.querySelector('[id="foo.numberArray"]');
+        editor.getModel().setText("2307, 7016");
+        advanceClock(editor.getModel().getBuffer().getStoppedChangingDelay());
+        expect(atom.config.get("foo.numberArray")).toEqual([2307, 7016]);
       });
     });
   });
