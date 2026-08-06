@@ -33,7 +33,7 @@ module.exports = class UriHandlerPanel {
     // Seed from the registry rather than starting empty: the panel is built
     // lazily, on the first switch to it, so every URI handled before that point
     // is already in the history and would otherwise never be shown.
-    this.uriHistory = atom.uriHandlerRegistry.getRecentlyHandledURIs();
+    this.uriHistory = atom.uriHandlers.getRecentlyHandledURIs();
     etch.initialize(this);
 
     this.subscriptions = new CompositeDisposable();
@@ -58,8 +58,8 @@ module.exports = class UriHandlerPanel {
           this.scrollToBottom();
         },
       }),
-      atom.uriHandlerRegistry.onHistoryChange(() => {
-        this.uriHistory = atom.uriHandlerRegistry.getRecentlyHandledURIs();
+      atom.uriHandlers.onHistoryChange(() => {
+        this.uriHistory = atom.uriHandlers.getRecentlyHandledURIs();
         etch.update(this);
       }),
     );
