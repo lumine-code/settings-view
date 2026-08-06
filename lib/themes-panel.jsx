@@ -25,7 +25,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
     this.items = {
       dev: new List("name"),
       core: new List("name"),
-      community: new List("name"),
+      installed: new List("name"),
     };
     this.itemViews = {
       dev: new ListView(this.items.dev, this.refs.devPackages, this.createPackageCard.bind(this)),
@@ -34,9 +34,9 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
         this.refs.corePackages,
         this.createPackageCard.bind(this),
       ),
-      community: new ListView(
-        this.items.community,
-        this.refs.communityPackages,
+      installed: new ListView(
+        this.items.installed,
+        this.refs.installedPackages,
         this.createPackageCard.bind(this),
       ),
     };
@@ -273,15 +273,15 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
             </div>
 
             <section className="sub-section installed-packages">
-              <h3 ref="communityThemesHeader" className="sub-section-heading icon icon-paintcan">
-                Community Themes
-                <span ref="communityCount" className="section-heading-count badge badge-flexible">
+              <h3 ref="installedThemesHeader" className="sub-section-heading icon icon-paintcan">
+                Installed Themes
+                <span ref="installedCount" className="section-heading-count badge badge-flexible">
                   â€¦
                 </span>
               </h3>
-              <div ref="communityPackages" className="container package-container">
+              <div ref="installedPackages" className="container package-container">
                 <div
-                  ref="communityLoadingArea"
+                  ref="installedLoadingArea"
                   className="alert alert-info loading-area icon icon-hourglass"
                 >
                   Loading themesâ€¦
@@ -336,9 +336,9 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
     packages.user = packages.user.filter(isTheme);
     packages.core = packages.core.filter(isTheme);
     packages.git = (packages.git || []).filter(isTheme);
-    packages.community = packages.user.concat(packages.git);
+    packages.installed = packages.user.concat(packages.git);
 
-    for (let packageType of ["dev", "core", "community"]) {
+    for (let packageType of ["dev", "core", "installed"]) {
       for (let pack of packages[packageType]) {
         pack.owner = ownerFromRepository(pack.repository);
       }
@@ -349,7 +349,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
   sortThemes(packages) {
     packages.dev.sort(packageComparatorAscending);
     packages.core.sort(packageComparatorAscending);
-    packages.community.sort(packageComparatorAscending);
+    packages.installed.sort(packageComparatorAscending);
     return packages;
   }
 
@@ -366,8 +366,8 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
         this.refs.coreLoadingArea.remove();
         this.items.core.setItems(this.packages.core);
 
-        this.refs.communityLoadingArea.remove();
-        this.items.community.setItems(this.packages.community);
+        this.refs.installedLoadingArea.remove();
+        this.items.installed.setItems(this.packages.installed);
 
         // TODO show empty mesage per section
 
@@ -489,7 +489,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
       return;
     }
 
-    for (let packageType of ["dev", "core", "community"]) {
+    for (let packageType of ["dev", "core", "installed"]) {
       const allViews = this.itemViews[packageType].getViews();
       const activeViews = this.itemViews[packageType].filterViews((pack) => {
         if (text === "") {
@@ -521,9 +521,9 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
 
   updateUnfilteredSectionCounts() {
     this.updateSectionCount(
-      this.refs.communityThemesHeader,
-      this.refs.communityCount,
-      this.packages.community.length,
+      this.refs.installedThemesHeader,
+      this.refs.installedCount,
+      this.packages.installed.length,
     );
     this.updateSectionCount(
       this.refs.coreThemesHeader,
@@ -535,16 +535,16 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
       this.refs.devCount,
       this.packages.dev.length,
     );
-    this.refs.totalPackages.textContent = `${this.packages.community.length + this.packages.core.length + this.packages.dev.length}`;
+    this.refs.totalPackages.textContent = `${this.packages.installed.length + this.packages.core.length + this.packages.dev.length}`;
   }
 
   updateFilteredSectionCounts() {
-    const community = this.notHiddenCardsLength(this.refs.communityPackages);
+    const installed = this.notHiddenCardsLength(this.refs.installedPackages);
     this.updateSectionCount(
-      this.refs.communityThemesHeader,
-      this.refs.communityCount,
-      community,
-      this.packages.community.length,
+      this.refs.installedThemesHeader,
+      this.refs.installedCount,
+      installed,
+      this.packages.installed.length,
     );
 
     const dev = this.notHiddenCardsLength(this.refs.devPackages);
@@ -563,15 +563,15 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
       this.packages.core.length,
     );
 
-    const shownThemes = dev + core + community;
+    const shownThemes = dev + core + installed;
     const totalThemes =
-      this.packages.community.length + this.packages.core.length + this.packages.dev.length;
+      this.packages.installed.length + this.packages.core.length + this.packages.dev.length;
     this.refs.totalPackages.textContent = `${shownThemes}/${totalThemes}`;
   }
 
   resetSectionHasItems() {
     this.resetCollapsibleSections([
-      this.refs.communityThemesHeader,
+      this.refs.installedThemesHeader,
       this.refs.coreThemesHeader,
       this.refs.developmentThemesHeader,
     ]);

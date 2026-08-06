@@ -138,14 +138,14 @@ describe("ThemesPanel", function () {
       waitsFor(
         () =>
           packageManager.getInstalled.callCount === 1 &&
-          panel.refs.communityCount.textContent.indexOf("…") < 0,
+          panel.refs.installedCount.textContent.indexOf("…") < 0,
       );
     });
 
     it("shows the themes", function () {
-      expect(panel.refs.communityCount.textContent.trim()).toBe("1");
+      expect(panel.refs.installedCount.textContent.trim()).toBe("1");
       expect(
-        panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+        panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
       ).toBe(1);
 
       expect(panel.refs.coreCount.textContent.trim()).toBe("1");
@@ -155,7 +155,7 @@ describe("ThemesPanel", function () {
       expect(panel.refs.devPackages.querySelectorAll(".package-card:not(.hidden)").length).toBe(1);
     });
 
-    it("shows repository themes as community themes", function () {
+    it("shows repository themes as installed themes", function () {
       const packages = panel.filterThemes({
         user: [{ name: "manual-theme", theme: "syntax" }],
         git: [{ name: "repository-theme", theme: "ui", apmInstallSource: { type: "git" } }],
@@ -163,7 +163,7 @@ describe("ThemesPanel", function () {
         dev: [],
       });
 
-      expect(packages.community.map(({ name }) => name)).toEqual([
+      expect(packages.installed.map(({ name }) => name)).toEqual([
         "manual-theme",
         "repository-theme",
       ]);
@@ -193,9 +193,9 @@ describe("ThemesPanel", function () {
     it("filters themes by name", async () => {
       panel.refs.filterEditor.setText("user-");
       await wait(panel.refs.filterEditor.getBuffer().stoppedChangingDelay);
-      expect(panel.refs.communityCount.textContent.trim()).toBe("1/1");
+      expect(panel.refs.installedCount.textContent.trim()).toBe("1/1");
       expect(
-        panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+        panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
       ).toBe(1);
 
       expect(panel.refs.coreCount.textContent.trim()).toBe("0/1");
@@ -217,16 +217,16 @@ describe("ThemesPanel", function () {
         installed.user.push({ name, theme: "ui" }),
       );
 
-      expect(panel.refs.communityCount.textContent.trim()).toBe("1");
+      expect(panel.refs.installedCount.textContent.trim()).toBe("1");
       expect(
-        panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+        panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
       ).toBe(1);
 
       packageManager.install({ name: "another-user-theme", theme: "ui" });
 
-      await conditionPromise(() => panel.refs.communityCount.textContent.trim() === "2");
+      await conditionPromise(() => panel.refs.installedCount.textContent.trim() === "2");
       expect(
-        panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+        panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
       ).toBe(2);
     });
 
@@ -287,7 +287,7 @@ describe("ThemesPanel", function () {
 
       const hasItems = panel.element.querySelectorAll(".sub-section-heading.has-items");
       expect(hasItems.length).toBe(1);
-      expect(hasItems[0].textContent).toMatch(/^Community Themes/);
+      expect(hasItems[0].textContent).toMatch(/^Installed Themes/);
     });
   });
 
@@ -306,7 +306,7 @@ describe("ThemesPanel", function () {
       waitsFor(
         () =>
           packageManager.getInstalled.callCount === 1 &&
-          panel.refs.communityCount.textContent.indexOf("…") < 0,
+          panel.refs.installedCount.textContent.indexOf("…") < 0,
       );
     });
 

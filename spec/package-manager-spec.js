@@ -65,13 +65,13 @@ describe("PackageManager", function () {
       expect(packages.user.map((p) => p.name)).toEqual([]);
     });
 
-    it("files a community package under user", function () {
+    it("files a installed package under user", function () {
       availablePackages(
-        descriptor("community", path.join(configDirPath, "packages"), "some-community-package"),
+        descriptor("installed", path.join(configDirPath, "packages"), "some-installed-package"),
       );
 
       const packages = packageManager.getLocalPackages();
-      expect(packages.user.map((p) => p.name)).toEqual(["some-community-package"]);
+      expect(packages.user.map((p) => p.name)).toEqual(["some-installed-package"]);
       expect(packages.core).toEqual([]);
     });
 
@@ -95,7 +95,7 @@ describe("PackageManager", function () {
 
     it("files a git-sourced package under git", function () {
       availablePackages(
-        descriptor("community", path.join(configDirPath, "packages"), "git-package", {
+        descriptor("installed", path.join(configDirPath, "packages"), "git-package", {
           name: "git-package",
           apmInstallSource: { type: "git" },
         }),
@@ -107,7 +107,7 @@ describe("PackageManager", function () {
 
     it("keeps a legacy Git install active but warns when its receipt has no origin", function () {
       availablePackages(
-        descriptor("community", path.join(configDirPath, "packages"), "legacy-package", {
+        descriptor("installed", path.join(configDirPath, "packages"), "legacy-package", {
           name: "legacy-package",
           repository: "owner/legacy-package",
           apmInstallSource: { type: "git", source: "owner/legacy-package", sha: "abc123" },
@@ -121,19 +121,19 @@ describe("PackageManager", function () {
     it("records the directory a package lives in, whatever the package is called", function () {
       availablePackages(
         descriptor("bundled", bundledPackagesPath, "tree-view"),
-        descriptor("community", path.join(configDirPath, "packages"), "installed-as-other", {
-          name: "some-community-package",
+        descriptor("installed", path.join(configDirPath, "packages"), "installed-as-other", {
+          name: "some-installed-package",
         }),
       );
 
       const packages = packageManager.getLocalPackages();
       expect(packages.core[0].directoryName).toBe("tree-view");
-      expect(packages.user[0].name).toBe("some-community-package");
+      expect(packages.user[0].name).toBe("some-installed-package");
       expect(packages.user[0].directoryName).toBe("installed-as-other");
     });
 
     it("lists every directory providing one name, marking the copies that do not load", function () {
-      const stale = descriptor("community", path.join(configDirPath, "packages"), "zz-old-copy", {
+      const stale = descriptor("installed", path.join(configDirPath, "packages"), "zz-old-copy", {
         name: "duplicated-package",
       });
       stale.isWinner = false;
@@ -141,10 +141,10 @@ describe("PackageManager", function () {
         name: "duplicated-package",
         dirname: "duplicated-package",
         path: path.join(configDirPath, "packages", "duplicated-package"),
-        tier: "community",
+        tier: "installed",
       };
       availablePackages(
-        descriptor("community", path.join(configDirPath, "packages"), "duplicated-package"),
+        descriptor("installed", path.join(configDirPath, "packages"), "duplicated-package"),
         stale,
       );
 
@@ -168,12 +168,12 @@ describe("PackageManager", function () {
       this.packs = [];
       for (let i = 0; i < 45; i++) {
         this.packs.push({
-          name: `community-${i}`,
-          dirname: `community-${i}`,
-          path: path.join(configDirPath, "packages", `community-${i}`),
-          tier: "community",
+          name: `installed-${i}`,
+          dirname: `installed-${i}`,
+          path: path.join(configDirPath, "packages", `installed-${i}`),
+          tier: "installed",
           isBundled: false,
-          metadata: { name: `community-${i}` },
+          metadata: { name: `installed-${i}` },
           isWinner: true,
         });
       }
@@ -201,7 +201,7 @@ describe("PackageManager", function () {
     }));
 
   describe("::findInstalledPackageByOrigin()", function () {
-    it("finds a community install under its previous package name and ignores built-ins", function () {
+    it("finds a installed install under its previous package name and ignores built-ins", function () {
       spyOn(packageManager, "getLocalPackages").andReturn({
         dev: [],
         user: [

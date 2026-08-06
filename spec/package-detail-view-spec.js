@@ -151,7 +151,7 @@ describe("PackageDetailView", function () {
         name: loadedPackage.name,
         dirname: path.basename(loadedPackage.path),
         path: loadedPackage.path,
-        tier: "community",
+        tier: "installed",
       },
       metadata: loadedPackage.metadata,
     };
@@ -428,7 +428,7 @@ describe("PackageDetailView", function () {
     const metadata = {
       name: "shadowed-pkg",
       version: "1.0.0",
-      description: "A bundled package overridden by a community install.",
+      description: "A bundled package overridden by an installed copy.",
       repository: "https://github.com/lumine-code/lumine",
     };
     view = new PackageDetailView(

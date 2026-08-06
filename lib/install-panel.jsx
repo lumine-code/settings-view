@@ -12,7 +12,7 @@ const { CompositeDisposable, Disposable, TextEditor } = require("atom");
 const PackageCard = require("./package-card");
 const notifyPackageError = require("./notify-error");
 const { packageOrigin } = require("./utils");
-const { normalizeCatalogSource } = require("./community-package-catalog-client");
+const { normalizeCatalogSource } = require("./package-catalog-client");
 
 const PackageNameRegex = /config\/install\/(?:package|theme):([a-z0-9-_]+)/i;
 
@@ -38,7 +38,7 @@ module.exports = class InstallPanel {
 
     this.refs.searchMessage.style.display = "none";
 
-    this.refs.searchEditor.setPlaceholderText("Search community packages or enter owner/repo");
+    this.refs.searchEditor.setPlaceholderText("Search packages or enter owner/repo");
     this.refs.catalogEditor.setPlaceholderText("owner/catalog or index.json URL");
 
     this.disposables.add(atom.tooltips.add(this.refs.addCatalogButton, { title: "Add catalog" }));
@@ -110,7 +110,7 @@ module.exports = class InstallPanel {
       }),
     );
     this.disposables.add(
-      atom.config.onDidChange("settings-view.communityPackageCatalogs", () => {
+      atom.config.onDidChange("settings-view.packageCatalogs", () => {
         this.renderCatalogSources();
         // Sources changed — re-fetch on the next search instead of reusing the
         // data fetched from the old source list.
@@ -224,7 +224,7 @@ module.exports = class InstallPanel {
         <div className="section packages">
           <div className="section-container">
             <h1 ref="browseHeading" className="section-heading icon icon-star">
-              Community Packages
+              Packages
             </h1>
 
             <div className="search-container clearfix">
@@ -389,7 +389,7 @@ module.exports = class InstallPanel {
 
     this.refs.resultsContainer.innerHTML = "";
     this.clearPackageCards(this.catalogPackageCards);
-    this.refs.searchMessage.textContent = `No community packages match “${_query}”. You can also enter owner/repo directly.`;
+    this.refs.searchMessage.textContent = `No packages match “${_query}”. You can also enter owner/repo directly.`;
     this.refs.searchMessage.style.display = "";
   }
 
@@ -785,7 +785,7 @@ module.exports = class InstallPanel {
     if (generation !== this.searchGeneration) return [];
     this.refs.searchMessage.style.display = "none";
 
-    // Community catalog results, deduplicated by repository.
+    // Catalog results, deduplicated by repository.
     const byOrigin = new Map();
     const results = [];
     for (const pack of this.scoreCatalog(query)) {
@@ -808,7 +808,7 @@ module.exports = class InstallPanel {
   }
 
   getCatalogSources() {
-    const sources = atom.config.get("settings-view.communityPackageCatalogs");
+    const sources = atom.config.get("settings-view.packageCatalogs");
     return Array.isArray(sources)
       ? sources.filter((source) => typeof source === "string" && source.trim())
       : [];
@@ -874,7 +874,7 @@ module.exports = class InstallPanel {
       if (sources.some((existing) => normalizeCatalogSource(existing) === normalized)) {
         throw new Error("That catalog is already configured.");
       }
-      atom.config.set("settings-view.communityPackageCatalogs", [...sources, source]);
+      atom.config.set("settings-view.packageCatalogs", [...sources, source]);
       this.refs.catalogEditor.setText("");
     } catch (error) {
       this.showCatalogSourceError(error.message);
@@ -892,14 +892,14 @@ module.exports = class InstallPanel {
   }
 
   didClickRestoreDefaults() {
-    atom.config.unset("settings-view.communityPackageCatalogs");
+    atom.config.unset("settings-view.packageCatalogs");
     this.renderCatalogSources();
   }
 
   removeCatalogSource(index) {
     const sources = this.getCatalogSources();
     atom.config.set(
-      "settings-view.communityPackageCatalogs",
+      "settings-view.packageCatalogs",
       sources.filter((_source, sourceIndex) => sourceIndex !== index),
     );
   }
@@ -919,7 +919,7 @@ module.exports = class InstallPanel {
       }
       const updated = [...sources];
       updated[index] = value;
-      atom.config.set("settings-view.communityPackageCatalogs", updated);
+      atom.config.set("settings-view.packageCatalogs", updated);
     } catch (error) {
       this.renderCatalogSources();
       this.showCatalogSourceError(error.message);

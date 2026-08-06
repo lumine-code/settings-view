@@ -79,7 +79,7 @@ module.exports = class PackageCard {
     this.hasCompatibleVersion = true;
 
     // The informational card for a bundled package currently overridden by a
-    // community install: greyed out, with a single "Override" indicator and no
+    // installed copy: greyed out, with a single "Override" indicator and no
     // Update/Settings/Disable/Uninstall.
     if (this.isShadowed) {
       this.setupShadowedCard();
@@ -93,7 +93,7 @@ module.exports = class PackageCard {
     }
 
     // Only strip the install/uninstall buttons for the genuine bundled instance.
-    // A community package that overrides a bundled name is a real install and
+    // An installed package that overrides a bundled name is a real install and
     // keeps its Settings/Disable/Uninstall buttons.
     if (this.isBundledInstance()) {
       this.refs.installButtonGroup.remove();
@@ -153,7 +153,7 @@ module.exports = class PackageCard {
     if (!winner) return "another copy of this package";
     const tierLabel = {
       dev: "the dev package",
-      community: "the community package",
+      installed: "the installed package",
       bundled: "the bundled package",
     };
     const label = tierLabel[winner.tier] || "the copy";
@@ -1330,7 +1330,7 @@ module.exports = class PackageCard {
     this.refs.packageActionButtonGroup.style.display = "none";
   }
 
-  // Installing puts a package in the community directory, which a dev checkout
+  // Installing puts a package in the installed directory, which a dev checkout
   // of the same name outranks. The install still succeeds and the files are
   // there, but the dev copy keeps loading — say so before the click, not after.
   shadowedInstallNote() {
@@ -1519,7 +1519,7 @@ module.exports = class PackageCard {
     // At least one side has no recorded origin. They are the same package only
     // when NEITHER does — a local/unpublished package, already matched by name in
     // subscribeToPackageEvent. If one side has an origin and the other does not,
-    // a shared name is a coincidence (e.g. a community card and a same-named
+    // a shared name is a coincidence (e.g. a catalog card and a same-named
     // bundled or hand-placed package), so one must not drive the other's state.
     return !cardOrigin && !eventOrigin;
   }

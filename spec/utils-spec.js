@@ -115,12 +115,12 @@ describe("Utils", () => {
   });
 
   describe("packagePanelKey", () => {
-    it("does not key community or built-in detail panels by name alone", () => {
+    it("does not key installed or built-in detail panels by name alone", () => {
       expect(packagePanelKey({ name: "shared", repository: "owner/one" })).toBe(
-        "community:github.com/owner/one",
+        "origin:github.com/owner/one",
       );
       expect(packagePanelKey({ name: "shared", repository: "owner/two" })).toBe(
-        "community:github.com/owner/two",
+        "origin:github.com/owner/two",
       );
       expect(packagePanelKey({ name: "shared", packageKind: "builtin" })).toBe("builtin:shared");
     });

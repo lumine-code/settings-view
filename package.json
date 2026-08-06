@@ -39,8 +39,8 @@
     "format:check": "prettier --check ."
   },
   "configSchema": {
-    "communityPackageCatalogs": {
-      "title": "Community Package Catalogs",
+    "packageCatalogs": {
+      "title": "Package Catalogs",
       "description": "Ordered repositories or index.json URLs containing untrusted lists of Git repositories. Package metadata is fetched directly by Lumine.",
       "type": "array",
       "items": {

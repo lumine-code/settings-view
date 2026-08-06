@@ -195,7 +195,7 @@ module.exports = class PackageDetailView {
       this.completeInitialization();
     } else if (this.pack.metadata) {
       // A same-named loaded package may be a bundled package or another
-      // community origin. Keep the exact card metadata instead of crossing
+      // installed origin. Keep the exact card metadata instead of crossing
       // package identities, and never query the legacy registry by name.
       this.completeInitialization();
     } else {

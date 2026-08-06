@@ -32,7 +32,7 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
     this.items = {
       dev: new List(packageEntryKey),
       core: new List(packageEntryKey),
-      community: new List(packageEntryKey),
+      installed: new List(packageEntryKey),
     };
     this.itemViews = {
       dev: new ListView(this.items.dev, this.refs.devPackages, this.createPackageCard.bind(this)),
@@ -41,9 +41,9 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
         this.refs.corePackages,
         this.createPackageCard.bind(this),
       ),
-      community: new ListView(
-        this.items.community,
-        this.refs.communityPackages,
+      installed: new ListView(
+        this.items.installed,
+        this.refs.installedPackages,
         this.createPackageCard.bind(this),
       ),
     };
@@ -143,15 +143,15 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
             </div>
 
             <section className="sub-section installed-packages">
-              <h3 ref="communityPackagesHeader" className="sub-section-heading icon icon-package">
-                Community Packages
-                <span ref="communityCount" className="section-heading-count badge badge-flexible">
+              <h3 ref="installedPackagesHeader" className="sub-section-heading icon icon-package">
+                Installed Packages
+                <span ref="installedCount" className="section-heading-count badge badge-flexible">
                   …
                 </span>
               </h3>
-              <div ref="communityPackages" className="container package-container">
+              <div ref="installedPackages" className="container package-container">
                 <div
-                  ref="communityLoadingArea"
+                  ref="installedLoadingArea"
                   className="alert alert-info loading-area icon icon-hourglass"
                 >
                   Loading packages…
@@ -200,7 +200,7 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
 
   // How many directories the list is showing for a package name.
   countCopies(name) {
-    return ["dev", "core", "community"].reduce(
+    return ["dev", "core", "installed"].reduce(
       (total, type) =>
         total + (this.packages[type] || []).filter((pack) => pack.name === name).length,
       0,
@@ -215,9 +215,9 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
     packages.user = packages.user.filter((p) => !isTheme(p));
     packages.core = packages.core.filter((p) => !isTheme(p));
     packages.git = (packages.git || []).filter((p) => !isTheme(p));
-    packages.community = packages.user.concat(packages.git);
+    packages.installed = packages.user.concat(packages.git);
 
-    for (let packageType of ["dev", "core", "community"]) {
+    for (let packageType of ["dev", "core", "installed"]) {
       for (let pack of packages[packageType]) {
         pack.owner = ownerFromRepository(pack.repository);
       }
@@ -229,7 +229,7 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
   sortPackages(packages) {
     packages.dev.sort(packageComparatorAscending);
     packages.core.sort(packageComparatorAscending);
-    packages.community.sort(packageComparatorAscending);
+    packages.installed.sort(packageComparatorAscending);
     return packages;
   }
 
@@ -252,8 +252,8 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
         this.refs.coreLoadingArea.remove();
         this.items.core.setItems(this.packages.core);
 
-        this.refs.communityLoadingArea.remove();
-        this.items.community.setItems(this.packages.community);
+        this.refs.installedLoadingArea.remove();
+        this.items.installed.setItems(this.packages.installed);
 
         // TODO show empty mesage per section
 
@@ -268,7 +268,7 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
   }
 
   displayPackageUpdates(packagesWithUpdates) {
-    for (const packageType of ["dev", "core", "community"]) {
+    for (const packageType of ["dev", "core", "installed"]) {
       for (const packageCard of this.itemViews[packageType].getViews()) {
         // A shadowed copy does not own its name, so an update found for that
         // name belongs to the copy that loads, not to this one.
@@ -290,7 +290,7 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
       return;
     }
 
-    for (let packageType of ["dev", "core", "community"]) {
+    for (let packageType of ["dev", "core", "installed"]) {
       const allViews = this.itemViews[packageType].getViews();
       const activeViews = this.itemViews[packageType].filterViews((pack) => {
         if (text === "") {
@@ -322,9 +322,9 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
 
   updateUnfilteredSectionCounts() {
     this.updateSectionCount(
-      this.refs.communityPackagesHeader,
-      this.refs.communityCount,
-      this.packages.community.length,
+      this.refs.installedPackagesHeader,
+      this.refs.installedCount,
+      this.packages.installed.length,
     );
     this.updateSectionCount(
       this.refs.corePackagesHeader,
@@ -337,17 +337,17 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
       this.packages.dev.length,
     );
     const totalPackages =
-      this.packages.community.length + this.packages.core.length + this.packages.dev.length;
+      this.packages.installed.length + this.packages.core.length + this.packages.dev.length;
     this.refs.totalPackages.textContent = totalPackages.toString();
   }
 
   updateFilteredSectionCounts() {
-    const community = this.notHiddenCardsLength(this.refs.communityPackages);
+    const installed = this.notHiddenCardsLength(this.refs.installedPackages);
     this.updateSectionCount(
-      this.refs.communityPackagesHeader,
-      this.refs.communityCount,
-      community,
-      this.packages.community.length,
+      this.refs.installedPackagesHeader,
+      this.refs.installedCount,
+      installed,
+      this.packages.installed.length,
     );
 
     const core = this.notHiddenCardsLength(this.refs.corePackages);
@@ -366,15 +366,15 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
       this.packages.dev.length,
     );
 
-    const shownPackages = dev + core + community;
+    const shownPackages = dev + core + installed;
     const totalPackages =
-      this.packages.community.length + this.packages.core.length + this.packages.dev.length;
+      this.packages.installed.length + this.packages.core.length + this.packages.dev.length;
     this.refs.totalPackages.textContent = `${shownPackages}/${totalPackages}`;
   }
 
   resetSectionHasItems() {
     this.resetCollapsibleSections([
-      this.refs.communityPackagesHeader,
+      this.refs.installedPackagesHeader,
       this.refs.corePackagesHeader,
       this.refs.devPackagesHeader,
     ]);

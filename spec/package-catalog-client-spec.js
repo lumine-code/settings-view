@@ -1,5 +1,5 @@
-const CommunityPackageCatalogClient = require("../lib/community-package-catalog-client");
-const { normalizeCatalogSource, TaskQueue } = CommunityPackageCatalogClient;
+const PackageCatalogClient = require("../lib/package-catalog-client");
+const { normalizeCatalogSource, TaskQueue } = PackageCatalogClient;
 
 const SHA_1 = "1111111111111111111111111111111111111111";
 const SHA_2 = "2222222222222222222222222222222222222222";
@@ -65,7 +65,7 @@ function createFetch(catalogs = {}) {
   });
 }
 
-describe("CommunityPackageCatalogClient", function () {
+describe("PackageCatalogClient", function () {
   it("normalizes index.json catalog locations", function () {
     expect(normalizeCatalogSource("owner/catalog")).toBe(
       "https://raw.githubusercontent.com/owner/catalog/HEAD/index.json",
@@ -82,7 +82,7 @@ describe("CommunityPackageCatalogClient", function () {
   });
 
   it("accepts only source strings and rejects the old metadata schema", function () {
-    const client = new CommunityPackageCatalogClient({ storage: createStorage() });
+    const client = new PackageCatalogClient({ storage: createStorage() });
     expect(client.validate(["owner/package@1.0.0"])[0]).toEqual(
       jasmine.objectContaining({
         originKey: "github.com/owner/package",
@@ -97,7 +97,7 @@ describe("CommunityPackageCatalogClient", function () {
   it("merges installed-package update results into the cached entries", function () {
     const storage = createStorage();
     storage.setItem(
-      "settings-view:community-package-catalog-v2",
+      "settings-view:package-catalog-v2",
       JSON.stringify({
         schemaVersion: 2,
         lastFetch: 1,
@@ -113,7 +113,7 @@ describe("CommunityPackageCatalogClient", function () {
         },
       }),
     );
-    const client = new CommunityPackageCatalogClient({ storage });
+    const client = new PackageCatalogClient({ storage });
 
     client.mergeInstalledUpdates([
       {
@@ -124,7 +124,7 @@ describe("CommunityPackageCatalogClient", function () {
       { apmInstallSource: { origin: "github.com/owner/absent" }, latestSha: "b".repeat(40) },
     ]);
 
-    const cache = JSON.parse(storage.getItem("settings-view:community-package-catalog-v2"));
+    const cache = JSON.parse(storage.getItem("settings-view:package-catalog-v2"));
     expect(cache.packages["github.com/owner/pkg"].latestSha).toBe("a".repeat(40));
     expect(cache.packages["github.com/owner/pkg"].latestVersion).toBe("1.1.0");
     // Existing catalog fields are preserved, and unknown origins are ignored.
@@ -133,7 +133,7 @@ describe("CommunityPackageCatalogClient", function () {
   });
 
   it("blocks unsafe automatic repository transports and local targets", function () {
-    const client = new CommunityPackageCatalogClient({ storage: createStorage() });
+    const client = new PackageCatalogClient({ storage: createStorage() });
     expect(() => client.validate(["git@github.com:owner/package.git"])).toThrow();
     expect(() => client.validate(["file:///tmp/package"])).toThrow();
     expect(() => client.validate(["https://127.0.0.1/package"])).toThrow();
@@ -143,7 +143,7 @@ describe("CommunityPackageCatalogClient", function () {
   it("hydrates names and metadata from the exact selected SHA", function () {
     const catalogUrl = "https://catalog.test/sources.json";
     const fetchImpl = createFetch({ [catalogUrl]: ["owner/package"] });
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl,
       packageManager: createPackageManager(),
       storage: createStorage(),
@@ -187,7 +187,7 @@ describe("CommunityPackageCatalogClient", function () {
       }
       return Promise.resolve(textResponse(404, "not found"));
     });
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl,
       packageManager: createPackageManager(),
       storage: createStorage(),
@@ -247,7 +247,7 @@ describe("CommunityPackageCatalogClient", function () {
       }
       return Promise.resolve(textResponse(404, "not found"));
     });
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl,
       packageManager,
       storage: createStorage(),
@@ -286,7 +286,7 @@ describe("CommunityPackageCatalogClient", function () {
 
   it("inspects an installed update at its exact SHA through Git", function () {
     const storage = createStorage();
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       packageManager: createPackageManager(),
       storage,
       atomVersion: () => "1.132.1",
@@ -332,7 +332,7 @@ describe("CommunityPackageCatalogClient", function () {
     const catalogUrl = "https://catalog.test/sources.json";
     const storage = createStorage();
     const fetchImpl = createFetch({ [catalogUrl]: ["owner/package"] });
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl,
       packageManager: createPackageManager(),
       storage,
@@ -364,7 +364,7 @@ describe("CommunityPackageCatalogClient", function () {
     const catalogUrl = "https://catalog.test/sources.json";
     const storage = createStorage();
     storage.setItem(
-      "settings-view:community-package-catalog-v2",
+      "settings-view:package-catalog-v2",
       JSON.stringify({
         schemaVersion: 2,
         lastFetch: 123,
@@ -383,7 +383,7 @@ describe("CommunityPackageCatalogClient", function () {
         },
       }),
     );
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl: createFetch({ [catalogUrl]: ["owner/package"] }),
       packageManager: createPackageManager(),
       storage,
@@ -412,7 +412,7 @@ describe("CommunityPackageCatalogClient", function () {
   it("merges provenance and keeps the first catalog selector", function () {
     const first = "https://one.test/sources.json";
     const second = "https://two.test/sources.json";
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl: createFetch({
         [first]: ["owner/package@1.0.0"],
         [second]: ["https://github.com/owner/package.git#branch:Next"],
@@ -433,7 +433,7 @@ describe("CommunityPackageCatalogClient", function () {
   it("loads the complete branch list lazily and caches it", function () {
     const catalogUrl = "https://catalog.test/sources.json";
     const packageManager = createPackageManager();
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl: createFetch({ [catalogUrl]: ["owner/package"] }),
       packageManager,
       storage: createStorage(),
@@ -477,7 +477,7 @@ describe("CommunityPackageCatalogClient", function () {
         }),
       );
     });
-    const client = new CommunityPackageCatalogClient({ fetchImpl, packageManager, storage });
+    const client = new PackageCatalogClient({ fetchImpl, packageManager, storage });
 
     waitsForPromise(() =>
       client
@@ -497,7 +497,7 @@ describe("CommunityPackageCatalogClient", function () {
 
   it("keeps a renderable origin-based error record when first hydration fails", function () {
     const catalogUrl = "https://catalog.test/sources.json";
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl: jasmine
         .createSpy("fetchImpl")
         .andCallFake((url) =>
@@ -528,7 +528,7 @@ describe("CommunityPackageCatalogClient", function () {
   it("rejects more than 2000 unique origins before hydration", function () {
     const catalogUrl = "https://catalog.test/sources.json";
     const sources = Array.from({ length: 2001 }, (_value, index) => `owner/package-${index}`);
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl: createFetch({ [catalogUrl]: sources }),
       packageManager: createPackageManager(),
       storage: createStorage(),
@@ -582,7 +582,7 @@ describe("CommunityPackageCatalogClient", function () {
         });
       });
     });
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl,
       packageManager,
       storage,
@@ -601,7 +601,7 @@ describe("CommunityPackageCatalogClient", function () {
           expect(finalProgress).toEqual({ processed: 1000, total: 1000, errors: 0 });
           expect(maximumGit).toBeLessThanOrEqual(4);
           expect(maximumHttp).toBeLessThanOrEqual(4);
-          return new CommunityPackageCatalogClient({ storage }).loadAll([catalogUrl], {
+          return new PackageCatalogClient({ storage }).loadAll([catalogUrl], {
             cacheOnly: true,
           });
         })
@@ -614,7 +614,7 @@ describe("CommunityPackageCatalogClient", function () {
     const fetchImpl = jasmine
       .createSpy("fetchImpl")
       .andReturn(Promise.resolve(textResponse(200, "# Exact README")));
-    const client = new CommunityPackageCatalogClient({ fetchImpl, storage });
+    const client = new PackageCatalogClient({ fetchImpl, storage });
     const pack = {
       originKey: "github.com/owner/package",
       repository: "owner/package",
@@ -657,7 +657,7 @@ describe("CommunityPackageCatalogClient", function () {
 
   it("retries transient HTTP failures with bounded backoff", function () {
     let attempts = 0;
-    const client = new CommunityPackageCatalogClient({
+    const client = new PackageCatalogClient({
       fetchImpl: jasmine.createSpy("fetchImpl").andCallFake(() => {
         attempts++;
         return Promise.resolve(

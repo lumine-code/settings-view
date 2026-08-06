@@ -5,7 +5,7 @@ Edit config settings, install packages, and change themes.
 ## Features
 
 - **Settings editor**: browse and change core and editor settings from a single view.
-- **Package management**: install, uninstall, and update community packages.
+- **Package management**: install, uninstall, and update packages.
 - **Theme management**: install, uninstall, and switch between UI and syntax themes.
 - **Keybinding browser**: view all active keybindings in one place.
 - **Settings search**: find individual settings by name across every panel, with the ones you opened most recently listed first.

@@ -23,14 +23,14 @@ describe("InstalledPackagesPanel", function () {
       waitsFor(function () {
         return (
           this.packageManager.getInstalled.callCount === 1 &&
-          this.panel.refs.communityCount.textContent.indexOf("…") < 0
+          this.panel.refs.installedCount.textContent.indexOf("…") < 0
         );
       });
 
       runs(function () {
-        expect(this.panel.refs.communityCount.textContent.trim()).toBe("1/1");
+        expect(this.panel.refs.installedCount.textContent.trim()).toBe("1/1");
         expect(
-          this.panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+          this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
         ).toBe(1);
 
         expect(this.panel.refs.coreCount.textContent.trim()).toBe("0/1");
@@ -60,15 +60,15 @@ describe("InstalledPackagesPanel", function () {
       waitsFor(function () {
         return (
           this.packageManager.getInstalled.callCount === 1 &&
-          this.panel.refs.communityCount.textContent.indexOf("…") < 0
+          this.panel.refs.installedCount.textContent.indexOf("…") < 0
         );
       });
     });
 
     it("shows packages", function () {
-      expect(this.panel.refs.communityCount.textContent.trim()).toBe("1");
+      expect(this.panel.refs.installedCount.textContent.trim()).toBe("1");
       expect(
-        this.panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+        this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
       ).toBe(1);
 
       expect(this.panel.refs.coreCount.textContent.trim()).toBe("1");
@@ -82,7 +82,7 @@ describe("InstalledPackagesPanel", function () {
       ).toBe(1);
     });
 
-    it("shows repository installs as community packages", function () {
+    it("shows repository installs as installed packages", function () {
       const packages = this.panel.filterPackages({
         user: [{ name: "manual-package" }],
         git: [{ name: "repository-package", apmInstallSource: { type: "git" } }],
@@ -90,7 +90,7 @@ describe("InstalledPackagesPanel", function () {
         dev: [],
       });
 
-      expect(packages.community.map(({ name }) => name)).toEqual([
+      expect(packages.installed.map(({ name }) => name)).toEqual([
         "manual-package",
         "repository-package",
       ]);
@@ -99,9 +99,9 @@ describe("InstalledPackagesPanel", function () {
     it("filters packages by name", function () {
       this.panel.refs.filterEditor.setText("user-");
       window.advanceClock(this.panel.refs.filterEditor.getBuffer().stoppedChangingDelay);
-      expect(this.panel.refs.communityCount.textContent.trim()).toBe("1/1");
+      expect(this.panel.refs.installedCount.textContent.trim()).toBe("1/1");
       expect(
-        this.panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+        this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
       ).toBe(1);
 
       expect(this.panel.refs.coreCount.textContent.trim()).toBe("0/1");
@@ -116,9 +116,9 @@ describe("InstalledPackagesPanel", function () {
     });
 
     it("adds newly installed packages to the list", function () {
-      expect(this.panel.refs.communityCount.textContent.trim()).toBe("1");
+      expect(this.panel.refs.installedCount.textContent.trim()).toBe("1");
       expect(
-        this.panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+        this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
       ).toBe(1);
 
       this.installed.user.push({ name: "another-user-package" });
@@ -129,17 +129,17 @@ describe("InstalledPackagesPanel", function () {
       advanceClock(InstalledPackagesPanel.loadPackagesDelay());
       waits(1);
       runs(function () {
-        expect(this.panel.refs.communityCount.textContent.trim()).toBe("2");
+        expect(this.panel.refs.installedCount.textContent.trim()).toBe("2");
         expect(
-          this.panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+          this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
         ).toBe(2);
       });
     });
 
     it("keeps uninstalled packages visible without rebuilding the list", function () {
-      expect(this.panel.refs.communityCount.textContent.trim()).toBe("1");
+      expect(this.panel.refs.installedCount.textContent.trim()).toBe("1");
       expect(
-        this.panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+        this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
       ).toBe(1);
 
       spyOn(this.panel, "loadPackages").andCallThrough();
@@ -153,7 +153,7 @@ describe("InstalledPackagesPanel", function () {
         // switches to the not-installed state).
         expect(this.panel.loadPackages).not.toHaveBeenCalled();
         expect(
-          this.panel.refs.communityPackages.querySelectorAll(".package-card:not(.hidden)").length,
+          this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
         ).toBe(1);
       });
     });
@@ -174,7 +174,7 @@ describe("InstalledPackagesPanel", function () {
       waitsFor(function () {
         return (
           this.packageManager.getInstalled.callCount === 1 &&
-          this.panel.refs.communityCount.textContent.indexOf("…") < 0
+          this.panel.refs.installedCount.textContent.indexOf("…") < 0
         );
       });
     });
@@ -245,7 +245,7 @@ describe("InstalledPackagesPanel", function () {
 
       const hasItems = this.panel.element.querySelectorAll(".sub-section-heading.has-items");
       expect(hasItems.length).toBe(1);
-      expect(hasItems[0].textContent).toMatch(/Community Packages/);
+      expect(hasItems[0].textContent).toMatch(/Installed Packages/);
     });
   });
 
@@ -266,7 +266,7 @@ describe("InstalledPackagesPanel", function () {
       waitsFor(function () {
         return (
           this.packageManager.getInstalled.callCount === 1 &&
-          this.panel.refs.communityCount.textContent.indexOf("…") < 0
+          this.panel.refs.installedCount.textContent.indexOf("…") < 0
         );
       });
     });

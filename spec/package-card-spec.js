@@ -107,7 +107,7 @@ describe("PackageCard", function () {
     });
   });
 
-  it("loads the author avatar for a hydrated community card", function () {
+  it("loads the author avatar for a hydrated installed card", function () {
     setPackageStatusSpies({ installed: false, disabled: false });
     const avatarCache = { avatar: jasmine.createSpy("avatar") };
     spyOn(packageManager, "getAvatarCache").andReturn(avatarCache);
@@ -151,7 +151,7 @@ describe("PackageCard", function () {
           name: "invert-colors",
           directoryName: "zz-old-copy",
           isShadowed: true,
-          shadowedBy: { name: "invert-colors", dirname: "invert-colors", tier: "community" },
+          shadowedBy: { name: "invert-colors", dirname: "invert-colors", tier: "installed" },
         },
         new SettingsView(),
         packageManager,
@@ -824,7 +824,7 @@ describe("PackageCard", function () {
       expect(card.installNoteTooltip).toBeTruthy();
     });
 
-    it("keeps the Uninstall button on a community package overriding a bundled name", function () {
+    it("keeps the Uninstall button on a installed package overriding a bundled name", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
       spyOn(atom.packages, "isBundledPackage").andCallFake((name) => name === "fuzzy-explorer");
       spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn(null);
@@ -861,7 +861,7 @@ describe("PackageCard", function () {
           version: "1.0.0",
           path: "/tmp/.lumine/packages/about",
           directoryName: "about",
-          tier: "community",
+          tier: "installed",
         },
         new SettingsView(),
         packageManager,
@@ -912,7 +912,7 @@ describe("PackageCard", function () {
       expect(card.refs.updateButton).not.toBeVisible();
     });
 
-    it("blocks Override until the conflicting community card validates", function () {
+    it("blocks Override until the conflicting installed card validates", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
       spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
         name: "search-panel",

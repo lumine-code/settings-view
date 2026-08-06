@@ -555,7 +555,7 @@ describe("SettingsView", function () {
           snippetsProvider: SnippetsProvider,
         });
         const originKey = "github.com/owner/renamed-package";
-        const detailInitial = settingsView.getOrCreatePanel(`community:${originKey}`, {
+        const detailInitial = settingsView.getOrCreatePanel(`origin:${originKey}`, {
           pack: {
             name: "old-package-name",
             repository: "owner/renamed-package",
@@ -566,7 +566,7 @@ describe("SettingsView", function () {
             engines: { lumine: "*" },
           },
         });
-        const detailAfterRename = settingsView.getOrCreatePanel(`community:${originKey}`, {
+        const detailAfterRename = settingsView.getOrCreatePanel(`origin:${originKey}`, {
           pack: {
             name: "new-package-name",
             repository: "owner/renamed-package",
@@ -580,7 +580,7 @@ describe("SettingsView", function () {
 
         expect(detailAfterRename).not.toBe(detailInitial);
         expect(detailAfterRename.pack.name).toBe("new-package-name");
-        expect(settingsView.panelsByName[`community:${originKey}`]).toBe(detailAfterRename);
+        expect(settingsView.panelsByName[`origin:${originKey}`]).toBe(detailAfterRename);
       });
 
       it("passes the URI to a pane's beforeShow() method on settings view initialization", function () {
