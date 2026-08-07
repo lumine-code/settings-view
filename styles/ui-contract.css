@@ -55,7 +55,12 @@
 
   /* Cards ------------------------------ */
 
-  .sub-section:not(.collapsed) .package-container {
+  /* Breathing room between the last card and the next sticky heading. A
+     collapsed or empty section shows no card, so it keeps only the spacing the
+     headings carry themselves — otherwise a section listing nothing opens a
+     hole its neighbours do not. `:not()` weighs its most specific argument, so
+     naming `.empty` here leaves the dock override above this one. */
+  .sub-section:not(.collapsed, .empty) .package-container {
     padding-bottom: calc(var(--component-padding) * 3);
   }
 

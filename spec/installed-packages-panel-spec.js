@@ -247,6 +247,27 @@ describe("InstalledPackagesPanel", function () {
       expect(hasItems.length).toBe(1);
       expect(hasItems[0].textContent).toMatch(/Installed Packages/);
     });
+
+    it("marks the sub-sections a filter empties, and unmarks them again", function () {
+      this.panel.refs.filterEditor.setText("user-");
+      window.advanceClock(this.panel.refs.filterEditor.getBuffer().stoppedChangingDelay);
+
+      expect(this.panel.element.querySelector(".sub-section.installed-packages")).not.toHaveClass(
+        "empty",
+      );
+      expect(this.panel.element.querySelector(".sub-section.core-packages")).toHaveClass("empty");
+      expect(this.panel.element.querySelector(".sub-section.dev-packages")).toHaveClass("empty");
+
+      this.panel.refs.filterEditor.setText("");
+      window.advanceClock(this.panel.refs.filterEditor.getBuffer().stoppedChangingDelay);
+
+      expect(this.panel.element.querySelector(".sub-section.core-packages")).not.toHaveClass(
+        "empty",
+      );
+      expect(this.panel.element.querySelector(".sub-section.dev-packages")).not.toHaveClass(
+        "empty",
+      );
+    });
   });
 
   describe("when there are no packages", function () {
@@ -279,6 +300,14 @@ describe("InstalledPackagesPanel", function () {
       expect(
         this.panel.element.querySelectorAll(".sub-section .icon-package.has-items").length,
       ).toBe(0);
+    });
+
+    it("marks every sub-section empty", function () {
+      expect(this.panel.element.querySelector(".sub-section.installed-packages")).toHaveClass(
+        "empty",
+      );
+      expect(this.panel.element.querySelector(".sub-section.core-packages")).toHaveClass("empty");
+      expect(this.panel.element.querySelector(".sub-section.dev-packages")).toHaveClass("empty");
     });
 
     it("can not collapse and expand any of the sub-sections", function () {
