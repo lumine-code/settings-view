@@ -81,7 +81,7 @@ describe("KeybindingsPanel", function () {
     panel.refs.resolverButton.click();
     expect(atom.commands.dispatch).toHaveBeenCalledWith(
       workspaceElement,
-      "key-binding-resolver:toggle",
+      "keybinding-resolver:toggle",
     );
   });
 

@@ -180,7 +180,7 @@ module.exports = class KeybindingsPanel {
       atom.commands.dispatch(atom.views.getView(atom.workspace), "application:open-your-keymap");
     };
     const resolverHandler = () => {
-      atom.commands.dispatch(atom.views.getView(atom.workspace), "key-binding-resolver:toggle");
+      atom.commands.dispatch(atom.views.getView(atom.workspace), "keybinding-resolver:toggle");
     };
     const clearSearchHandler = () => this.clearSearch();
     const sourceFilterHandler = (event) => {
