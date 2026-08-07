@@ -75,9 +75,10 @@ atom-dock.right .settings-view {
   .sub-section .sub-section-heading {
     font-size: 1.15em;
 
+    /* The glyph keeps the 16px contract box a plain heading icon gets — only
+       the gap goes, because the dock is narrow. */
     &.has-items::before {
       margin-right: 0;
-      font-size: 1.15em;
     }
   }
 

@@ -49,6 +49,7 @@
   }
 
   .sub-section-heading.icon:before,
+  .sub-section-heading.has-items:before,
   .section-heading.icon:before {
     margin-right: var(--ui-padding-icon);
   }

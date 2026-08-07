@@ -333,7 +333,11 @@
     cursor: default;
   }
 
+  /* `.has-items` is listed beside `.icon` because a collapsible heading gets
+     its glyph from the chevron rule rather than an `icon-*` class, and the gap
+     to the title is the same either way. */
   .sub-section-heading.icon:before,
+  .sub-section-heading.has-items:before,
   .section-heading.icon:before {
     margin-right: calc(var(--component-padding) * 0.8);
   }
@@ -381,8 +385,13 @@
       &.has-items {
         cursor: pointer;
 
+        /* Spelled out rather than inherited: a collapsible heading need not
+           carry an `icon-*` class — the config sub-sections do not — so this
+           is the only rule that gives the chevron the octicon face. The box is
+           the contract's 16px, the same one the package glyph next door gets,
+           so a section with items and one without start at the same x. */
         &::before {
-          /* .icon(20px) */
+          /* .icon(16px) */
           font-family: "Octicons Regular";
           font-weight: normal;
           font-style: normal;
@@ -390,14 +399,14 @@
           line-height: 1;
           -webkit-font-smoothing: antialiased;
           text-decoration: none;
-          font-size: 20px;
-          width: 20px;
-          height: 20px;
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
           content: "\f0a3"; /* @chevron-down */
           color: var(--text-color-subtle);
         }
 
-        &:hover:after {
+        &:hover::before {
           color: var(--text-color-highlight);
         }
       }
