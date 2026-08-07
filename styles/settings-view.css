@@ -372,7 +372,10 @@
       font-weight: bold;
       line-height: 1;
       color: var(--text-color-highlight);
-      background-color: var(--base-background-color);
+      /* Opaque so the settings it pins scroll under it — and the same surface
+         the panel is painted in (`& > .panels` in ui-contract.css), so a
+         theme that shades level 2 does not get a lighter band per heading. */
+      background-color: var(--level-2-color);
       -webkit-user-select: none;
 
       &.has-items {
