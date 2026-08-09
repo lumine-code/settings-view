@@ -4,7 +4,7 @@ let view;
 describe("PackageKeymapView", () => {
   beforeEach(() => {
     // Just prevent this stuff from calling through, it doesn't matter for this test
-    spyOn(atom.packages, "getLoadedPackage").andReturn({ keymaps: [] });
+    spyOn(lumine.packages, "getLoadedPackage").andReturn({ keymaps: [] });
 
     view = new PackageKeymapView({
       name: "test-package",
@@ -18,7 +18,7 @@ describe("PackageKeymapView", () => {
       {
         keystrokes: "ctrl-k",
         command: "test-package:run",
-        selector: "atom-text-editor",
+        selector: "lumine-text-editor",
       },
       { renderShortcut: true, shortcutRowSpan: 2 },
     );
@@ -26,7 +26,7 @@ describe("PackageKeymapView", () => {
     expect(row.querySelector(".keystroke kbd").textContent).toBe("ctrl-k");
     expect(row.querySelector(".keystroke").rowSpan).toBe(2);
     expect(row.querySelector(".command").textContent).toBe("test-package:run");
-    expect(row.querySelector(".selector").textContent).toBe("atom-text-editor");
+    expect(row.querySelector(".selector").textContent).toBe("lumine-text-editor");
     expect(row.querySelector(".copy-keybinding").tagName).toBe("BUTTON");
     expect(row.querySelector(".copy-keybinding").getAttribute("aria-label")).toContain("ctrl-k");
   });
@@ -44,19 +44,19 @@ describe("PackageKeymapView", () => {
   });
 
   it("escapes special characters in copied CSON overrides", () => {
-    spyOn(atom.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
+    spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
     view.writeKeyBindingToClipboard({
-      selector: "atom-text-editor[data-grammar~='css']",
+      selector: "lumine-text-editor[data-grammar~='css']",
       keystrokes: "ctrl-\\",
       command: "test-package:toggle's",
     });
-    expect(atom.clipboard.read().replace(/\r\n/g, "\n"))
-      .toBe(String.raw`'atom-text-editor[data-grammar~=\'css\']':
+    expect(lumine.clipboard.read().replace(/\r\n/g, "\n"))
+      .toBe(String.raw`'lumine-text-editor[data-grammar~=\'css\']':
   'ctrl-\\': 'test-package:toggle\'s'`);
   });
 
   it("should say a selector with no platform listed is compatible with the current one", () => {
-    expect(view.selectorIsCompatibleWithPlatform("atom-text-editor", "win32")).toBe(true);
+    expect(view.selectorIsCompatibleWithPlatform("lumine-text-editor", "win32")).toBe(true);
   });
 
   it("should say a selector with a platform other than the current is not compatible", () => {

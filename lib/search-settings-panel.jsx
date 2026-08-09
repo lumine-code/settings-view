@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { TextEditor, CompositeDisposable, Disposable } = require("atom");
+const { TextEditor, CompositeDisposable, Disposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 const CollapsibleSectionPanel = require("./collapsible-section-panel");
 const SearchSettingView = require("./search-setting-view");
@@ -16,7 +16,7 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
     this.recentViews = [];
     this.searchState = "initial";
     this.activeFilter = "all";
-    this.settingsSchema = atom.config.schema.properties;
+    this.settingsSchema = lumine.config.schema.properties;
 
     etch.initialize(this);
     this.refs.searchEditor.element.setAttribute("aria-label", "Search settings");
@@ -36,7 +36,7 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
     this.subscriptions.add(this.handleEvents());
     this.subscriptions.add(this.handlePanelEvents());
     this.subscriptions.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => this.scrollUp(),
         "core:move-down": () => this.scrollDown(),
         "core:page-up": () => this.pageUp(),
@@ -58,7 +58,7 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
     // restored window has already painted this panel. Recompose the list then so
     // a recently-opened setting belonging to such a package is not dropped.
     this.subscriptions.add(
-      atom.packages.onDidActivateInitialPackages(() => {
+      lumine.packages.onDidActivateInitialPackages(() => {
         if (this.searchState === "initial") this.renderRecentSettings();
       }),
     );
@@ -339,7 +339,7 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
   }
 
   processRanks(ranks, query) {
-    const minimumScore = atom.config.get("settings-view.searchSettingsMinimumScore");
+    const minimumScore = lumine.config.get("settings-view.searchSettingsMinimumScore");
     const filteredRanks = ranks
       .filter((item) => item.rank.totalScore > minimumScore)
       .sort((a, b) => b.rank.totalScore - a.rank.totalScore);
@@ -389,7 +389,7 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
 
   getScore(candidate, query) {
     if (!candidate || !query) return { score: 0, matchIndexes: [] };
-    const result = atom.tools.fuzzyMatcher.match(candidate, query, { recordMatchIndexes: true });
+    const result = lumine.tools.fuzzyMatcher.match(candidate, query, { recordMatchIndexes: true });
     return result
       ? { score: result.score, matchIndexes: result.matchIndexes }
       : { score: 0, matchIndexes: [] };

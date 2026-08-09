@@ -147,7 +147,7 @@ describe("PackageCatalogClient", function () {
       fetchImpl,
       packageManager: createPackageManager(),
       storage: createStorage(),
-      atomVersion: () => "1.132.1",
+      lumineVersion: () => "1.132.1",
     });
 
     waitsForPromise(() =>
@@ -191,7 +191,7 @@ describe("PackageCatalogClient", function () {
       fetchImpl,
       packageManager: createPackageManager(),
       storage: createStorage(),
-      atomVersion: () => "1.132.1",
+      lumineVersion: () => "1.132.1",
     });
 
     waitsForPromise(() =>
@@ -251,7 +251,7 @@ describe("PackageCatalogClient", function () {
       fetchImpl,
       packageManager,
       storage: createStorage(),
-      atomVersion: () => "1.132.1",
+      lumineVersion: () => "1.132.1",
     });
 
     waitsForPromise(() =>
@@ -289,7 +289,7 @@ describe("PackageCatalogClient", function () {
     const client = new PackageCatalogClient({
       packageManager: createPackageManager(),
       storage,
-      atomVersion: () => "1.132.1",
+      lumineVersion: () => "1.132.1",
     });
     spyOn(client, "fetchManifest").andReturn(
       Promise.resolve({

@@ -5,7 +5,7 @@ describe("SearchSettingView", () => {
   let settingsView;
 
   beforeEach(() => {
-    atom.config.setSchema("search-test-package", {
+    lumine.config.setSchema("search-test-package", {
       type: "object",
       properties: {
         nested: {

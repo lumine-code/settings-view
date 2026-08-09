@@ -11,7 +11,7 @@ describe("InstallPanel", function () {
   beforeEach(function () {
     const settingsView = new SettingsView();
     packageManager = new PackageManager();
-    atom.config.set("settings-view.packageCatalogs", ["official/catalog"]);
+    lumine.config.set("settings-view.packageCatalogs", ["official/catalog"]);
     catalogClient = {
       load: jasmine
         .createSpy("load")
@@ -58,7 +58,7 @@ describe("InstallPanel", function () {
     expect(panel.refs.catalogSourcesList.children.length).toBe(1);
     expect(panel.sourceEditors.length).toBe(1);
     expect(panel.sourceEditors[0].getText()).toBe("official/catalog");
-    expect(panel.refs.catalogSourcesList.querySelector("atom-text-editor")).toBeTruthy();
+    expect(panel.refs.catalogSourcesList.querySelector("lumine-text-editor")).toBeTruthy();
     expect(panel.refs.catalogSourcesList.querySelector("button")).toHaveClass("icon-x");
     expect(
       panel.refs.catalogSourcesList.compareDocumentPosition(panel.refs.catalogEditor.element) &
@@ -67,21 +67,21 @@ describe("InstallPanel", function () {
     panel.refs.catalogEditor.setText("extra/catalog");
     panel.refs.addCatalogButton.click();
 
-    expect(atom.config.get("settings-view.packageCatalogs")).toEqual([
+    expect(lumine.config.get("settings-view.packageCatalogs")).toEqual([
       "official/catalog",
       "extra/catalog",
     ]);
     expect(panel.refs.catalogSourcesList.children.length).toBe(2);
 
     panel.refs.catalogSourcesList.querySelector("button").click();
-    expect(atom.config.get("settings-view.packageCatalogs")).toEqual(["extra/catalog"]);
+    expect(lumine.config.get("settings-view.packageCatalogs")).toEqual(["extra/catalog"]);
   });
 
   it("adds a catalog source when the add editor confirms with enter", function () {
     panel.refs.catalogEditor.setText("extra/catalog");
-    atom.commands.dispatch(panel.refs.catalogEditor.element, "core:confirm");
+    lumine.commands.dispatch(panel.refs.catalogEditor.element, "core:confirm");
 
-    expect(atom.config.get("settings-view.packageCatalogs")).toEqual([
+    expect(lumine.config.get("settings-view.packageCatalogs")).toEqual([
       "official/catalog",
       "extra/catalog",
     ]);
@@ -91,9 +91,9 @@ describe("InstallPanel", function () {
   it("saves edits to configured catalog sources", function () {
     const editor = panel.sourceEditors[0];
     editor.setText("updated/catalog");
-    atom.commands.dispatch(editor.element, "core:confirm");
+    lumine.commands.dispatch(editor.element, "core:confirm");
 
-    expect(atom.config.get("settings-view.packageCatalogs")).toEqual(["updated/catalog"]);
+    expect(lumine.config.get("settings-view.packageCatalogs")).toEqual(["updated/catalog"]);
   });
 
   it("rejects duplicate catalog sources after URL normalization", function () {
@@ -102,7 +102,7 @@ describe("InstallPanel", function () {
 
     expect(panel.refs.catalogSourceError.style.display).not.toBe("none");
     expect(panel.refs.catalogSourceErrorMessage.textContent).toContain("already configured");
-    expect(atom.config.get("settings-view.packageCatalogs")).toEqual(["official/catalog"]);
+    expect(lumine.config.get("settings-view.packageCatalogs")).toEqual(["official/catalog"]);
   });
 
   it("dismisses the catalog source error when its close button is clicked", function () {
@@ -115,14 +115,14 @@ describe("InstallPanel", function () {
   });
 
   it("reports catalog fetch failures as a notification", function () {
-    spyOn(atom.notifications, "addError").andCallThrough();
+    spyOn(lumine.notifications, "addError").andCallThrough();
     catalogClient.loadAll.andReturn(Promise.reject(new Error("boom")));
     panel.refs.fetchButton.click();
 
     waitsForPromise(() =>
       panel.catalogPromise.then(() => {
-        expect(atom.notifications.addError).toHaveBeenCalled();
-        const [message] = atom.notifications.addError.mostRecentCall.args;
+        expect(lumine.notifications.addError).toHaveBeenCalled();
+        const [message] = lumine.notifications.addError.mostRecentCall.args;
         expect(message).toContain("boom");
       }),
     );
@@ -131,8 +131,8 @@ describe("InstallPanel", function () {
   it("restores the default catalog sources", function () {
     panel.refs.restoreDefaultsButton.click();
 
-    expect(atom.config.get("settings-view.packageCatalogs")).toEqual(
-      atom.config.getSchema("settings-view.packageCatalogs").default,
+    expect(lumine.config.get("settings-view.packageCatalogs")).toEqual(
+      lumine.config.getSchema("settings-view.packageCatalogs").default,
     );
   });
 
@@ -215,7 +215,7 @@ describe("InstallPanel", function () {
         errors: [],
       }),
     );
-    atom.config.set("settings-view.packageCatalogs", ["first/catalog", "second/catalog"]);
+    lumine.config.set("settings-view.packageCatalogs", ["first/catalog", "second/catalog"]);
     panel.refs.fetchButton.click();
 
     waitsForPromise(() =>
@@ -550,12 +550,12 @@ describe("InstallPanel", function () {
     });
 
     it("keeps a version selector in the install source, not just the repository", function () {
-      const query = "asiloisad/pulsar-invert-colors@0.4.0";
+      const query = "asiloisad/community-invert-colors@0.4.0";
       panel.performSearchForQuery(query);
       const args = panel.showGitInstallPackageCard.argsForCall[0][0];
       expect(args.name).toEqual(query);
       expect(args.installSource).toEqual(query);
-      expect(args.repository).toEqual("asiloisad/pulsar-invert-colors");
+      expect(args.repository).toEqual("asiloisad/community-invert-colors");
     });
 
     it("doesn't show a git installation card for normal packages", function () {

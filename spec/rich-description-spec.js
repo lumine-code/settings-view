@@ -134,7 +134,7 @@ Second paragraph\
       },
     };
 
-    atom.config.setSchema("foo", config);
+    lumine.config.setSchema("foo", config);
   });
 
   describe("supported Markdown", () => {

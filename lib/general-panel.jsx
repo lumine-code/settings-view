@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { CompositeDisposable } = require("atom");
+const { CompositeDisposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 const SettingsPanel = require("./settings-panel");
 
@@ -8,7 +8,7 @@ module.exports = class GeneralPanel {
     etch.initialize(this);
     this.subscriptions = new CompositeDisposable();
     this.subscriptions.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => {
           this.scrollUp();
         },
@@ -62,7 +62,7 @@ module.exports = class GeneralPanel {
   didClick(event) {
     const target = event.target.closest(".packages-open");
     if (target) {
-      atom.workspace.open("lumine://config/packages");
+      lumine.workspace.open("lumine://config/packages");
     }
   }
 

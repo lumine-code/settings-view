@@ -15,12 +15,12 @@ describe("PackageManager", function () {
       expect(packageManager.isPackageInstalled("some-package")).toBe(false));
 
     it("returns true when a package is loaded", function () {
-      spyOn(atom.packages, "isPackageLoaded").andReturn(true);
+      spyOn(lumine.packages, "isPackageLoaded").andReturn(true);
       expect(packageManager.isPackageInstalled("some-package")).toBe(true);
     });
 
     it("returns true when a package is disabled", function () {
-      spyOn(atom.packages, "getAvailablePackageNames").andReturn(["some-package"]);
+      spyOn(lumine.packages, "getAvailablePackageNames").andReturn(["some-package"]);
       expect(packageManager.isPackageInstalled("some-package")).toBe(true);
     });
   });
@@ -32,7 +32,7 @@ describe("PackageManager", function () {
       configDirPath = path.join(os.tmpdir(), "settings-view-config");
       devPackagesPath = path.join(configDirPath, "packages-dev");
       bundledPackagesPath = path.join(path.sep, "app", "packages");
-      spyOn(atom, "getConfigDirPath").andReturn(configDirPath);
+      spyOn(lumine, "getConfigDirPath").andReturn(configDirPath);
     });
 
     // A descriptor shaped like the ones PackageManager::scanAvailablePackages
@@ -51,7 +51,7 @@ describe("PackageManager", function () {
     }
 
     function availablePackages(...packs) {
-      spyOn(atom.packages, "getAvailablePackages").andReturn(packs);
+      spyOn(lumine.packages, "getAvailablePackages").andReturn(packs);
     }
 
     it("files a package found in the bundled directory under core", function () {
@@ -161,7 +161,7 @@ describe("PackageManager", function () {
     beforeEach(function () {
       jasmine.useRealClock();
       const configDirPath = path.join(os.tmpdir(), "settings-view-config");
-      spyOn(atom, "getConfigDirPath").andReturn(configDirPath);
+      spyOn(lumine, "getConfigDirPath").andReturn(configDirPath);
 
       // More than one batch (BATCH_SIZE = 20) so the async path exercises its
       // yield-between-chunks loop rather than only the single-batch fast path.
@@ -177,7 +177,7 @@ describe("PackageManager", function () {
           isWinner: true,
         });
       }
-      spyOn(atom.packages, "getAvailablePackages").andReturn(this.packs);
+      spyOn(lumine.packages, "getAvailablePackages").andReturn(this.packs);
     });
 
     it("resolves to the same structure the synchronous getLocalPackages() returns", function () {
@@ -246,7 +246,7 @@ describe("PackageManager", function () {
       spyOn(packageManager, "emitPackageEvent").andCallThrough();
       // Activation happens once inside installGitHubPackage's afterSwap hook, not
       // in install(); a second activatePackage here would double-activate.
-      spyOn(atom.packages, "activatePackage").andReturn(Promise.resolve());
+      spyOn(lumine.packages, "activatePackage").andReturn(Promise.resolve());
       spyOn(packageManager, "installGitHubPackage").andReturn(
         Promise.resolve({
           name: "real-package-name",
@@ -263,7 +263,7 @@ describe("PackageManager", function () {
         expect(installCallback.argsForCall[0].length).toBe(0);
         // install() does not activate (installGitHubPackage is stubbed here, so
         // its afterSwap never runs) — proving activation isn't done twice.
-        expect(atom.packages.activatePackage).not.toHaveBeenCalled();
+        expect(lumine.packages.activatePackage).not.toHaveBeenCalled();
         const installed = packageManager.emitPackageEvent.calls
           .all()
           .find((call) => call.args[0] === "installed");
@@ -274,7 +274,7 @@ describe("PackageManager", function () {
     it("emits an installed event with a copy of the pack including package metadata", function () {
       const installCallback = jasmine.createSpy("installCallback");
       const originalPackObject = { name: "user/repo", otherData: { will: "beCopied" } };
-      spyOn(atom.packages, "activatePackage");
+      spyOn(lumine.packages, "activatePackage");
       spyOn(packageManager, "emitPackageEvent");
       spyOn(packageManager, "installGitHubPackage").andReturn(
         Promise.resolve({
@@ -385,8 +385,8 @@ describe("PackageManager", function () {
     it("removes the package from the core.disabledPackages list when no copy is left", function () {
       const root = tempRoot("lumine-uninstall-disabled-");
       const packagePath = installedAt(root, "something");
-      atom.config.set("core.disabledPackages", ["something"]);
-      spyOn(atom.packages, "getAvailablePackage").andReturn(undefined);
+      lumine.config.set("core.disabledPackages", ["something"]);
+      spyOn(lumine.packages, "getAvailablePackage").andReturn(undefined);
 
       const uninstallCallback = jasmine.createSpy("uninstallCallback");
       waitsForPromise(() =>
@@ -395,7 +395,7 @@ describe("PackageManager", function () {
 
       runs(() => {
         expect(uninstallCallback).toHaveBeenCalled();
-        expect(atom.config.get("core.disabledPackages")).not.toContain("something");
+        expect(lumine.config.get("core.disabledPackages")).not.toContain("something");
         expect(fs.existsSync(packagePath)).toBe(false);
         fs.removeSync(root);
       });
@@ -407,19 +407,22 @@ describe("PackageManager", function () {
       const root = tempRoot("lumine-uninstall-active-");
       const packagePath = installedAt(root, "active-pkg");
       let deactivated = false;
-      spyOn(atom.packages, "getLoadedPackage").andReturn({ name: "active-pkg", path: packagePath });
-      spyOn(atom.packages, "isPackageActive").andCallFake(() => !deactivated);
-      spyOn(atom.packages, "deactivatePackage").andCallFake(() =>
+      spyOn(lumine.packages, "getLoadedPackage").andReturn({
+        name: "active-pkg",
+        path: packagePath,
+      });
+      spyOn(lumine.packages, "isPackageActive").andCallFake(() => !deactivated);
+      spyOn(lumine.packages, "deactivatePackage").andCallFake(() =>
         Promise.resolve().then(() => {
           deactivated = true;
         }),
       );
-      spyOn(atom.packages, "unloadPackage").andCallFake((name) => {
-        if (atom.packages.isPackageActive(name)) {
+      spyOn(lumine.packages, "unloadPackage").andCallFake((name) => {
+        if (lumine.packages.isPackageActive(name)) {
           throw new Error(`Tried to unload active package '${name}'`);
         }
       });
-      spyOn(atom.packages, "getAvailablePackage").andReturn(undefined);
+      spyOn(lumine.packages, "getAvailablePackage").andReturn(undefined);
 
       const uninstallCallback = jasmine.createSpy("uninstallCallback");
       waitsForPromise(() =>
@@ -427,8 +430,8 @@ describe("PackageManager", function () {
       );
 
       runs(() => {
-        expect(atom.packages.deactivatePackage).toHaveBeenCalledWith("active-pkg");
-        expect(atom.packages.unloadPackage).toHaveBeenCalledWith("active-pkg");
+        expect(lumine.packages.deactivatePackage).toHaveBeenCalledWith("active-pkg");
+        expect(lumine.packages.unloadPackage).toHaveBeenCalledWith("active-pkg");
         expect(uninstallCallback).toHaveBeenCalled();
         expect(uninstallCallback.mostRecentCall.args[0]).toBeUndefined();
         fs.removeSync(root);
@@ -439,14 +442,14 @@ describe("PackageManager", function () {
       const root = tempRoot("lumine-uninstall-shadowed-");
       const loadedPath = installedAt(root, "duplicated-package");
       const shadowedPath = installedAt(root, "zz-old-copy");
-      spyOn(atom.packages, "getLoadedPackage").andReturn({
+      spyOn(lumine.packages, "getLoadedPackage").andReturn({
         name: "duplicated-package",
         path: loadedPath,
       });
-      spyOn(atom.packages, "deactivatePackage");
-      spyOn(atom.packages, "unloadPackage");
-      spyOn(atom.packages, "reconcilePackage");
-      spyOn(atom.packages, "getAvailablePackage").andReturn({
+      spyOn(lumine.packages, "deactivatePackage");
+      spyOn(lumine.packages, "unloadPackage");
+      spyOn(lumine.packages, "reconcilePackage");
+      spyOn(lumine.packages, "getAvailablePackage").andReturn({
         name: "duplicated-package",
         path: loadedPath,
       });
@@ -456,9 +459,9 @@ describe("PackageManager", function () {
       );
 
       runs(() => {
-        expect(atom.packages.deactivatePackage).not.toHaveBeenCalled();
-        expect(atom.packages.unloadPackage).not.toHaveBeenCalled();
-        expect(atom.packages.reconcilePackage).not.toHaveBeenCalled();
+        expect(lumine.packages.deactivatePackage).not.toHaveBeenCalled();
+        expect(lumine.packages.unloadPackage).not.toHaveBeenCalled();
+        expect(lumine.packages.reconcilePackage).not.toHaveBeenCalled();
         expect(fs.existsSync(shadowedPath)).toBe(false);
         expect(fs.existsSync(loadedPath)).toBe(true);
         fs.removeSync(root);
@@ -469,26 +472,26 @@ describe("PackageManager", function () {
       const root = tempRoot("lumine-uninstall-promote-");
       const packagePath = installedAt(root, "search-panel");
       const bundledPath = path.join(path.sep, "app", "packages", "search-panel");
-      atom.config.set("core.disabledPackages", ["search-panel"]);
-      spyOn(atom.packages, "getLoadedPackage").andReturn({
+      lumine.config.set("core.disabledPackages", ["search-panel"]);
+      spyOn(lumine.packages, "getLoadedPackage").andReturn({
         name: "search-panel",
         path: packagePath,
       });
-      spyOn(atom.packages, "isPackageActive").andReturn(false);
-      spyOn(atom.packages, "unloadPackage");
-      spyOn(atom.packages, "getAvailablePackage").andReturn({
+      spyOn(lumine.packages, "isPackageActive").andReturn(false);
+      spyOn(lumine.packages, "unloadPackage");
+      spyOn(lumine.packages, "getAvailablePackage").andReturn({
         name: "search-panel",
         path: bundledPath,
         tier: "bundled",
       });
-      spyOn(atom.packages, "reconcilePackage").andReturn(Promise.resolve(null));
+      spyOn(lumine.packages, "reconcilePackage").andReturn(Promise.resolve(null));
 
       waitsForPromise(() => packageManager.uninstall({ name: "search-panel", path: packagePath }));
       runs(() => {
-        expect(atom.packages.reconcilePackage).toHaveBeenCalledWith("search-panel", {
+        expect(lumine.packages.reconcilePackage).toHaveBeenCalledWith("search-panel", {
           activate: true,
         });
-        expect(atom.config.get("core.disabledPackages")).toContain("search-panel");
+        expect(lumine.config.get("core.disabledPackages")).toContain("search-panel");
         fs.removeSync(root);
       });
     });
@@ -498,18 +501,18 @@ describe("PackageManager", function () {
       // its trigger fires; awaiting it would hang the uninstall.
       const root = tempRoot("lumine-uninstall-deferred-");
       const packagePath = installedAt(root, "deferred-bundled");
-      spyOn(atom.packages, "getLoadedPackage").andReturn({
+      spyOn(lumine.packages, "getLoadedPackage").andReturn({
         name: "deferred-bundled",
         path: packagePath,
       });
-      spyOn(atom.packages, "isPackageActive").andReturn(false);
-      spyOn(atom.packages, "unloadPackage");
-      spyOn(atom.packages, "getAvailablePackage").andReturn({
+      spyOn(lumine.packages, "isPackageActive").andReturn(false);
+      spyOn(lumine.packages, "unloadPackage");
+      spyOn(lumine.packages, "getAvailablePackage").andReturn({
         name: "deferred-bundled",
         path: path.join(path.sep, "app", "packages", "deferred-bundled"),
       });
       // Never resolves — mimics a package that defers activation.
-      spyOn(atom.packages, "reconcilePackage").andReturn(new Promise(() => {}));
+      spyOn(lumine.packages, "reconcilePackage").andReturn(new Promise(() => {}));
 
       const uninstallCallback = jasmine.createSpy("uninstallCallback");
       waitsForPromise(() =>
@@ -520,7 +523,7 @@ describe("PackageManager", function () {
       );
 
       runs(() => {
-        expect(atom.packages.reconcilePackage).toHaveBeenCalled();
+        expect(lumine.packages.reconcilePackage).toHaveBeenCalled();
         // The uninstall completes even though activation never resolves.
         expect(uninstallCallback).toHaveBeenCalled();
         expect(uninstallCallback.mostRecentCall.args[0]).toBeUndefined();
@@ -531,19 +534,19 @@ describe("PackageManager", function () {
     it("still completes the uninstall when loading the remaining copy fails", function () {
       const root = tempRoot("lumine-uninstall-throw-");
       const packagePath = installedAt(root, "broken-bundled");
-      spyOn(atom.packages, "getLoadedPackage").andReturn({
+      spyOn(lumine.packages, "getLoadedPackage").andReturn({
         name: "broken-bundled",
         path: packagePath,
       });
-      spyOn(atom.packages, "isPackageActive").andReturn(false);
-      spyOn(atom.packages, "unloadPackage");
-      spyOn(atom.packages, "getAvailablePackage").andReturn({
+      spyOn(lumine.packages, "isPackageActive").andReturn(false);
+      spyOn(lumine.packages, "unloadPackage");
+      spyOn(lumine.packages, "getAvailablePackage").andReturn({
         name: "broken-bundled",
         path: path.join(path.sep, "app", "packages", "broken-bundled"),
       });
       // Built inside the fake, not ahead of it: a rejected promise created
       // before the call it answers is unhandled until the caller gets to it.
-      spyOn(atom.packages, "reconcilePackage").andCallFake(() =>
+      spyOn(lumine.packages, "reconcilePackage").andCallFake(() =>
         Promise.reject(new Error("cannot load bundled package")),
       );
 
@@ -571,7 +574,7 @@ describe("PackageManager", function () {
       fs.makeTreeSync(sourceDir);
       fs.writeFileSync(sourceFile, "keep");
       fs.symlinkSync(sourceDir, packagePath, process.platform === "win32" ? "junction" : "dir");
-      spyOn(atom.packages, "getAvailablePackage").andReturn(undefined);
+      spyOn(lumine.packages, "getAvailablePackage").andReturn(undefined);
 
       waitsForPromise(() =>
         packageManager.uninstall({ name: "linked-package", path: packagePath }),
@@ -635,9 +638,9 @@ describe("PackageManager", function () {
     it("preserves an explicit version selector from installSource", function () {
       spyOn(packageManager, "resolvePackageSource").andReturn(Promise.reject(new Error("stop")));
       const pack = {
-        name: "asiloisad/pulsar-invert-colors@0.4.0",
-        installSource: "asiloisad/pulsar-invert-colors@0.4.0",
-        repository: "asiloisad/pulsar-invert-colors",
+        name: "asiloisad/community-invert-colors@0.4.0",
+        installSource: "asiloisad/community-invert-colors@0.4.0",
+        repository: "asiloisad/community-invert-colors",
       };
 
       let rejected = false;
@@ -649,7 +652,7 @@ describe("PackageManager", function () {
         expect(rejected).toBe(true);
         // The pinned tag must survive; installing the bare repo would grab latest.
         expect(packageManager.resolvePackageSource).toHaveBeenCalledWith(
-          "asiloisad/pulsar-invert-colors@0.4.0",
+          "asiloisad/community-invert-colors@0.4.0",
         );
       });
     });
@@ -677,16 +680,16 @@ describe("PackageManager", function () {
     });
 
     it("does not block install completion on a package that defers activation", function () {
-      spyOn(atom.packages, "loadPackage");
-      spyOn(atom.packages, "isPackageDisabled").andReturn(false);
+      spyOn(lumine.packages, "loadPackage");
+      spyOn(lumine.packages, "isPackageDisabled").andReturn(false);
       // A package with activationCommands/hooks never resolves activatePackage
       // until its trigger fires; the install must not await that.
-      spyOn(atom.packages, "activatePackage").andReturn(new Promise(() => {}));
+      spyOn(lumine.packages, "activatePackage").andReturn(new Promise(() => {}));
 
       const result = packageManager.activateInstalledPackage("deferred-package", { theme: false });
 
-      expect(atom.packages.loadPackage).toHaveBeenCalledWith("deferred-package");
-      expect(atom.packages.activatePackage).toHaveBeenCalledWith("deferred-package");
+      expect(lumine.packages.loadPackage).toHaveBeenCalledWith("deferred-package");
+      expect(lumine.packages.activatePackage).toHaveBeenCalledWith("deferred-package");
       // Returns synchronously — it must not await the (never-resolving) activation.
       expect(result).toBeUndefined();
     });
@@ -694,7 +697,7 @@ describe("PackageManager", function () {
 
   describe("::packageHasSettings", function () {
     it("returns true when the package has config", function () {
-      atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+      lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
       expect(packageManager.packageHasSettings("package-with-config")).toBe(true);
     });
 
@@ -705,7 +708,7 @@ describe("PackageManager", function () {
       const packageName = "language-test";
 
       waitsForPromise(() =>
-        atom.packages.activatePackage(path.join(__dirname, "fixtures", packageName)),
+        lumine.packages.activatePackage(path.join(__dirname, "fixtures", packageName)),
       );
 
       return runs(() => expect(packageManager.packageHasSettings(packageName)).toBe(true));

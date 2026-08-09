@@ -21,8 +21,8 @@ describe("Utils", () => {
 
   describe("repoUrlFromRepository", () => {
     it("returns a full GitHub URL for a shorthand so it opens in a browser", () => {
-      expect(repoUrlFromRepository("asiloisad/pulsar-invert-colors")).toBe(
-        "https://github.com/asiloisad/pulsar-invert-colors",
+      expect(repoUrlFromRepository("asiloisad/community-invert-colors")).toBe(
+        "https://github.com/asiloisad/community-invert-colors",
       );
     });
 
@@ -49,14 +49,14 @@ describe("Utils", () => {
       ).toBe("github.com/author-a/linter");
     });
 
-    it("normalizes a Pulsar-style repository URL", () => {
+    it("normalizes a fork-style repository URL", () => {
       expect(
         packageOrigin({
           name: "hydrogen-next",
-          repository: "https://github.com/asiloisad/pulsar-hydrogen-next",
-          installSource: "https://github.com/asiloisad/pulsar-hydrogen-next",
+          repository: "https://github.com/asiloisad/community-hydrogen-next",
+          installSource: "https://github.com/asiloisad/community-hydrogen-next",
         }),
-      ).toBe("github.com/asiloisad/pulsar-hydrogen-next");
+      ).toBe("github.com/asiloisad/community-hydrogen-next");
     });
 
     it("strips a version selector from the origin", () => {
@@ -79,7 +79,7 @@ describe("Utils", () => {
       // identified by where it was actually installed from, not the upstream.
       const metadata = {
         name: "hydrogen-next",
-        repository: "https://github.com/upstream/pulsar-hydrogen-next",
+        repository: "https://github.com/upstream/community-hydrogen-next",
         apmInstallSource: {
           type: "git",
           source: "lumine-code/hydrogen-next",

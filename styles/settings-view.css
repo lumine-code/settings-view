@@ -270,7 +270,7 @@
       border-top: none;
     }
 
-    atom-text-editor[mini] {
+    lumine-text-editor[mini] {
       opacity: 0.75;
       .selection .region {
         /* contrast(@input-background-color, lighten(…, 8%), darken(…, 8%)) */
@@ -282,7 +282,7 @@
       }
     }
 
-    atom-text-editor[mini].is-focused {
+    lumine-text-editor[mini].is-focused {
       opacity: 1;
       .selection .region {
         /* contrast(@input-background-color, lighten(…, 12%), darken(…, 12%)) */

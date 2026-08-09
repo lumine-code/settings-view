@@ -19,7 +19,7 @@ describe("BadgeView", function () {
   });
 
   it("opens the badge link in the browser when clicked", function () {
-    spyOn(atom.shell, "openExternal");
+    spyOn(lumine.shell, "openExternal");
     const view = new BadgeView({
       title: "Outdated",
       type: "warn",
@@ -28,6 +28,6 @@ describe("BadgeView", function () {
     expect(view.element).toHaveClass("has-link");
     jasmine.attachToDOM(view.element);
     view.element.click();
-    expect(atom.shell.openExternal).toHaveBeenCalledWith("https://example.test/badge");
+    expect(lumine.shell.openExternal).toHaveBeenCalledWith("https://example.test/badge");
   });
 });

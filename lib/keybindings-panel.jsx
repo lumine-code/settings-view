@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { CompositeDisposable, Disposable, TextEditor } = require("atom");
+const { CompositeDisposable, Disposable, TextEditor } = require("lumine");
 const etch = require("@lumine-code/etch");
 const _ = require("@lumine-code/underscore-plus");
 const path = require("path");
@@ -30,7 +30,7 @@ module.exports = class KeybindingsPanel {
     this.disposables = new CompositeDisposable();
     this.disposables.add(this.handlePanelEvents());
     this.disposables.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => this.scrollUp(),
         "core:move-down": () => this.scrollDown(),
         "core:page-up": () => this.pageUp(),
@@ -48,8 +48,8 @@ module.exports = class KeybindingsPanel {
 
     this.disposables.add(
       this.refs.searchEditor.onDidStopChanging(() => this.filterKeyBindings()),
-      atom.keymaps.onDidReloadKeymap(() => this.loadKeyBindings()),
-      atom.keymaps.onDidUnloadKeymap(() => this.loadKeyBindings()),
+      lumine.keymaps.onDidReloadKeymap(() => this.loadKeyBindings()),
+      lumine.keymaps.onDidUnloadKeymap(() => this.loadKeyBindings()),
     );
     this.loadKeyBindings();
   }
@@ -177,10 +177,16 @@ module.exports = class KeybindingsPanel {
 
   handlePanelEvents() {
     const openKeymapHandler = () => {
-      atom.commands.dispatch(atom.views.getView(atom.workspace), "application:open-your-keymap");
+      lumine.commands.dispatch(
+        lumine.views.getView(lumine.workspace),
+        "application:open-your-keymap",
+      );
     };
     const resolverHandler = () => {
-      atom.commands.dispatch(atom.views.getView(atom.workspace), "keybinding-resolver:toggle");
+      lumine.commands.dispatch(
+        lumine.views.getView(lumine.workspace),
+        "keybinding-resolver:toggle",
+      );
     };
     const clearSearchHandler = () => this.clearSearch();
     const sourceFilterHandler = (event) => {
@@ -208,7 +214,7 @@ module.exports = class KeybindingsPanel {
   }
 
   loadKeyBindings() {
-    this.keyBindings = atom.keymaps.getKeyBindings().slice().sort(this.compareKeyBindings);
+    this.keyBindings = lumine.keymaps.getKeyBindings().slice().sort(this.compareKeyBindings);
     this.filterKeyBindings();
   }
 
@@ -284,7 +290,7 @@ module.exports = class KeybindingsPanel {
   }
 
   fieldMatches(field, keyword) {
-    return field.includes(keyword) || Boolean(atom.tools.fuzzyMatcher.match(field, keyword));
+    return field.includes(keyword) || Boolean(lumine.tools.fuzzyMatcher.match(field, keyword));
   }
 
   compareKeyBindings(a, b) {
@@ -391,7 +397,7 @@ module.exports = class KeybindingsPanel {
   }
 
   copyKeyBinding({ selector, keystrokes, command }, button) {
-    const keymapExtension = path.extname(atom.keymaps.getUserKeymapPath());
+    const keymapExtension = path.extname(lumine.keymaps.getUserKeymapPath());
     const escapeCSON = (input) => {
       return JSON.stringify(input).slice(1, -1).replace(/\\"/g, '"').replace(/'/g, "\\'");
     };
@@ -399,7 +405,7 @@ module.exports = class KeybindingsPanel {
       keymapExtension === ".cson"
         ? `'${escapeCSON(selector)}':\n  '${escapeCSON(keystrokes)}': '${escapeCSON(command)}'`
         : `${JSON.stringify(selector)}: {\n  ${JSON.stringify(keystrokes)}: ${JSON.stringify(command)}\n}`;
-    atom.clipboard.write(content);
+    lumine.clipboard.write(content);
 
     button.textContent = "Copied";
     button.classList.add("copied");
@@ -439,10 +445,10 @@ module.exports = class KeybindingsPanel {
 
   static determineSource(filePath) {
     if (!filePath || typeof filePath !== "string") return "Unknown";
-    if (filePath.indexOf(path.join(atom.app.getResourcePath(), "keymaps")) === 0) {
+    if (filePath.indexOf(path.join(lumine.app.getResourcePath(), "keymaps")) === 0) {
       return "Core";
     }
-    if (filePath === atom.keymaps.getUserKeymapPath()) return "User";
+    if (filePath === lumine.keymaps.getUserKeymapPath()) return "User";
 
     const pathParts = filePath.split(path.sep);
     const packageName = pathParts[pathParts.length - 3] || "";

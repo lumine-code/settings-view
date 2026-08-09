@@ -1,6 +1,6 @@
 /** @jsx etch.dom */
 /** @jsxFrag etch.Fragment */
-const { CompositeDisposable, Disposable } = require("atom");
+const { CompositeDisposable, Disposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 const BadgeView = require("./badge-view");
 const fs = require("fs");
@@ -120,7 +120,7 @@ module.exports = class PackageCard {
     // the name.
     if (this.pack.apmInstallSource) return false;
     if (this.installedOriginDiffers()) return false;
-    return atom.packages.isBundledPackage(this.pack.name);
+    return lumine.packages.isBundledPackage(this.pack.name);
   }
 
   // A directory whose package name is owned by another directory. It is on
@@ -164,7 +164,7 @@ module.exports = class PackageCard {
     // Before install, a Git card's `name` is the raw source (e.g.
     // "owner/repo@1.0.0"), so fall back to the repository's project name for a
     // clean label. Once installed we know the real package.json name, which can
-    // differ from the repository name (repo "pulsar-invert-colors" ships package
+    // differ from the repository name (repo "community-invert-colors" ships package
     // "invert-colors"), so prefer it.
     const knowsRealName = this.pack.apmInstallSource != null || this.isInstalled();
     const displayName =
@@ -649,7 +649,7 @@ module.exports = class PackageCard {
         this.compatibleVersionNote = null;
         this.refs.versionValue.classList.add("text-error");
         console.error(
-          `No available version compatible with the installed Lumine version: ${atom.app.getVersion()}`,
+          `No available version compatible with the installed Lumine version: ${lumine.app.getVersion()}`,
         );
       }
 
@@ -751,7 +751,7 @@ module.exports = class PackageCard {
       const detail = oldVersion && newVersion ? `${oldVersion} -> ${newVersion}` : "";
 
       this.update().then(() => {
-        const notification = atom.notifications.addSuccess(
+        const notification = lumine.notifications.addSuccess(
           `Restart Lumine to complete the update of \`${this.pack.name}\`.`,
           {
             dismissable: true,
@@ -759,7 +759,7 @@ module.exports = class PackageCard {
               {
                 text: "Restart now",
                 onDidClick() {
-                  return atom.app.restart();
+                  return lumine.app.restart();
                 },
               },
               {
@@ -785,7 +785,7 @@ module.exports = class PackageCard {
       event.stopPropagation();
       const repoUrl = repoUrlFromRepository(this.pack.repository);
       if (repoUrl) {
-        atom.shell.openExternal(repoUrl);
+        lumine.shell.openExternal(repoUrl);
       }
     };
     if (this.refs.repoLink) {
@@ -799,7 +799,7 @@ module.exports = class PackageCard {
       // in a hover tooltip rather than cluttering the card. A function title
       // keeps it current as the selected ref changes.
       this.disposables.add(
-        atom.tooltips.addComposite(this.refs.repoLink, this.catalogTooltipEntries()),
+        lumine.tooltips.addComposite(this.refs.repoLink, this.catalogTooltipEntries()),
       );
     }
     this.refs.packageName.addEventListener("click", packageNameClickHandler);
@@ -813,7 +813,7 @@ module.exports = class PackageCard {
       event.stopPropagation();
       const owner = ownerFromRepository(this.pack.repository);
       if (owner) {
-        atom.shell.openExternal(`https://github.com/${owner}`);
+        lumine.shell.openExternal(`https://github.com/${owner}`);
       }
     };
     this.refs.avatarLink.addEventListener("click", packageAuthorClickHandler);
@@ -827,9 +827,9 @@ module.exports = class PackageCard {
       event.stopPropagation();
       event.preventDefault();
       if (this.isDisabled()) {
-        atom.packages.enablePackage(this.pack.name);
+        lumine.packages.enablePackage(this.pack.name);
       } else {
-        atom.packages.disablePackage(this.pack.name);
+        lumine.packages.disablePackage(this.pack.name);
       }
     };
     this.refs.enablementButton.addEventListener("click", enablementButtonClickHandler);
@@ -845,7 +845,7 @@ module.exports = class PackageCard {
         event.stopPropagation();
         event.preventDefault();
         if (target.href && target.href.startsWith("lumine:")) {
-          atom.workspace.open(target.href);
+          lumine.workspace.open(target.href);
         }
       }
     };
@@ -872,11 +872,16 @@ module.exports = class PackageCard {
   }
 
   loadCachedMetadata() {
-    if (repoUrlFromRepository(this.pack.repository) === atom.branding.urlCoreRepo) {
+    if (repoUrlFromRepository(this.pack.repository) === lumine.branding.urlCoreRepo) {
       // Don't hit the web for our bundled packages. Just use the local image.
       let avatarPath = path.join(process.resourcesPath, "lumine.png");
       if (!fs.existsSync(avatarPath)) {
-        avatarPath = path.join(atom.app.getResourcePath(), "resources", "app-icons", "lumine.png");
+        avatarPath = path.join(
+          lumine.app.getResourcePath(),
+          "resources",
+          "app-icons",
+          "lumine.png",
+        );
       }
       this.refs.avatar.src = `file://${avatarPath}`;
     } else {
@@ -1101,7 +1106,7 @@ module.exports = class PackageCard {
         this.installNoteTooltip = null;
       }
       if (message) {
-        this.installNoteTooltip = atom.tooltips.add(this.refs.installButtonGroup, {
+        this.installNoteTooltip = lumine.tooltips.add(this.refs.installButtonGroup, {
           title: message,
         });
       }
@@ -1151,7 +1156,7 @@ module.exports = class PackageCard {
       return;
     }
 
-    if (atom.packages.isBundledPackage(this.pack.name)) {
+    if (lumine.packages.isBundledPackage(this.pack.name)) {
       // The name belongs to a bundled package, which cannot be uninstalled — so
       // Replace is impossible. Keep a disabled Install with the reason.
       this.refs.installButton.style.display = "none";
@@ -1274,8 +1279,8 @@ module.exports = class PackageCard {
 
   displayNotInstalledState() {
     this.refs.uninstallButton.style.display = "none";
-    const atomVersion = this.packageManager.normalizeVersion(atom.app.getVersion());
-    if (!this.packageManager.satisfiesVersion(atomVersion, this.pack)) {
+    const lumineVersion = this.packageManager.normalizeVersion(lumine.app.getVersion());
+    if (!this.packageManager.satisfiesVersion(lumineVersion, this.pack)) {
       // Incompatible engine: keep the card in the list with a disabled Install.
       // A catalog card can switch to another ref (whose engine may match), so it
       // does not hunt the legacy registry for an older compatible version.
@@ -1329,7 +1334,7 @@ module.exports = class PackageCard {
   // of the same name outranks. The install still succeeds and the files are
   // there, but the dev copy keeps loading — say so before the click, not after.
   shadowedInstallNote() {
-    const owner = atom.packages.getAvailablePackage(this.pack.name);
+    const owner = lumine.packages.getAvailablePackage(this.pack.name);
     if (!owner || owner.tier !== "dev") return null;
     return (
       `Your dev package in “${owner.dirname}” provides “${this.pack.name}”, ` +
@@ -1390,7 +1395,7 @@ module.exports = class PackageCard {
 
   handlePackageEvents() {
     this.disposables.add(
-      atom.packages.onDidDeactivatePackage((pack) => {
+      lumine.packages.onDidDeactivatePackage((pack) => {
         if (pack.name === this.pack.name) {
           this.updateDisabledState();
         }
@@ -1398,7 +1403,7 @@ module.exports = class PackageCard {
     );
 
     this.disposables.add(
-      atom.packages.onDidActivatePackage((pack) => {
+      lumine.packages.onDidActivatePackage((pack) => {
         if (pack.name === this.pack.name) {
           this.updateDisabledState();
         }
@@ -1406,7 +1411,7 @@ module.exports = class PackageCard {
     );
 
     this.disposables.add(
-      atom.config.onDidChange("core.disabledPackages", () => {
+      lumine.config.onDidChange("core.disabledPackages", () => {
         this.updateDisabledState();
       }),
     );
@@ -1448,7 +1453,7 @@ module.exports = class PackageCard {
           this.updateInterfaceState();
           return;
         }
-        const loadedPack = atom.packages.getLoadedPackage(this.pack.name);
+        const loadedPack = lumine.packages.getLoadedPackage(this.pack.name);
         const version = loadedPack && loadedPack.metadata ? loadedPack.metadata.version : null;
         if (version) {
           this.pack.version = version;
@@ -1464,7 +1469,7 @@ module.exports = class PackageCard {
         this.updateInterfaceState();
         return;
       }
-      const loadedPack = atom.packages.getLoadedPackage(this.pack.name);
+      const loadedPack = lumine.packages.getLoadedPackage(this.pack.name);
       const metadata = loadedPack ? loadedPack.metadata : null;
       if (metadata && metadata.version) {
         this.pack.version = metadata.version;
@@ -1524,7 +1529,7 @@ module.exports = class PackageCard {
   }
 
   isDisabled() {
-    return atom.packages.isPackageDisabled(this.pack.name);
+    return lumine.packages.isPackageDisabled(this.pack.name);
   }
 
   hasSettings() {
@@ -1571,7 +1576,7 @@ module.exports = class PackageCard {
         } else {
           // if a package was disabled before installing it, re-enable it
           if (this.isDisabled()) {
-            atom.packages.enablePackage(this.pack.name);
+            lumine.packages.enablePackage(this.pack.name);
           }
         }
       },
@@ -1613,7 +1618,7 @@ module.exports = class PackageCard {
     return new Promise((resolve, reject) => {
       this.packageManager.update(pack, this.newVersion, (error) => {
         if (error != null) {
-          atom.assert(false, "Package update failed", (assertionError) => {
+          lumine.assert(false, "Package update failed", (assertionError) => {
             assertionError.metadata = {
               type: this.type,
               name: pack.name,

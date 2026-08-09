@@ -2,7 +2,7 @@
 const path = require("path");
 const etch = require("@lumine-code/etch");
 const _ = require("@lumine-code/underscore-plus");
-const { CompositeDisposable, Disposable } = require("atom");
+const { CompositeDisposable, Disposable } = require("lumine");
 
 const GeneralPanel = require("./general-panel");
 const EditorPanel = require("./editor-panel");
@@ -47,7 +47,7 @@ module.exports = class SettingsView {
     }
 
     this.disposables.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => {
           this.scrollUp();
         },
@@ -99,7 +99,7 @@ module.exports = class SettingsView {
             <div className="panel-menu-separator" ref="menuSeparator" />
           </ul>
           <div className="button-area">
-            <button className="btn btn-default icon icon-link-external" ref="openDotAtom">
+            <button className="btn btn-default icon icon-link-external" ref="openConfigDirectory">
               Open Config Folder
             </button>
           </div>
@@ -107,7 +107,7 @@ module.exports = class SettingsView {
         </div>
         {/* The tabindex attr below ensures that clicks in a panel item won't
         cause this view to gain focus. This is important because when this view
-        gains focus (e.g. immediately after atom displays it), it focuses the
+        gains focus (e.g. immediately after lumine displays it), it focuses the
         currently active panel item. If that focusing causes the active panel to
         scroll (e.g. because the active panel itself passes focus on to a search
         box at the top of a scrolled panel), then the browser will not fire the
@@ -150,17 +150,17 @@ module.exports = class SettingsView {
       new Disposable(() => this.element.removeEventListener("focus", focusHandler)),
     );
 
-    const openDotAtomClickHandler = () => {
-      atom.app.openWindow({ pathsToOpen: [atom.getConfigDirPath()] });
+    const openConfigDirectoryClickHandler = () => {
+      lumine.app.openWindow({ pathsToOpen: [lumine.getConfigDirPath()] });
     };
-    this.refs.openDotAtom.addEventListener("click", openDotAtomClickHandler);
+    this.refs.openConfigDirectory.addEventListener("click", openConfigDirectoryClickHandler);
     this.disposables.add(
       new Disposable(() =>
-        this.refs.openDotAtom.removeEventListener("click", openDotAtomClickHandler),
+        this.refs.openConfigDirectory.removeEventListener("click", openConfigDirectoryClickHandler),
       ),
     );
 
-    if (atom.config.get("settings-view.enableSettingsSearch")) {
+    if (lumine.config.get("settings-view.enableSettingsSearch")) {
       this.addCorePanel("Search", "search", () => new SearchSettingsPanel(this));
     }
 
@@ -168,11 +168,11 @@ module.exports = class SettingsView {
     this.addCorePanel("Editor", "code", () => new EditorPanel());
     this.addCorePanel("Language", "globe", () => new LanguagesPanel());
     this.addCorePanel("Git", "git-branch", () => new GitSettingsPanel());
-    if (atom.config.getSchema("core.uriHandlerRegistration").type !== "any") {
+    if (lumine.config.getSchema("core.uriHandlerRegistration").type !== "any") {
       // "feature flag" based on core support for URI handling
       this.addCorePanel("URI Handling", "link", () => new UriHandlerPanel());
     }
-    if (process.platform === "win32" && require("atom").WinShell != null) {
+    if (process.platform === "win32" && require("lumine").WinShell != null) {
       const SystemPanel = require("./system-windows-panel");
       this.addCorePanel("System", "device-desktop", () => new SystemPanel());
     }
@@ -222,20 +222,20 @@ module.exports = class SettingsView {
       return this.packages;
     }
 
-    this.packages = atom.packages.getLoadedPackages();
+    this.packages = lumine.packages.getLoadedPackages();
 
     try {
-      const packageMetadata = require(path.join(atom.app.getResourcePath(), "package.json"));
-      bundledPackageMetadataCache = packageMetadata ? packageMetadata._atomPackages : null;
+      const packageMetadata = require(path.join(lumine.app.getResourcePath(), "package.json"));
+      bundledPackageMetadataCache = packageMetadata ? packageMetadata._luminePackages : null;
     } catch {
       /* no bundled package metadata */
     }
 
     // Include disabled packages so they can be re-enabled from the UI
-    const disabledPackages = atom.config.get("core.disabledPackages") || [];
+    const disabledPackages = lumine.config.get("core.disabledPackages") || [];
     for (const packageName of disabledPackages) {
       var metadata;
-      const packagePath = atom.packages.resolvePackagePath(packageName);
+      const packagePath = lumine.packages.resolvePackagePath(packageName);
       if (!packagePath) {
         continue;
       }
@@ -398,7 +398,7 @@ module.exports = class SettingsView {
         this.showPanel(path2, {
           uri: uri,
           pack: { name: path2 },
-          back: atom.packages.getLoadedPackage(path2) ? "Packages" : null,
+          back: lumine.packages.getLoadedPackage(path2) ? "Packages" : null,
         });
       } else if (path1 === "updates") {
         // Backward-compatible alias for the Update panel.
@@ -480,7 +480,7 @@ module.exports = class SettingsView {
 
     const focusTarget =
       target.querySelector(
-        "input, select, atom-text-editor, button, [tabindex]:not([tabindex='-1'])",
+        "input, select, lumine-text-editor, button, [tabindex]:not([tabindex='-1'])",
       ) || inputElement;
     if (focusTarget) focusTarget.focus();
 

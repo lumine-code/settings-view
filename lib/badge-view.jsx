@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { CompositeDisposable, Disposable } = require("atom");
+const { CompositeDisposable, Disposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 const { STATUS_DOT_TYPES } = require("./status-dots");
 
@@ -15,14 +15,14 @@ module.exports = class BadgeView {
 
     const tooltip = this.tooltipText();
     if (tooltip) {
-      this.disposables.add(atom.tooltips.add(this.element, { title: tooltip }));
+      this.disposables.add(lumine.tooltips.add(this.element, { title: tooltip }));
     }
 
     if (this.hasLink()) {
       const clickHandler = (event) => {
         event.stopPropagation();
         event.preventDefault();
-        atom.shell.openExternal(this.badge.link);
+        lumine.shell.openExternal(this.badge.link);
       };
       this.element.addEventListener("click", clickHandler);
       this.disposables.add(

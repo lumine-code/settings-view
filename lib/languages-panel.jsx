@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { CompositeDisposable, Disposable } = require("atom");
+const { CompositeDisposable, Disposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 const SettingsPanel = require("./settings-panel");
 
@@ -13,7 +13,7 @@ module.exports = class LanguagesPanel {
     etch.initialize(this);
     this.subscriptions = new CompositeDisposable();
     this.subscriptions.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => {
           this.scrollUp();
         },
@@ -38,8 +38,8 @@ module.exports = class LanguagesPanel {
     this.selectedScopeName = DEFAULTS_VALUE;
     this.populateLanguageSelect();
     this.subscriptions.add(
-      atom.grammars.onDidAddGrammar(() => this.populateLanguageSelect()),
-      atom.grammars.onDidUpdateGrammar(() => this.populateLanguageSelect()),
+      lumine.grammars.onDidAddGrammar(() => this.populateLanguageSelect()),
+      lumine.grammars.onDidUpdateGrammar(() => this.populateLanguageSelect()),
     );
 
     const changeHandler = () => {
@@ -96,8 +96,8 @@ module.exports = class LanguagesPanel {
   }
 
   getDisplayableGrammars() {
-    const grammars = atom.grammars.getGrammars({ includeTreeSitter: true }).filter((grammar) => {
-      return grammar !== atom.grammars.nullGrammar && grammar.name && grammar.scopeName;
+    const grammars = lumine.grammars.getGrammars({ includeTreeSitter: true }).filter((grammar) => {
+      return grammar !== lumine.grammars.nullGrammar && grammar.name && grammar.scopeName;
     });
     grammars.sort((a, b) => a.name.localeCompare(b.name));
 

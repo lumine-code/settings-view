@@ -2,7 +2,7 @@
 const path = require("path");
 const _ = require("@lumine-code/underscore-plus");
 const etch = require("@lumine-code/etch");
-const { CompositeDisposable, Disposable } = require("atom");
+const { CompositeDisposable, Disposable } = require("lumine");
 
 // View to display the snippets that a package has registered.
 module.exports = class PackageSnippetsView {
@@ -15,16 +15,17 @@ module.exports = class PackageSnippetsView {
     this.disposables = new CompositeDisposable();
     this.updateSnippetsView();
 
-    const packagesWithSnippetsDisabled = atom.config.get("core.packagesWithSnippetsDisabled") || [];
+    const packagesWithSnippetsDisabled =
+      lumine.config.get("core.packagesWithSnippetsDisabled") || [];
     this.refs.snippetToggle.checked = !packagesWithSnippetsDisabled.includes(this.namespace);
 
     const changeHandler = (event) => {
       event.stopPropagation();
       const value = this.refs.snippetToggle.checked;
       if (value) {
-        atom.config.removeAtKeyPath("core.packagesWithSnippetsDisabled", this.namespace);
+        lumine.config.removeAtKeyPath("core.packagesWithSnippetsDisabled", this.namespace);
       } else {
-        atom.config.pushAtKeyPath("core.packagesWithSnippetsDisabled", this.namespace);
+        lumine.config.pushAtKeyPath("core.packagesWithSnippetsDisabled", this.namespace);
       }
       this.updateSnippetsView();
     };
@@ -118,7 +119,7 @@ module.exports = class PackageSnippetsView {
   }
 
   getSnippets(callback) {
-    const snippetsPackage = atom.packages.getLoadedPackage("snippets");
+    const snippetsPackage = lumine.packages.getLoadedPackage("snippets");
     const snippetsModule = snippetsPackage ? snippetsPackage.mainModule : null;
     if (snippetsModule) {
       if (snippetsModule.loaded) {
@@ -132,7 +133,8 @@ module.exports = class PackageSnippetsView {
   }
 
   updateSnippetsView() {
-    const packagesWithSnippetsDisabled = atom.config.get("core.packagesWithSnippetsDisabled") || [];
+    const packagesWithSnippetsDisabled =
+      lumine.config.get("core.packagesWithSnippetsDisabled") || [];
     const snippetsDisabled = packagesWithSnippetsDisabled.includes(this.namespace);
 
     this.getSnippets((snippets) => {
@@ -220,7 +222,7 @@ module.exports = class PackageSnippetsView {
     viewButton.textContent = "View";
     viewButton.classList.add("btn", "snippet-view-btn");
 
-    let tooltip = atom.tooltips.add(viewButton, {
+    let tooltip = lumine.tooltips.add(viewButton, {
       title: body,
       html: false,
       trigger: "click",
@@ -284,6 +286,6 @@ ${triggers.join(",\n")}
 `;
     }
 
-    atom.clipboard.write(content);
+    lumine.clipboard.write(content);
   }
 };

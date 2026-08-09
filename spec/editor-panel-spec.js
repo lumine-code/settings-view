@@ -31,13 +31,13 @@ describe("EditorPanel", function () {
   };
 
   beforeEach(function () {
-    atom.config.set("editor.boolean", true);
-    atom.config.set("editor.string", "hey");
-    atom.config.set("editor.object", { boolean: true, int: 3, string: "test" });
-    atom.config.set("editor.simpleArray", ["a", "b", "c"]);
-    atom.config.set("editor.complexArray", ["a", "b", { c: true }]);
+    lumine.config.set("editor.boolean", true);
+    lumine.config.set("editor.string", "hey");
+    lumine.config.set("editor.object", { boolean: true, int: 3, string: "test" });
+    lumine.config.set("editor.simpleArray", ["a", "b", "c"]);
+    lumine.config.set("editor.complexArray", ["a", "b", { c: true }]);
 
-    atom.config.setSchema("", { type: "object" });
+    lumine.config.setSchema("", { type: "object" });
 
     return (panel = new EditorPanel());
   });
@@ -49,11 +49,11 @@ describe("EditorPanel", function () {
     expect(getValueForId("editor.object.int")).toBe("3");
     expect(getValueForId("editor.object.string")).toBe("test");
 
-    atom.config.set("editor.boolean", false);
-    atom.config.set("editor.string", "hey again");
-    atom.config.set("editor.object.boolean", false);
-    atom.config.set("editor.object.int", 6);
-    atom.config.set("editor.object.string", "hi");
+    lumine.config.set("editor.boolean", false);
+    lumine.config.set("editor.string", "hey again");
+    lumine.config.set("editor.object.boolean", false);
+    lumine.config.set("editor.object.int", 6);
+    lumine.config.set("editor.object.string", "hi");
 
     expect(getValueForId("editor.boolean")).toBeFalsy();
     expect(getValueForId("editor.string")).toBe("hey again");
@@ -67,24 +67,24 @@ describe("EditorPanel", function () {
     setValueForId("editor.object.int", 9);
     setValueForId("editor.object.string", "yo");
 
-    expect(atom.config.get("editor.boolean")).toBe(true);
-    expect(atom.config.get("editor.string")).toBe("oh hi");
-    expect(atom.config.get("editor.object.boolean")).toBe(true);
-    expect(atom.config.get("editor.object.int")).toBe(9);
-    expect(atom.config.get("editor.object.string")).toBe("yo");
+    expect(lumine.config.get("editor.boolean")).toBe(true);
+    expect(lumine.config.get("editor.string")).toBe("oh hi");
+    expect(lumine.config.get("editor.object.boolean")).toBe(true);
+    expect(lumine.config.get("editor.object.int")).toBe(9);
+    expect(lumine.config.get("editor.object.string")).toBe("yo");
 
     setValueForId("editor.string", "");
     setValueForId("editor.object.int", "");
     setValueForId("editor.object.string", "");
 
-    expect(atom.config.get("editor.string")).toBeUndefined();
-    expect(atom.config.get("editor.object.int")).toBeUndefined();
-    expect(atom.config.get("editor.object.string")).toBeUndefined();
+    expect(lumine.config.get("editor.string")).toBeUndefined();
+    expect(lumine.config.get("editor.object.int")).toBeUndefined();
+    expect(lumine.config.get("editor.object.string")).toBeUndefined();
   });
 
   it("does not save the config value until it has been changed to a new value", function () {
     const observeHandler = jasmine.createSpy("observeHandler");
-    atom.config.observe("editor.simpleArray", observeHandler);
+    lumine.config.observe("editor.simpleArray", observeHandler);
     observeHandler.reset();
 
     window.advanceClock(10000); // wait for contents-modified to be triggered
@@ -100,7 +100,7 @@ describe("EditorPanel", function () {
 
   it("does not update the editor text unless the value it parses to changes", function () {
     setValueForId("editor.simpleArray", "a, b,");
-    expect(atom.config.get("editor.simpleArray")).toEqual(["a", "b"]);
+    expect(lumine.config.get("editor.simpleArray")).toEqual(["a", "b"]);
     expect(getValueForId("editor.simpleArray")).toBe("a, b,");
   });
 
@@ -110,8 +110,8 @@ describe("EditorPanel", function () {
 
     setValueForId("editor.simpleArray", "a, d");
 
-    expect(atom.config.get("editor.simpleArray")).toEqual(["a", "d"]);
-    expect(atom.config.get("editor.complexArray")).toEqual(["a", "b", { c: true }]);
+    expect(lumine.config.get("editor.simpleArray")).toEqual(["a", "d"]);
+    expect(lumine.config.get("editor.complexArray")).toEqual(["a", "b", { c: true }]);
   });
 
   it("shows the package settings notes for core and editor settings", function () {

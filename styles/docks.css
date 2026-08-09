@@ -1,8 +1,8 @@
 /* Dock overrides
    Allows settings to be used in left/right dock */
 
-atom-dock.left .settings-view,
-atom-dock.right .settings-view {
+lumine-dock.left .settings-view,
+lumine-dock.right .settings-view {
   flex-direction: column;
 
   &.pane-item {

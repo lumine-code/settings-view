@@ -192,7 +192,7 @@ describe("SearchSettingsPanel", () => {
 
     it("renders a card even when search metadata is enabled", () => {
       // Recent entries carry no search score, so the card must not reach for one.
-      atom.config.set("settings-view.searchSettingsMetadata", true);
+      lumine.config.set("settings-view.searchSettingsMetadata", true);
       recentSettings.add("editor.fontSize");
       searchSettingsPanel.renderRecentSettings();
 

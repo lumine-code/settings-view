@@ -1,7 +1,7 @@
 /** @jsx etch.dom */
 const etch = require("@lumine-code/etch");
 const _ = require("@lumine-code/underscore-plus");
-const { CompositeDisposable, TextEditor } = require("atom");
+const { CompositeDisposable, TextEditor } = require("lumine");
 
 const CollapsibleSectionPanel = require("./collapsible-section-panel");
 const PackageCard = require("./package-card");
@@ -44,7 +44,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
     this.disposables = new CompositeDisposable();
     this.disposables.add(this.handleEvents());
     this.disposables.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => {
           this.scrollUp();
         },
@@ -78,20 +78,20 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
       }),
     );
 
-    this.disposables.add(atom.themes.onDidChangeActiveThemes(() => this.updateActiveThemes()));
+    this.disposables.add(lumine.themes.onDidChangeActiveThemes(() => this.updateActiveThemes()));
     for (const ref of [
       "lightUiThemeSettings",
       "lightSyntaxThemeSettings",
       "darkUiThemeSettings",
       "darkSyntaxThemeSettings",
     ]) {
-      this.disposables.add(atom.tooltips.add(this.refs[ref], { title: "Settings" }));
+      this.disposables.add(lumine.tooltips.add(this.refs[ref], { title: "Settings" }));
     }
     this.updateActiveThemes();
     this.disposables.add(
-      atom.config.onDidChange("theme.mode", () => this.updateThemeSelections()),
-      atom.config.onDidChange("theme.light", () => this.updateThemeSelections()),
-      atom.config.onDidChange("theme.dark", () => this.updateThemeSelections()),
+      lumine.config.onDidChange("theme.mode", () => this.updateThemeSelections()),
+      lumine.config.onDidChange("theme.light", () => this.updateThemeSelections()),
+      lumine.config.onDidChange("theme.dark", () => this.updateThemeSelections()),
     );
 
     this.disposables.add(
@@ -395,7 +395,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
       menu.innerHTML = "";
     }
 
-    const availableThemes = _.sortBy(atom.themes.getLoadedThemes(), "name");
+    const availableThemes = _.sortBy(lumine.themes.getLoadedThemes(), "name");
     for (let { name, metadata } of availableThemes) {
       const menus =
         metadata.theme === "ui" ? uiMenus : metadata.theme === "syntax" ? syntaxMenus : [];
@@ -409,16 +409,16 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
 
   // Reflect the mode and theme pair settings in the pickers.
   updateThemeSelections() {
-    this.refs.modeMenu.value = atom.config.get("theme.mode");
+    this.refs.modeMenu.value = lumine.config.get("theme.mode");
 
-    const lightPair = atom.config.get("theme.light") || [];
-    const darkPair = atom.config.get("theme.dark") || [];
+    const lightPair = lumine.config.get("theme.light") || [];
+    const darkPair = lumine.config.get("theme.dark") || [];
     this.refs.lightUiMenu.value = this.themeOfTypeFromPair(lightPair, "ui") || "";
     this.refs.lightSyntaxMenu.value = this.themeOfTypeFromPair(lightPair, "syntax") || "";
     this.refs.darkUiMenu.value = this.themeOfTypeFromPair(darkPair, "ui") || "";
     this.refs.darkSyntaxMenu.value = this.themeOfTypeFromPair(darkPair, "syntax") || "";
 
-    const dark = atom.themes.isDarkThemeMode();
+    const dark = lumine.themes.isDarkThemeMode();
     this.refs.lightActiveBadge.style.display = dark ? "none" : "";
     this.refs.darkActiveBadge.style.display = dark ? "" : "none";
 
@@ -428,7 +428,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
   // Pick the theme of the given type ("ui" or "syntax") out of a pair array.
   themeOfTypeFromPair(pair, type) {
     for (const name of pair) {
-      const pack = atom.packages.getLoadedPackage(name);
+      const pack = lumine.packages.getLoadedPackage(name);
       if (pack && pack.metadata && pack.metadata.theme === type) {
         return name;
       }
@@ -456,10 +456,10 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
     );
     const darkPair = [this.refs.darkUiMenu.value, this.refs.darkSyntaxMenu.value].filter(Boolean);
     if (lightPair.length > 0) {
-      atom.config.set("theme.light", lightPair);
+      lumine.config.set("theme.light", lightPair);
     }
     if (darkPair.length > 0) {
-      atom.config.set("theme.dark", darkPair);
+      lumine.config.set("theme.dark", darkPair);
     }
   }
 
@@ -497,7 +497,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
         } else {
           const owner = pack.owner != null ? pack.owner : ownerFromRepository(pack.repository);
           const filterText = `${pack.name} ${owner}`;
-          return atom.tools.fuzzyMatcher.score(filterText, text) > 0;
+          return lumine.tools.fuzzyMatcher.score(filterText, text) > 0;
         }
       });
 
@@ -583,11 +583,14 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
 
   didClickOpenUserStyleSheet(e) {
     e.preventDefault();
-    atom.commands.dispatch(atom.views.getView(atom.workspace), "application:open-your-stylesheet");
+    lumine.commands.dispatch(
+      lumine.views.getView(lumine.workspace),
+      "application:open-your-stylesheet",
+    );
   }
 
   didChangeModeMenu() {
-    atom.config.set("theme.mode", this.refs.modeMenu.value);
+    lumine.config.set("theme.mode", this.refs.modeMenu.value);
   }
 
   didChangeThemeMenu() {
@@ -598,11 +601,11 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
   didClickThemeSettings(menuRef, event) {
     event.stopPropagation();
     const themeName = this.refs[menuRef].value;
-    const pack = atom.packages.getLoadedPackage(themeName);
+    const pack = lumine.packages.getLoadedPackage(themeName);
     if (pack != null) {
       // Carry the directory the theme loaded from, so this opens the same panel
       // its card in the list opens.
-      const available = atom.packages.getAvailablePackage(themeName);
+      const available = lumine.packages.getAvailablePackage(themeName);
       const metadata = {
         ...pack.metadata,
         path: pack.path,

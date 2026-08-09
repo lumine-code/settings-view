@@ -50,14 +50,14 @@ describe("SettingsPanel", () => {
           },
         },
       };
-      atom.config.setSchema("foo", config);
-      atom.config.setDefaults("foo", { gong: "gong" });
-      expect(_.size(atom.config.get("foo"))).toBe(7);
+      lumine.config.setSchema("foo", config);
+      lumine.config.setDefaults("foo", { gong: "gong" });
+      expect(_.size(lumine.config.get("foo"))).toBe(7);
       settingsPanel = new SettingsPanel({ namespace: "foo", includeTitle: false });
     });
 
     it("sorts settings by order, then by schema definition order", () => {
-      const settings = atom.config.get("foo");
+      const settings = lumine.config.get("foo");
       expect(_.size(settings)).toBe(7);
       const sortedSettings = settingsPanel.sortSettings("foo", settings);
       // Explicit `order` wins first, then settings fall back to the order they
@@ -106,7 +106,7 @@ describe("SettingsPanel", () => {
 
   describe("copying a setting key", () => {
     beforeEach(() => {
-      atom.config.setSchema("kopy", {
+      lumine.config.setSchema("kopy", {
         type: "object",
         properties: {
           flag: {
@@ -132,7 +132,7 @@ describe("SettingsPanel", () => {
       });
       settingsPanel = new SettingsPanel({ namespace: "kopy", includeTitle: false });
       jasmine.attachToDOM(settingsPanel.element);
-      atom.clipboard.write("");
+      lumine.clipboard.write("");
     });
 
     afterEach(() => {
@@ -148,7 +148,7 @@ describe("SettingsPanel", () => {
       const keyElement = keyElementFor("kopy.flag");
       keyElement.click();
 
-      expect(atom.clipboard.read()).toBe("kopy.flag");
+      expect(lumine.clipboard.read()).toBe("kopy.flag");
       expect(keyElement.classList.contains("copied")).toBe(true);
 
       advanceClock(1200);
@@ -156,12 +156,12 @@ describe("SettingsPanel", () => {
     });
 
     it("does not toggle the setting when the key belongs to a checkbox", () => {
-      expect(atom.config.get("kopy.flag")).toBe(false);
+      expect(lumine.config.get("kopy.flag")).toBe(false);
 
       keyElementFor("kopy.flag").click();
 
-      expect(atom.clipboard.read()).toBe("kopy.flag");
-      expect(atom.config.get("kopy.flag")).toBe(false);
+      expect(lumine.clipboard.read()).toBe("kopy.flag");
+      expect(lumine.config.get("kopy.flag")).toBe(false);
     });
 
     it("does not collapse the group when the key belongs to a sub-section heading", () => {
@@ -170,7 +170,7 @@ describe("SettingsPanel", () => {
 
       keyElementFor("kopy.group").click();
 
-      expect(atom.clipboard.read()).toBe("kopy.group");
+      expect(lumine.clipboard.read()).toBe("kopy.group");
       expect(section.classList.contains("collapsed")).toBe(false);
     });
 
@@ -225,9 +225,9 @@ describe("SettingsPanel", () => {
           },
         },
       };
-      atom.config.setSchema("foo", config);
-      atom.config.setDefaults("foo", { gong: "gong" });
-      expect(_.size(atom.config.get("foo"))).toBe(5);
+      lumine.config.setSchema("foo", config);
+      lumine.config.setDefaults("foo", { gong: "gong" });
+      expect(_.size(lumine.config.get("foo"))).toBe(5);
       settingsPanel = new SettingsPanel({ namespace: "foo", includeTitle: false });
     });
 
@@ -243,11 +243,11 @@ describe("SettingsPanel", () => {
       expect(settingsPanel.isDefault("foo.haz")).toBe(true);
       settingsPanel.set("foo.haz", "newhaz");
       expect(settingsPanel.isDefault("foo.haz")).toBe(false);
-      expect(atom.config.get("foo.haz")).toBe("newhaz");
+      expect(lumine.config.get("foo.haz")).toBe("newhaz");
     });
 
     it("ignores project-specific overrides", () => {
-      atom.project.replace({
+      lumine.project.replace({
         originPath: "TEST",
         config: {
           foo: {
@@ -256,12 +256,12 @@ describe("SettingsPanel", () => {
         },
       });
       expect(settingsPanel.isDefault("foo.haz")).toBe(true);
-      expect(atom.config.get("foo.haz")).toBe("newhaz");
+      expect(lumine.config.get("foo.haz")).toBe("newhaz");
     });
 
     it("has a tooltip showing the default value", () => {
       const hazEditor = settingsPanel.element.querySelector('[id="foo.haz"]');
-      const tooltips = atom.tooltips.findTooltips(hazEditor);
+      const tooltips = lumine.tooltips.findTooltips(hazEditor);
       expect(tooltips).toHaveLength(1);
       const { title } = tooltips[0].options;
       expect(title).toBe("Default: haz");
@@ -269,7 +269,7 @@ describe("SettingsPanel", () => {
 
     it("has a tooltip showing the description of the default value", () => {
       const quxEditor = settingsPanel.element.querySelector('[id="foo.qux"]');
-      const tooltips = atom.tooltips.findTooltips(quxEditor);
+      const tooltips = lumine.tooltips.findTooltips(quxEditor);
       expect(tooltips).toHaveLength(1);
       const { title } = tooltips[0].options;
       expect(title).toBe("Default: Alice");
@@ -307,8 +307,8 @@ describe("SettingsPanel", () => {
           },
         };
 
-        atom.config.setScopedDefaultsFromSchema("language.tabLength", schema);
-        expect(atom.config.get("language.tabLength")).toBe(2);
+        lumine.config.setScopedDefaultsFromSchema("language.tabLength", schema);
+        expect(lumine.config.get("language.tabLength")).toBe(2);
       });
 
       it("displays the scoped default", () => {
@@ -323,7 +323,7 @@ describe("SettingsPanel", () => {
       });
 
       it("allows the scoped setting to be changed to its normal default if the unscoped value is different", () => {
-        atom.config.set("language.tabLength", 8);
+        lumine.config.set("language.tabLength", 8);
 
         settingsPanel = new SettingsPanel({
           namespace: "language",
@@ -337,7 +337,7 @@ describe("SettingsPanel", () => {
         // This is the unscoped default, but it differs from the current unscoped value
         settingsPanel.set("language.tabLength", 2);
         expect(tabLengthEditor.getModel().getText()).toBe("2");
-        expect(atom.config.get("language.tabLength", { scope: ["source.js"] })).toBe(2);
+        expect(lumine.config.get("language.tabLength", { scope: ["source.js"] })).toBe(2);
       });
 
       it("allows the scoped setting to be changed to the unscoped default if it is different", () => {
@@ -353,7 +353,7 @@ describe("SettingsPanel", () => {
         // This is the unscoped default, but it differs from the scoped default
         settingsPanel.set("language.tabLength", 2);
         expect(tabLengthEditor.getModel().getText()).toBe("2");
-        expect(atom.config.get("language.tabLength", { scope: ["source.python"] })).toBe(2);
+        expect(lumine.config.get("language.tabLength", { scope: ["source.python"] })).toBe(2);
       });
     });
   });
@@ -394,8 +394,8 @@ describe("SettingsPanel", () => {
           },
         },
       };
-      atom.config.setSchema("foo", config);
-      expect(_.size(atom.config.get("foo"))).toBe(3);
+      lumine.config.setSchema("foo", config);
+      expect(_.size(lumine.config.get("foo"))).toBe(3);
       settingsPanel = new SettingsPanel({ namespace: "foo", includeTitle: false });
     });
 
@@ -516,7 +516,7 @@ describe("SettingsPanel", () => {
         },
       };
 
-      atom.config.setSchema("foo", config);
+      lumine.config.setSchema("foo", config);
       settingsPanel = new SettingsPanel({ namespace: "foo", includeTitle: false });
     });
 
@@ -563,7 +563,7 @@ describe("SettingsPanel", () => {
         includeTitle: false,
         scopeName: "source.js",
       });
-      const minMaxEditor = settingsPanel.element.querySelector("atom-text-editor");
+      const minMaxEditor = settingsPanel.element.querySelector("lumine-text-editor");
       minMaxEditor.getModel().setText("15");
       advanceClock(minMaxEditor.getModel().getBuffer().getStoppedChangingDelay());
       expect(minMaxEditor.getModel().getText()).toBe("15");
@@ -576,38 +576,38 @@ describe("SettingsPanel", () => {
         );
         commaValueArrayEditor.getModel().setText("1, \\,, 2");
         advanceClock(commaValueArrayEditor.getModel().getBuffer().getStoppedChangingDelay());
-        expect(atom.config.get("foo.commaValueArray")).toEqual(["1", ",", "2"]);
+        expect(lumine.config.get("foo.commaValueArray")).toEqual(["1", ",", "2"]);
 
         commaValueArrayEditor.getModel().setText("1\\, 2");
         advanceClock(commaValueArrayEditor.getModel().getBuffer().getStoppedChangingDelay());
-        expect(atom.config.get("foo.commaValueArray")).toEqual(["1, 2"]);
+        expect(lumine.config.get("foo.commaValueArray")).toEqual(["1, 2"]);
 
         commaValueArrayEditor.getModel().setText("1\\,");
         advanceClock(commaValueArrayEditor.getModel().getBuffer().getStoppedChangingDelay());
-        expect(atom.config.get("foo.commaValueArray")).toEqual(["1,"]);
+        expect(lumine.config.get("foo.commaValueArray")).toEqual(["1,"]);
 
         commaValueArrayEditor.getModel().setText("\\, 2");
         advanceClock(commaValueArrayEditor.getModel().getBuffer().getStoppedChangingDelay());
-        expect(atom.config.get("foo.commaValueArray")).toEqual([", 2"]);
+        expect(lumine.config.get("foo.commaValueArray")).toEqual([", 2"]);
       });
 
       it("renders an escaped comma", () => {
         const commaValueArrayEditor = settingsPanel.element.querySelector(
           '[id="foo.commaValueArray"]',
         );
-        atom.config.set("foo.commaValueArray", ["3", ",", "4"]);
+        lumine.config.set("foo.commaValueArray", ["3", ",", "4"]);
         advanceClock(1000);
         expect(commaValueArrayEditor.getModel().getText()).toBe("3, \\,, 4");
 
-        atom.config.set("foo.commaValueArray", ["3, 4"]);
+        lumine.config.set("foo.commaValueArray", ["3, 4"]);
         advanceClock(1000);
         expect(commaValueArrayEditor.getModel().getText()).toBe("3\\, 4");
 
-        atom.config.set("foo.commaValueArray", ["3,"]);
+        lumine.config.set("foo.commaValueArray", ["3,"]);
         advanceClock(1000);
         expect(commaValueArrayEditor.getModel().getText()).toBe("3\\,");
 
-        atom.config.set("foo.commaValueArray", [", 4"]);
+        lumine.config.set("foo.commaValueArray", [", 4"]);
         advanceClock(1000);
         expect(commaValueArrayEditor.getModel().getText()).toBe("\\, 4");
       });
@@ -619,7 +619,7 @@ describe("SettingsPanel", () => {
       // items coerce to numbers appeared until it had a value, then vanished
       // from the page and could no longer be edited or cleared.
       it("stays on the page once it holds numbers", () => {
-        atom.config.set("foo.numberArray", [2307, 7016]);
+        lumine.config.set("foo.numberArray", [2307, 7016]);
         settingsPanel = new SettingsPanel({ namespace: "foo", includeTitle: false });
         const editor = settingsPanel.element.querySelector('[id="foo.numberArray"]');
         expect(editor).not.toBeNull();
@@ -630,7 +630,7 @@ describe("SettingsPanel", () => {
         const editor = settingsPanel.element.querySelector('[id="foo.numberArray"]');
         editor.getModel().setText("2307, 7016");
         advanceClock(editor.getModel().getBuffer().getStoppedChangingDelay());
-        expect(atom.config.get("foo.numberArray")).toEqual([2307, 7016]);
+        expect(lumine.config.get("foo.numberArray")).toEqual([2307, 7016]);
       });
     });
   });

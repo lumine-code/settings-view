@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { CompositeDisposable } = require("atom");
+const { CompositeDisposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 
 function isSupported() {
@@ -7,7 +7,7 @@ function isSupported() {
 }
 
 function isDefaultProtocolClient() {
-  return atom.app.isDefaultProtocolClient("lumine", process.execPath, ["--uri-handler", "--"]);
+  return lumine.app.isDefaultProtocolClient("lumine", process.execPath, ["--uri-handler", "--"]);
 }
 
 function setAsDefaultProtocolClient() {
@@ -15,7 +15,7 @@ function setAsDefaultProtocolClient() {
   // hacks to make it work on Linux; see https://github.com/electron/electron/issues/6440
   return (
     isSupported() &&
-    atom.app.setAsDefaultProtocolClient("lumine", process.execPath, ["--uri-handler", "--"])
+    lumine.app.setAsDefaultProtocolClient("lumine", process.execPath, ["--uri-handler", "--"])
   );
 }
 
@@ -27,12 +27,12 @@ module.exports = class UriHandlerPanel {
     // Seed from the registry rather than starting empty: the panel is built
     // lazily, on the first switch to it, so every URI handled before that point
     // is already in the history and would otherwise never be shown.
-    this.uriHistory = atom.uriHandlers.getRecentlyHandledURIs();
+    this.uriHistory = lumine.uriHandlers.getRecentlyHandledURIs();
     etch.initialize(this);
 
     this.subscriptions = new CompositeDisposable();
     this.subscriptions.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => {
           this.scrollUp();
         },
@@ -52,8 +52,8 @@ module.exports = class UriHandlerPanel {
           this.scrollToBottom();
         },
       }),
-      atom.uriHandlers.onHistoryChange(() => {
-        this.uriHistory = atom.uriHandlers.getRecentlyHandledURIs();
+      lumine.uriHandlers.onHistoryChange(() => {
+        this.uriHistory = lumine.uriHandlers.getRecentlyHandledURIs();
         etch.update(this);
       }),
     );
@@ -68,7 +68,7 @@ module.exports = class UriHandlerPanel {
   update() {}
 
   render() {
-    const schema = atom.config.getSchema("core.uriHandlerRegistration");
+    const schema = lumine.config.getSchema("core.uriHandlerRegistration");
 
     return (
       <div className="panels-item" tabIndex="0">
@@ -109,7 +109,7 @@ module.exports = class UriHandlerPanel {
                       id="core.uriHandlerRegistration"
                       className="form-control"
                       onChange={this.handleChange}
-                      value={atom.config.get("core.uriHandlerRegistration")}
+                      value={lumine.config.get("core.uriHandlerRegistration")}
                     >
                       {schema.enum.map(({ description, value }) => (
                         <option value={value}>{description}</option>
@@ -168,7 +168,7 @@ module.exports = class UriHandlerPanel {
     // very table the link sits in, on top of opening the package here.
     evt.preventDefault();
     evt.stopPropagation();
-    atom.workspace.open(evt.currentTarget.getAttribute("href"));
+    lumine.workspace.open(evt.currentTarget.getAttribute("href"));
   }
 
   renderRegistrationDescription() {
@@ -182,7 +182,7 @@ module.exports = class UriHandlerPanel {
   }
 
   handleChange(evt) {
-    atom.config.set("core.uriHandlerRegistration", evt.target.value);
+    lumine.config.set("core.uriHandlerRegistration", evt.target.value);
   }
 
   async handleBecomeProtocolClient(evt) {
@@ -190,7 +190,7 @@ module.exports = class UriHandlerPanel {
     if (await setAsDefaultProtocolClient()) {
       await this.refreshProtocolClientState();
     } else {
-      atom.notifications.addError("Could not become default protocol client");
+      lumine.notifications.addError("Could not become default protocol client");
     }
   }
 

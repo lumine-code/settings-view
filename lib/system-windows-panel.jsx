@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { WinShell, CompositeDisposable } = require("atom");
+const { WinShell, CompositeDisposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 
 module.exports = class SystemPanel {
@@ -7,7 +7,7 @@ module.exports = class SystemPanel {
     etch.initialize(this);
     this.subscriptions = new CompositeDisposable();
     this.subscriptions.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => {
           this.scrollUp();
         },

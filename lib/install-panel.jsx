@@ -7,7 +7,7 @@ const gitHubUrlInfo = require("./github-url-info");
 const requireCore = require("./require-core");
 const { cloneUrlForRepository, parsePackageSource } = requireCore("package-source");
 
-const { CompositeDisposable, Disposable, TextEditor } = require("atom");
+const { CompositeDisposable, Disposable, TextEditor } = require("lumine");
 
 const PackageCard = require("./package-card");
 const notifyPackageError = require("./notify-error");
@@ -32,7 +32,7 @@ module.exports = class InstallPanel {
     this.page = 1;
     this.pageSize = 50;
     this.searchPackages = [];
-    this.atomIoURL = "https://github.com";
+    this.catalogURL = "https://github.com";
 
     etch.initialize(this);
 
@@ -41,7 +41,7 @@ module.exports = class InstallPanel {
     this.refs.searchEditor.setPlaceholderText("Search packages or enter owner/repo");
     this.refs.catalogEditor.setPlaceholderText("owner/catalog or index.json URL");
 
-    this.disposables.add(atom.tooltips.add(this.refs.addCatalogButton, { title: "Add catalog" }));
+    this.disposables.add(lumine.tooltips.add(this.refs.addCatalogButton, { title: "Add catalog" }));
     // Install failures are surfaced as notifications centrally (see SettingsView).
     // Catalog fetch failures below are panel-local; those still raise their own
     // notifications, tracked here so a re-run can dismiss a stale one.
@@ -78,17 +78,17 @@ module.exports = class InstallPanel {
     );
     this.disposables.add(new Disposable(() => clearTimeout(searchTimer)));
     this.disposables.add(
-      atom.commands.add(this.refs.searchEditor.element, "core:confirm", () => {
+      lumine.commands.add(this.refs.searchEditor.element, "core:confirm", () => {
         this.performSearch();
       }),
     );
     this.disposables.add(
-      atom.commands.add(this.refs.catalogEditor.element, "core:confirm", () => {
+      lumine.commands.add(this.refs.catalogEditor.element, "core:confirm", () => {
         this.didClickAddCatalog();
       }),
     );
     this.disposables.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => {
           this.scrollUp();
         },
@@ -110,7 +110,7 @@ module.exports = class InstallPanel {
       }),
     );
     this.disposables.add(
-      atom.config.onDidChange("settings-view.packageCatalogs", () => {
+      lumine.config.onDidChange("settings-view.packageCatalogs", () => {
         this.renderCatalogSources();
         // Sources changed — re-fetch on the next search instead of reusing the
         // data fetched from the old source list.
@@ -158,7 +158,7 @@ module.exports = class InstallPanel {
               <span ref="publishedToText">
                 Packages are installed from Git repositories such as{" "}
               </span>
-              <a className="link" onclick={this.didClickOpenAtomIo.bind(this)}>
+              <a className="link" onclick={this.didClickOpenCatalog.bind(this)}>
                 GitHub
               </a>
               <span> and are installed to {path.join(process.env.LUMINE_HOME, "packages")}</span>
@@ -553,7 +553,7 @@ module.exports = class InstallPanel {
         // catalog with many bad entries doesn't bury the screen in toasts.
         const detail = result.errors.map((e) => `${e.source}: ${e.message}`).join("\n");
         this.catalogFetchNotifications.push(
-          atom.notifications.addWarning(
+          lumine.notifications.addWarning(
             `${result.errors.length} catalog source(s) failed to load.`,
             { dismissable: true, detail },
           ),
@@ -599,7 +599,7 @@ module.exports = class InstallPanel {
     }));
     entries[0].html = true;
     entries[0].class = "catalog-progress-tooltip";
-    this.catalogProgressTooltip = atom.tooltips.addComposite(this.refs.catalogProgress, entries);
+    this.catalogProgressTooltip = lumine.tooltips.addComposite(this.refs.catalogProgress, entries);
   }
 
   // Renders `packs` into `container`, reusing any existing card whose pack
@@ -699,7 +699,7 @@ module.exports = class InstallPanel {
     if (keywords.some((keyword) => keyword.includes(query))) return 300;
 
     // Typo-tolerant fallback on the name only.
-    return (atom.tools.fuzzyMatcher.score(name, query) || 0) > 0 ? 100 : 0;
+    return (lumine.tools.fuzzyMatcher.score(name, query) || 0) > 0 ? 100 : 0;
   }
 
   scoreCatalog(query) {
@@ -808,7 +808,7 @@ module.exports = class InstallPanel {
   }
 
   getCatalogSources() {
-    const sources = atom.config.get("settings-view.packageCatalogs");
+    const sources = lumine.config.get("settings-view.packageCatalogs");
     return Array.isArray(sources)
       ? sources.filter((source) => typeof source === "string" && source.trim())
       : [];
@@ -848,7 +848,7 @@ module.exports = class InstallPanel {
         const value = editor.getText().trim();
         if (value !== source) this.updateCatalogSource(index, value);
       };
-      this.sourceDisposables.add(atom.commands.add(editor.element, "core:confirm", commit));
+      this.sourceDisposables.add(lumine.commands.add(editor.element, "core:confirm", commit));
       editor.element.addEventListener("blur", commit);
       this.sourceDisposables.add(
         new Disposable(() => editor.element.removeEventListener("blur", commit)),
@@ -858,7 +858,7 @@ module.exports = class InstallPanel {
       removeButton.className = "btn icon icon-x catalog-source-button";
       removeButton.setAttribute("aria-label", "Remove catalog");
       removeButton.onclick = () => this.removeCatalogSource(index);
-      this.sourceDisposables.add(atom.tooltips.add(removeButton, { title: "Remove catalog" }));
+      this.sourceDisposables.add(lumine.tooltips.add(removeButton, { title: "Remove catalog" }));
 
       row.appendChild(editorContainer);
       row.appendChild(removeButton);
@@ -874,7 +874,7 @@ module.exports = class InstallPanel {
       if (sources.some((existing) => normalizeCatalogSource(existing) === normalized)) {
         throw new Error("That catalog is already configured.");
       }
-      atom.config.set("settings-view.packageCatalogs", [...sources, source]);
+      lumine.config.set("settings-view.packageCatalogs", [...sources, source]);
       this.refs.catalogEditor.setText("");
     } catch (error) {
       this.showCatalogSourceError(error.message);
@@ -892,13 +892,13 @@ module.exports = class InstallPanel {
   }
 
   didClickRestoreDefaults() {
-    atom.config.unset("settings-view.packageCatalogs");
+    lumine.config.unset("settings-view.packageCatalogs");
     this.renderCatalogSources();
   }
 
   removeCatalogSource(index) {
     const sources = this.getCatalogSources();
-    atom.config.set(
+    lumine.config.set(
       "settings-view.packageCatalogs",
       sources.filter((_source, sourceIndex) => sourceIndex !== index),
     );
@@ -919,16 +919,16 @@ module.exports = class InstallPanel {
       }
       const updated = [...sources];
       updated[index] = value;
-      atom.config.set("settings-view.packageCatalogs", updated);
+      lumine.config.set("settings-view.packageCatalogs", updated);
     } catch (error) {
       this.renderCatalogSources();
       this.showCatalogSourceError(error.message);
     }
   }
 
-  didClickOpenAtomIo(event) {
+  didClickOpenCatalog(event) {
     event.preventDefault();
-    atom.shell.openExternal(this.atomIoURL);
+    lumine.shell.openExternal(this.catalogURL);
   }
 
   scrollUp() {

@@ -17,7 +17,7 @@ const _ = require("@lumine-code/underscore-plus");
 
 let SnippetsProvider = {
   getSnippets() {
-    return atom.config.scopedSettingsStore.propertySets;
+    return lumine.config.scopedSettingsStore.propertySets;
   },
 };
 
@@ -30,11 +30,11 @@ describe("InstalledPackageView", function () {
     let settingsPanels = null;
 
     waitsForPromise(() => {
-      return atom.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
+      return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
     });
 
     runs(() => {
-      const pack = atom.packages.getActivePackage("language-test");
+      const pack = lumine.packages.getActivePackage("language-test");
       const view = new PackageDetailView(
         pack,
         new SettingsView(),
@@ -68,14 +68,14 @@ describe("InstalledPackageView", function () {
     let snippetsModule = null;
 
     // Relies on behavior not present in the snippets package before 1.103.
-    const shouldRunScopeTest = parseFloat(atom.app.getVersion()) >= 1.103;
+    const shouldRunScopeTest = parseFloat(lumine.app.getVersion()) >= 1.103;
 
     waitsForPromise(() => {
-      return atom.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
+      return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
     });
 
     waitsForPromise(() => {
-      return atom.packages.activatePackage("snippets").then((p) => {
+      return lumine.packages.activatePackage("snippets").then((p) => {
         snippetsModule = p.mainModule;
         if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
           return;
@@ -94,7 +94,7 @@ describe("InstalledPackageView", function () {
     });
 
     runs(() => {
-      const pack = atom.packages.getActivePackage("language-test");
+      const pack = lumine.packages.getActivePackage("language-test");
       const view = new PackageDetailView(
         pack,
         new SettingsView(),
@@ -151,11 +151,11 @@ describe("InstalledPackageView", function () {
       let snippetsModule = null;
 
       waitsForPromise(() => {
-        return atom.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
+        return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
       });
 
       waitsForPromise(() =>
-        atom.packages.activatePackage("snippets").then((p) => {
+        lumine.packages.activatePackage("snippets").then((p) => {
           snippetsModule = p.mainModule;
           if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
             return;
@@ -174,7 +174,7 @@ describe("InstalledPackageView", function () {
       });
 
       runs(() => {
-        const pack = atom.packages.getActivePackage("language-test");
+        const pack = lumine.packages.getActivePackage("language-test");
         view = new PackageDetailView(
           pack,
           new SettingsView(),
@@ -204,7 +204,7 @@ describe("InstalledPackageView", function () {
 
   // Relies on behavior not present in the snippets package before 1.33.
   // TODO: These tests should always run once 1.33 is released.
-  if (parseFloat(atom.app.getVersion()) >= 1.33) {
+  if (parseFloat(lumine.app.getVersion()) >= 1.33) {
     describe("when a snippet is copied", () => {
       let pack, card;
       let snippetsTable = null;
@@ -212,11 +212,11 @@ describe("InstalledPackageView", function () {
 
       beforeEach(() => {
         waitsForPromise(() => {
-          return atom.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
+          return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
         });
 
         waitsForPromise(() => {
-          return atom.packages.activatePackage("snippets").then((p) => {
+          return lumine.packages.activatePackage("snippets").then((p) => {
             snippetsModule = p.mainModule;
             if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
               return;
@@ -236,7 +236,7 @@ describe("InstalledPackageView", function () {
         });
 
         runs(() => {
-          pack = atom.packages.getActivePackage("language-test");
+          pack = lumine.packages.getActivePackage("language-test");
           card = new PackageSnippetsView(pack, SnippetsProvider);
           snippetsTable = card.element.querySelector(".package-snippets-table tbody");
         });
@@ -255,7 +255,7 @@ describe("InstalledPackageView", function () {
               ".package-snippets-table tbody tr:nth-child(1) td.snippet-body .snippet-copy-btn",
             )
             .click();
-          expect(atom.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
+          expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 \n'.b.source':
   'BAR':
     'prefix': 'b'
@@ -271,7 +271,7 @@ describe("InstalledPackageView", function () {
               ".package-snippets-table tbody tr:nth-child(1) td.snippet-body .btn:nth-child(2)",
             )
             .click();
-          expect(atom.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
+          expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 \n  ".b.source": {
     "BAR": {
       "prefix": "b",
@@ -289,11 +289,11 @@ describe("InstalledPackageView", function () {
       let snippetsModule = null;
 
       waitsForPromise(() => {
-        return atom.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
+        return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
       });
 
       waitsForPromise(() =>
-        atom.packages.activatePackage("snippets").then((p) => {
+        lumine.packages.activatePackage("snippets").then((p) => {
           snippetsModule = p.mainModule;
           if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
             return;
@@ -312,13 +312,13 @@ describe("InstalledPackageView", function () {
       });
 
       runs(() => {
-        pack = atom.packages.getActivePackage("language-test");
+        pack = lumine.packages.getActivePackage("language-test");
         card = new PackageSnippetsView(pack, SnippetsProvider);
         jasmine.attachToDOM(card.element);
 
         card.refs.snippetToggle.click();
         expect(card.refs.snippetToggle.checked).toBe(false);
-        let disabledSnippetsPackages = atom.config.get("core.packagesWithSnippetsDisabled") || [];
+        let disabledSnippetsPackages = lumine.config.get("core.packagesWithSnippetsDisabled") || [];
         expect(_.include(disabledSnippetsPackages, "language-test")).toBe(true);
       });
 
@@ -329,7 +329,7 @@ describe("InstalledPackageView", function () {
       runs(() => {
         card.refs.snippetToggle.click();
         expect(card.refs.snippetToggle.checked).toBe(true);
-        let disabledSnippetsPackages = atom.config.get("core.packagesWithSnippetsDisabled") || [];
+        let disabledSnippetsPackages = lumine.config.get("core.packagesWithSnippetsDisabled") || [];
         expect(_.include(disabledSnippetsPackages, "language-test")).toBe(false);
       });
 
@@ -342,11 +342,11 @@ describe("InstalledPackageView", function () {
     let keybindingsTable = null;
 
     waitsForPromise(() => {
-      return atom.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
+      return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
     });
 
     runs(() => {
-      const pack = atom.packages.getActivePackage("language-test");
+      const pack = lumine.packages.getActivePackage("language-test");
       const view = new PackageDetailView(
         pack,
         new SettingsView(),
@@ -361,21 +361,21 @@ describe("InstalledPackageView", function () {
   describe("when the keybindings toggle is clicked", () =>
     it("sets the packagesWithKeymapsDisabled config to include the package name", () => {
       waitsForPromise(() => {
-        return atom.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
+        return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
       });
 
       runs(() => {
         let keybindingRows;
-        const pack = atom.packages.getActivePackage("language-test");
+        const pack = lumine.packages.getActivePackage("language-test");
         const card = new PackageKeymapView(pack);
         jasmine.attachToDOM(card.element);
 
         card.refs.keybindingToggle.click();
         expect(card.refs.keybindingToggle.checked).toBe(false);
-        let disabledKeymapsPackages = atom.config.get("core.packagesWithKeymapsDisabled") || [];
+        let disabledKeymapsPackages = lumine.config.get("core.packagesWithKeymapsDisabled") || [];
         expect(_.include(disabledKeymapsPackages, "language-test")).toBe(true);
 
-        if (atom.keymaps.build) {
+        if (lumine.keymaps.build) {
           keybindingRows = card.element.querySelectorAll(
             ".package-keymap-table tbody.text-subtle tr",
           );
@@ -384,11 +384,11 @@ describe("InstalledPackageView", function () {
 
         card.refs.keybindingToggle.click();
         expect(card.refs.keybindingToggle.checked).toBe(true);
-        disabledKeymapsPackages = atom.config.get("core.packagesWithKeymapsDisabled") || [];
+        disabledKeymapsPackages = lumine.config.get("core.packagesWithKeymapsDisabled") || [];
 
         expect(_.include(disabledKeymapsPackages, "language-test")).toBe(false);
 
-        if (atom.keymaps.build) {
+        if (lumine.keymaps.build) {
           keybindingRows = card.element.querySelectorAll(".package-keymap-table tbody tr");
           expect(keybindingRows.length).toBe(1);
         }
@@ -400,20 +400,20 @@ describe("InstalledPackageView", function () {
 
     beforeEach(() => {
       waitsForPromise(() => {
-        return atom.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
+        return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
       });
 
       runs(() => {
-        pack = atom.packages.getActivePackage("language-test");
+        pack = lumine.packages.getActivePackage("language-test");
         card = new PackageKeymapView(pack);
       });
     });
 
     describe("when the keybinding file ends in .cson", () =>
       it("writes a CSON snippet to the clipboard", () => {
-        spyOn(atom.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
+        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
         card.element.querySelector(".copy-keybinding").click();
-        expect(atom.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
+        expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 'test':
   'cmd-g': 'language-test:run'\
 `);
@@ -421,9 +421,9 @@ describe("InstalledPackageView", function () {
 
     describe("when the keybinding file ends in .json", () => {
       it("writes a JSON snippet to the clipboard", () => {
-        spyOn(atom.keymaps, "getUserKeymapPath").andReturn("keymap.json");
+        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.json");
         card.element.querySelector(".copy-keybinding").click();
-        expect(atom.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
+        expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 "test": {
   "cmd-g": "language-test:run"
 }\
@@ -437,12 +437,12 @@ describe("InstalledPackageView", function () {
       let packageCard = null;
 
       waitsForPromise(() => {
-        return atom.packages.activatePackage("status-bar");
+        return lumine.packages.activatePackage("status-bar");
       });
 
       runs(() => {
-        expect(atom.packages.isPackageActive("status-bar")).toBe(true);
-        const pack = atom.packages.getLoadedPackage("status-bar");
+        expect(lumine.packages.isPackageActive("status-bar")).toBe(true);
+        const pack = lumine.packages.getLoadedPackage("status-bar");
         const view = new PackageDetailView(
           pack,
           new SettingsView(),
@@ -455,18 +455,18 @@ describe("InstalledPackageView", function () {
       runs(() => {
         // Trigger observeDisabledPackages() here
         // because it is not default in specs
-        atom.packages.observeDisabledPackages();
-        atom.packages.disablePackage("status-bar");
-        expect(atom.packages.isPackageDisabled("status-bar")).toBe(true);
+        lumine.packages.observeDisabledPackages();
+        lumine.packages.disablePackage("status-bar");
+        expect(lumine.packages.isPackageDisabled("status-bar")).toBe(true);
         expect(packageCard.classList.contains("disabled")).toBe(true);
       });
     }));
 
   describe("when the package is not active", () => {
     it("displays the correct enablement state", () => {
-      atom.packages.loadPackage("status-bar");
-      expect(atom.packages.isPackageActive("status-bar")).toBe(false);
-      const pack = atom.packages.getLoadedPackage("status-bar");
+      lumine.packages.loadPackage("status-bar");
+      expect(lumine.packages.isPackageActive("status-bar")).toBe(false);
+      const pack = lumine.packages.getLoadedPackage("status-bar");
       const view = new PackageDetailView(
         pack,
         new SettingsView(),
@@ -477,40 +477,40 @@ describe("InstalledPackageView", function () {
 
       // Trigger observeDisabledPackages() here
       // because it is not default in specs
-      atom.packages.observeDisabledPackages();
-      atom.packages.disablePackage("status-bar");
-      expect(atom.packages.isPackageDisabled("status-bar")).toBe(true);
+      lumine.packages.observeDisabledPackages();
+      lumine.packages.disablePackage("status-bar");
+      expect(lumine.packages.isPackageDisabled("status-bar")).toBe(true);
       expect(packageCard.classList.contains("disabled")).toBe(true);
     });
 
     it("still loads the config schema for the package", () => {
-      atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+      lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
 
-      waitsFor(() => atom.packages.isPackageLoaded("package-with-config") === true);
+      waitsFor(() => lumine.packages.isPackageLoaded("package-with-config") === true);
 
       runs(() => {
-        expect(atom.config.get("package-with-config.setting")).toBe(undefined);
+        expect(lumine.config.get("package-with-config.setting")).toBe(undefined);
 
-        const pack = atom.packages.getLoadedPackage("package-with-config");
+        const pack = lumine.packages.getLoadedPackage("package-with-config");
         new PackageDetailView(pack, new SettingsView(), new PackageManager(), SnippetsProvider);
 
-        expect(atom.config.get("package-with-config.setting")).toBe("something");
+        expect(lumine.config.get("package-with-config.setting")).toBe("something");
       });
     });
   });
 
-  describe("when the package was not installed from atom.io", () => {
+  describe("when the package was not installed from lumine.io", () => {
     const normalizePackageDataReadmeError = "ERROR: No README data found!";
 
     it("still displays the Readme", () => {
-      atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-readme"));
+      lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-readme"));
 
       waitsFor(() => {
-        return atom.packages.isPackageLoaded("package-with-readme") === true;
+        return lumine.packages.isPackageLoaded("package-with-readme") === true;
       });
 
       runs(() => {
-        const pack = atom.packages.getLoadedPackage("package-with-readme");
+        const pack = lumine.packages.getLoadedPackage("package-with-readme");
         expect(pack.metadata.readme).toBe(normalizePackageDataReadmeError);
 
         const view = new PackageDetailView(

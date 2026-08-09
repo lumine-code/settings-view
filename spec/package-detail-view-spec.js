@@ -56,8 +56,8 @@ describe("PackageDetailView", function () {
   };
 
   it("renders a package when provided in `initialize`", function () {
-    atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
-    const pack = atom.packages.getLoadedPackage("package-with-config");
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const pack = lumine.packages.getLoadedPackage("package-with-config");
     view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
 
     // Perhaps there are more things to assert here.
@@ -65,8 +65,8 @@ describe("PackageDetailView", function () {
   });
 
   it("shows every section at once and lists them in the table of contents", () => {
-    atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
-    const pack = atom.packages.getLoadedPackage("package-with-config");
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const pack = lumine.packages.getLoadedPackage("package-with-config");
     const settingsView = new SettingsView();
     const showToc = spyOn(settingsView, "showTableOfContents").andCallThrough();
     view = new PackageDetailView(pack, settingsView, packageManager, SnippetsProvider);
@@ -90,8 +90,8 @@ describe("PackageDetailView", function () {
   });
 
   it("keeps every section listed when the sections refresh", () => {
-    atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
-    const pack = atom.packages.getLoadedPackage("package-with-config");
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const pack = lumine.packages.getLoadedPackage("package-with-config");
     const settingsView = new SettingsView();
     const showToc = spyOn(settingsView, "showTableOfContents").andCallThrough();
     view = new PackageDetailView(pack, settingsView, packageManager, SnippetsProvider);
@@ -106,8 +106,8 @@ describe("PackageDetailView", function () {
   });
 
   it("drops and restores the sections as the package is disabled and enabled", () => {
-    atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
-    const pack = atom.packages.getLoadedPackage("package-with-config");
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const pack = lumine.packages.getLoadedPackage("package-with-config");
     const settingsView = new SettingsView();
     const showToc = spyOn(settingsView, "showTableOfContents").andCallThrough();
     view = new PackageDetailView(pack, settingsView, packageManager, SnippetsProvider);
@@ -123,13 +123,13 @@ describe("PackageDetailView", function () {
     // those sections go — no need to leave the panel and come back. Docs stay:
     // they are files on disk, and this package ships none, so the section is
     // present but empty and therefore hidden.
-    atom.config.pushAtKeyPath("core.disabledPackages", "package-with-config");
+    lumine.config.pushAtKeyPath("core.disabledPackages", "package-with-config");
     expect(sectionKeys()).toEqual(["readme", "docs"]);
     expect(listedSections()).toEqual(["README"]);
     expect(view.refs.startupTime.style.display).toBe("none");
 
     // Enabling it again brings them back, ahead of the README.
-    atom.config.removeAtKeyPath("core.disabledPackages", "package-with-config");
+    lumine.config.removeAtKeyPath("core.disabledPackages", "package-with-config");
     expect(sectionKeys()).toEqual(["settings", "keymap", "grammars", "snippets", "readme", "docs"]);
     expect(listedSections()).toEqual(["Settings", "README"]);
     expect(view.refs.startupTime.style.display).toBe("");
@@ -139,8 +139,8 @@ describe("PackageDetailView", function () {
     // The loaded package of this name lives somewhere else, so this directory
     // contributes nothing to the install: no settings, no keybindings, and not
     // even the documents it ships, since none of it is running.
-    atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
-    const loadedPackage = atom.packages.getLoadedPackage("package-with-config");
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const loadedPackage = lumine.packages.getLoadedPackage("package-with-config");
     const shadowedCopy = {
       ...loadedPackage.metadata,
       name: loadedPackage.name,
@@ -173,8 +173,8 @@ describe("PackageDetailView", function () {
 
   describe("the documents a package ships in docs/", () => {
     const openDetailView = (fixture, settingsView = new SettingsView()) => {
-      atom.packages.loadPackage(path.join(__dirname, "fixtures", fixture));
-      const pack = atom.packages.getLoadedPackage(fixture);
+      lumine.packages.loadPackage(path.join(__dirname, "fixtures", fixture));
+      const pack = lumine.packages.getLoadedPackage(fixture);
       view = new PackageDetailView(pack, settingsView, packageManager, SnippetsProvider);
       return view;
     };
@@ -236,11 +236,11 @@ describe("PackageDetailView", function () {
 
       // The documents are files on disk, so unlike the sections describing what
       // the package contributes while running, they read the same either way.
-      atom.config.pushAtKeyPath("core.disabledPackages", "package-with-docs");
+      lumine.config.pushAtKeyPath("core.disabledPackages", "package-with-docs");
       expect(docsSection().querySelectorAll(".package-doc").length).toBe(2);
       expect(docsSection().style.display).toBe("");
 
-      atom.config.removeAtKeyPath("core.disabledPackages", "package-with-docs");
+      lumine.config.removeAtKeyPath("core.disabledPackages", "package-with-docs");
       expect(docsSection().querySelectorAll(".package-doc").length).toBe(2);
     });
 
@@ -265,8 +265,8 @@ describe("PackageDetailView", function () {
 
   it("adds the sections when a package that started disabled is enabled", () => {
     const packagePath = path.join(__dirname, "fixtures", "package-with-config");
-    atom.packages.packageDirPaths.push(path.join(__dirname, "fixtures"));
-    atom.config.pushAtKeyPath("core.disabledPackages", "package-with-config");
+    lumine.packages.packageDirPaths.push(path.join(__dirname, "fixtures"));
+    lumine.config.pushAtKeyPath("core.disabledPackages", "package-with-config");
     const metadata = { ...require(path.join(packagePath, "package.json")) };
 
     // A disabled package is never loaded, so the Packages list hands the detail
@@ -282,17 +282,17 @@ describe("PackageDetailView", function () {
 
     // Enabling it loads the package, so its settings appear in the panel that is
     // already open, built from the package that was just loaded.
-    atom.packages.enablePackage("package-with-config");
-    expect(view.pack).toBe(atom.packages.getLoadedPackage("package-with-config"));
+    lumine.packages.enablePackage("package-with-config");
+    expect(view.pack).toBe(lumine.packages.getLoadedPackage("package-with-config"));
     expect(settingsSection()).not.toBeNull();
     expect(settingsSection().querySelector(".control-group")).not.toBeNull();
   });
 
   it("renders an installed package README with its file path", function () {
     const packagePath = path.join(__dirname, "fixtures", "package-with-readme");
-    atom.packages.loadPackage(packagePath);
-    const pack = atom.packages.getLoadedPackage("package-with-readme");
-    const render = spyOn(atom.tools.markdown, "render").andCallThrough();
+    lumine.packages.loadPackage(packagePath);
+    const pack = lumine.packages.getLoadedPackage("package-with-readme");
+    const render = spyOn(lumine.tools.markdown, "render").andCallThrough();
 
     view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
 
@@ -301,8 +301,8 @@ describe("PackageDetailView", function () {
   });
 
   it("shows only the README while a version other than the installed one is selected", function () {
-    atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
-    const pack = atom.packages.getLoadedPackage("package-with-config");
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const pack = lumine.packages.getLoadedPackage("package-with-config");
     view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
 
     const readmeSection = view.refs.sections.querySelector('[data-section="readme"]');
@@ -348,9 +348,9 @@ describe("PackageDetailView", function () {
     expect(view.refs.sections.querySelector('[data-section="license"]')).toBeNull();
 
     expect(view.refs.licenseButton.style.display).not.toBe("none");
-    spyOn(atom.shell, "openExternal");
+    spyOn(lumine.shell, "openExternal");
     view.refs.licenseButton.click();
-    expect(atom.shell.openExternal).toHaveBeenCalledWith(metadata.licenseSource);
+    expect(lumine.shell.openExternal).toHaveBeenCalledWith(metadata.licenseSource);
   });
 
   it("asks the catalog where the LICENSE is only once the button is clicked", function () {
@@ -360,7 +360,7 @@ describe("PackageDetailView", function () {
       Promise.resolve({ body: "MIT License…", source }),
     );
     spyOn(client, "loadReadme").andReturn(Promise.resolve(null));
-    spyOn(atom.shell, "openExternal");
+    spyOn(lumine.shell, "openExternal");
 
     const metadata = {
       name: "pkg-lazy-license",
@@ -388,13 +388,13 @@ describe("PackageDetailView", function () {
     waitsForPromise(() => view.openLicense());
     runs(() => {
       expect(loadLicense).toHaveBeenCalled();
-      expect(atom.shell.openExternal).toHaveBeenCalledWith(source);
+      expect(lumine.shell.openExternal).toHaveBeenCalledWith(source);
     });
   });
 
   it("hides the LICENSE button for a package with no license at all", function () {
-    atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
-    const pack = atom.packages.getLoadedPackage("package-with-config");
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const pack = lumine.packages.getLoadedPackage("package-with-config");
     view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
 
     expect(view.licensePath).toBeNull();
@@ -402,8 +402,8 @@ describe("PackageDetailView", function () {
   });
 
   it("scrolls to the Settings section when the Settings button opens it", () => {
-    atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
-    const pack = atom.packages.getLoadedPackage("package-with-config");
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const pack = lumine.packages.getLoadedPackage("package-with-config");
     view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
 
     // Opening via the card's Settings button scrolls straight to that section,
@@ -488,8 +488,8 @@ describe("PackageDetailView", function () {
     expect(scrollIntoView).toHaveBeenCalled();
   });
 
-  it("does not call the atom.io api for package metadata when present", function () {
-    atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+  it("does not call the lumine.io api for package metadata when present", function () {
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
     packageManager.client = createClientSpy();
     view = new PackageDetailView(
       { name: "package-with-config" },
@@ -511,7 +511,7 @@ describe("PackageDetailView", function () {
 
   it("does not expose a loaded package through a same-named card from another origin", function () {
     const packagePath = path.join(__dirname, "fixtures", "package-with-config");
-    atom.packages.loadPackage(packagePath);
+    lumine.packages.loadPackage(packagePath);
     const metadata = {
       name: "package-with-config",
       version: "1.0.0",
@@ -550,7 +550,7 @@ describe("PackageDetailView", function () {
     expect(view.element.querySelectorAll(".package-card").length).toBe(0);
   });
 
-  it("renders the README successfully after a call to the atom.io api", function () {
+  it("renders the README successfully after a call to the lumine.io api", function () {
     loadPackageFromRemote("package-with-readme");
     expect(view.packageCard).toBeDefined();
     expect(view.packageCard.refs.packageName.textContent).toBe("package-with-readme");
@@ -577,8 +577,8 @@ describe("PackageDetailView", function () {
   });
 
   it("renders the README when the package path is undefined", function () {
-    atom.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-readme"));
-    const pack = atom.packages.getLoadedPackage("package-with-readme");
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-readme"));
+    const pack = lumine.packages.getLoadedPackage("package-with-readme");
     delete pack.path;
     view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
 
@@ -589,36 +589,36 @@ describe("PackageDetailView", function () {
 
   it("triggers a report issue button click and checks that the fallback repository issue tracker URL was opened", function () {
     loadCustomPackageFromRemote("package-without-bugs-property");
-    spyOn(atom.shell, "openExternal");
+    spyOn(lumine.shell, "openExternal");
     view.refs.issueButton.click();
-    expect(atom.shell.openExternal).toHaveBeenCalledWith(
+    expect(lumine.shell.openExternal).toHaveBeenCalledWith(
       "https://github.com/example/package-without-bugs-property/issues/new",
     );
   });
 
   it("triggers a report issue button click and checks that the bugs URL string was opened", function () {
     loadCustomPackageFromRemote("package-with-bugs-property-url-string");
-    spyOn(atom.shell, "openExternal");
+    spyOn(lumine.shell, "openExternal");
     view.refs.issueButton.click();
-    expect(atom.shell.openExternal).toHaveBeenCalledWith(
+    expect(lumine.shell.openExternal).toHaveBeenCalledWith(
       "https://example.com/custom-issue-tracker/new",
     );
   });
 
   it("triggers a report issue button click and checks that the bugs URL was opened", function () {
     loadCustomPackageFromRemote("package-with-bugs-property-url");
-    spyOn(atom.shell, "openExternal");
+    spyOn(lumine.shell, "openExternal");
     view.refs.issueButton.click();
-    expect(atom.shell.openExternal).toHaveBeenCalledWith(
+    expect(lumine.shell.openExternal).toHaveBeenCalledWith(
       "https://example.com/custom-issue-tracker/new",
     );
   });
 
   it("triggers a report issue button click and checks that the bugs email link was opened", function () {
     loadCustomPackageFromRemote("package-with-bugs-property-email");
-    spyOn(atom.shell, "openExternal");
+    spyOn(lumine.shell, "openExternal");
     view.refs.issueButton.click();
-    expect(atom.shell.openExternal).toHaveBeenCalledWith("mailto:issues@example.com");
+    expect(lumine.shell.openExternal).toHaveBeenCalledWith("mailto:issues@example.com");
   });
 
   it("should show 'Install' as the first breadcrumb by default", function () {

@@ -4,7 +4,7 @@ describe("LanguagesPanel", () => {
   let panel = null;
 
   beforeEach(async () => {
-    await atom.packages.activatePackage("language-javascript");
+    await lumine.packages.activatePackage("language-javascript");
     panel = new LanguagesPanel();
   });
 
@@ -41,15 +41,15 @@ describe("LanguagesPanel", () => {
     panel.refs.languageSelect.dispatchEvent(new Event("change"));
 
     panel.settingsPanel.set("language.tabLength", 8);
-    expect(atom.config.get("language.tabLength", { scope: ["source.js"] })).toBe(8);
-    expect(atom.config.get("language.tabLength")).toBe(2);
+    expect(lumine.config.get("language.tabLength", { scope: ["source.js"] })).toBe(8);
+    expect(lumine.config.get("language.tabLength")).toBe(2);
   });
 
   it("falls back to the defaults entry when the chosen grammar goes away", async () => {
     panel.refs.languageSelect.value = "source.js";
     panel.refs.languageSelect.dispatchEvent(new Event("change"));
 
-    await atom.packages.deactivatePackage("language-javascript");
+    await lumine.packages.deactivatePackage("language-javascript");
     panel.populateLanguageSelect();
     expect(panel.selectedScopeName).toBe("");
     expect(panel.refs.grammarInfo.style.display).toBe("none");

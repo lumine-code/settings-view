@@ -1,7 +1,7 @@
 /** @jsx etch.dom */
 const path = require("path");
 const _ = require("@lumine-code/underscore-plus");
-const { Disposable, CompositeDisposable } = require("atom");
+const { Disposable, CompositeDisposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 
 // Displays the keybindings for a package namespace
@@ -13,16 +13,16 @@ module.exports = class PackageKeymapView {
     this.copyFeedbackTimeouts = new Set();
     etch.initialize(this);
 
-    const packagesWithKeymapsDisabled = atom.config.get("core.packagesWithKeymapsDisabled") || [];
+    const packagesWithKeymapsDisabled = lumine.config.get("core.packagesWithKeymapsDisabled") || [];
     this.refs.keybindingToggle.checked = !packagesWithKeymapsDisabled.includes(this.namespace);
 
     const changeHandler = (event) => {
       event.stopPropagation();
       const value = this.refs.keybindingToggle.checked;
       if (value) {
-        atom.config.removeAtKeyPath("core.packagesWithKeymapsDisabled", this.namespace);
+        lumine.config.removeAtKeyPath("core.packagesWithKeymapsDisabled", this.namespace);
       } else {
-        atom.config.pushAtKeyPath("core.packagesWithKeymapsDisabled", this.namespace);
+        lumine.config.pushAtKeyPath("core.packagesWithKeymapsDisabled", this.namespace);
       }
 
       this.updateKeyBindingView();
@@ -54,7 +54,7 @@ module.exports = class PackageKeymapView {
 
     let hasKeymaps = false;
     // eslint-disable-next-line no-unused-vars
-    for (let [packageKeymapsPath, keymap] of atom.packages.getLoadedPackage(this.namespace)
+    for (let [packageKeymapsPath, keymap] of lumine.packages.getLoadedPackage(this.namespace)
       .keymaps) {
       if (Object.keys(keymap || {}).length > 0) {
         hasKeymaps = true;
@@ -121,7 +121,7 @@ module.exports = class PackageKeymapView {
   updateKeyBindingView() {
     this.refs.keybindingItems.innerHTML = "";
 
-    const packagesWithKeymapsDisabled = atom.config.get("core.packagesWithKeymapsDisabled") || [];
+    const packagesWithKeymapsDisabled = lumine.config.get("core.packagesWithKeymapsDisabled") || [];
     const keybindingsDisabled = packagesWithKeymapsDisabled.includes(this.namespace);
     if (keybindingsDisabled) {
       this.refs.keybindingItems.classList.add("text-subtle");
@@ -130,19 +130,9 @@ module.exports = class PackageKeymapView {
     }
 
     const keyBindings = [];
-    if (atom.keymaps.build) {
-      // eslint-disable-next-line no-unused-vars
-      for (const [keymapPath, keymap] of atom.packages.getLoadedPackage(this.namespace).keymaps) {
-        keyBindings.push(...atom.keymaps.build(this.namespace, keymap, 0, false));
-      }
-    } else {
-      // Backwards compatibility for Atom <= 1.19
-      for (const keyBinding of atom.keymaps.getKeyBindings()) {
-        const { command } = keyBinding;
-        if (command && command.indexOf && command.indexOf(`${this.namespace}:`) === 0) {
-          keyBindings.push(keyBinding);
-        }
-      }
+    // eslint-disable-next-line no-unused-vars
+    for (const [keymapPath, keymap] of lumine.packages.getLoadedPackage(this.namespace).keymaps) {
+      keyBindings.push(...lumine.keymaps.build(this.namespace, keymap, 0, false));
     }
 
     const visibleBindings = keyBindings
@@ -220,7 +210,7 @@ module.exports = class PackageKeymapView {
   }
 
   writeKeyBindingToClipboard({ selector, keystrokes, command }) {
-    const keymapExtension = path.extname(atom.keymaps.getUserKeymapPath());
+    const keymapExtension = path.extname(lumine.keymaps.getUserKeymapPath());
     const escapeCSON = (input) => {
       return JSON.stringify(input).slice(1, -1).replace(/\\"/g, '"').replace(/'/g, "\\'");
     };
@@ -229,7 +219,7 @@ module.exports = class PackageKeymapView {
         ? `'${escapeCSON(selector)}':\n  '${escapeCSON(keystrokes)}': '${escapeCSON(command)}'`
         : `${JSON.stringify(selector)}: {\n  ${JSON.stringify(keystrokes)}: ${JSON.stringify(command)}\n}`;
 
-    atom.clipboard.write(content);
+    lumine.clipboard.write(content);
   }
 
   showCopyFeedback(button) {

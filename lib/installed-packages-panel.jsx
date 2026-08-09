@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { CompositeDisposable, TextEditor } = require("atom");
+const { CompositeDisposable, TextEditor } = require("lumine");
 const etch = require("@lumine-code/etch");
 
 const CollapsibleSectionPanel = require("./collapsible-section-panel");
@@ -81,7 +81,7 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
 
     this.subscriptions.add(this.handleEvents());
     this.subscriptions.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => {
           this.scrollUp();
         },
@@ -298,7 +298,7 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
         } else {
           const owner = pack.owner != null ? pack.owner : ownerFromRepository(pack.repository);
           const filterText = `${pack.name} ${owner}`;
-          return atom.tools.fuzzyMatcher.score(filterText, text) > 0;
+          return lumine.tools.fuzzyMatcher.score(filterText, text) > 0;
         }
       });
 

@@ -13,14 +13,14 @@ describe("ThemesPanel", function () {
 
   beforeEach(async () => {
     jasmine.useRealClock();
-    atom.packages.loadPackage("one-theme");
-    atom.packages.packageDirPaths.push(path.join(__dirname, "fixtures"));
-    atom.config.set("theme.mode", "dark");
-    atom.config.set("theme.light", ["one-day-ui", "one-day-syntax"]);
-    atom.config.set("theme.dark", ["one-night-ui", "one-night-syntax"]);
+    lumine.packages.loadPackage("one-theme");
+    lumine.packages.packageDirPaths.push(path.join(__dirname, "fixtures"));
+    lumine.config.set("theme.mode", "dark");
+    lumine.config.set("theme.light", ["one-day-ui", "one-day-syntax"]);
+    lumine.config.set("theme.dark", ["one-night-ui", "one-night-syntax"]);
     reloadedHandler = jasmine.createSpy("reloadedHandler");
-    atom.themes.onDidChangeActiveThemes(reloadedHandler);
-    await atom.themes.activatePackages();
+    lumine.themes.onDidChangeActiveThemes(reloadedHandler);
+    await lumine.themes.activatePackages();
 
     await conditionPromise(() => reloadedHandler.callCount === 1, "themes to be reloaded");
 
@@ -38,10 +38,10 @@ describe("ThemesPanel", function () {
   });
 
   afterEach(function () {
-    if (atom.packages.isPackageLoaded("a-theme")) {
-      atom.packages.unloadPackage("a-theme");
+    if (lumine.packages.isPackageLoaded("a-theme")) {
+      lumine.packages.unloadPackage("a-theme");
     }
-    waitsForPromise(() => Promise.resolve(atom.themes.deactivateThemes()));
+    waitsForPromise(() => Promise.resolve(lumine.themes.deactivateThemes()));
   }); // Ensure works on promise and non-promise versions
 
   it("selects the configured mode and theme pairs", function () {
@@ -62,8 +62,8 @@ describe("ThemesPanel", function () {
       }
       waitsFor(() => reloadedHandler.callCount === 2);
       runs(function () {
-        expect(atom.config.get("theme.dark")).toEqual(["one-day-ui", "one-night-syntax"]);
-        expect(atom.config.get(atom.themes.getActiveThemesKeyPath())).toEqual([
+        expect(lumine.config.get("theme.dark")).toEqual(["one-day-ui", "one-night-syntax"]);
+        expect(lumine.config.get(lumine.themes.getActiveThemesKeyPath())).toEqual([
           "one-day-ui",
           "one-night-syntax",
         ]);
@@ -78,12 +78,12 @@ describe("ThemesPanel", function () {
         child.dispatchEvent(new Event("change", { bubbles: true }));
       }
       waitsFor(
-        () => atom.config.get("theme.light")[1] === "one-night-syntax",
+        () => lumine.config.get("theme.light")[1] === "one-night-syntax",
         "the light pair to update",
       );
       runs(function () {
-        expect(atom.config.get("theme.light")).toEqual(["one-day-ui", "one-night-syntax"]);
-        expect(atom.config.get(atom.themes.getActiveThemesKeyPath())).toEqual([
+        expect(lumine.config.get("theme.light")).toEqual(["one-day-ui", "one-night-syntax"]);
+        expect(lumine.config.get(lumine.themes.getActiveThemesKeyPath())).toEqual([
           "one-night-ui",
           "one-night-syntax",
         ]);
@@ -98,8 +98,8 @@ describe("ThemesPanel", function () {
 
       waitsFor(() => reloadedHandler.callCount === 2);
       runs(function () {
-        expect(atom.config.get("theme.mode")).toBe("light");
-        expect(atom.config.get(atom.themes.getActiveThemesKeyPath())).toEqual([
+        expect(lumine.config.get("theme.mode")).toBe("light");
+        expect(lumine.config.get(lumine.themes.getActiveThemesKeyPath())).toEqual([
           "one-day-ui",
           "one-day-syntax",
         ]);
@@ -111,7 +111,7 @@ describe("ThemesPanel", function () {
   describe("when the theme pair config keys change", () =>
     it("refreshes the theme menus", function () {
       reloadedHandler.reset();
-      atom.config.set("theme.dark", ["one-day-ui", "one-day-syntax"]);
+      lumine.config.set("theme.dark", ["one-day-ui", "one-day-syntax"]);
 
       waitsFor(() => reloadedHandler.callCount === 1);
 
@@ -213,7 +213,7 @@ describe("ThemesPanel", function () {
         packageManager.activateInstalledPackage(pack.name, { theme: "ui" });
         return Promise.resolve({ name: pack.name, theme: "ui" });
       });
-      spyOn(atom.packages, "loadPackage").andCallFake((name) =>
+      spyOn(lumine.packages, "loadPackage").andCallFake((name) =>
         installed.user.push({ name, theme: "ui" }),
       );
 
@@ -310,7 +310,7 @@ describe("ThemesPanel", function () {
       );
     });
 
-    afterEach(() => waitsForPromise(() => Promise.resolve(atom.themes.deactivateThemes()))); // Ensure works on promise and non-promise versions
+    afterEach(() => waitsForPromise(() => Promise.resolve(lumine.themes.deactivateThemes()))); // Ensure works on promise and non-promise versions
 
     it("has a count of zero in all headings", function () {
       for (let heading of Array.from(panel.element.querySelector(".section-heading-count"))) {

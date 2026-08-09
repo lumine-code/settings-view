@@ -3,7 +3,7 @@ const path = require("path");
 
 const _ = require("@lumine-code/underscore-plus");
 const fs = require("@lumine-code/fs-plus");
-const { CompositeDisposable, Disposable } = require("atom");
+const { CompositeDisposable, Disposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 
 const PackageCard = require("./package-card");
@@ -61,7 +61,7 @@ module.exports = class PackageDetailView {
     this.subscribeToPackageEnablement();
 
     this.disposables.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => {
           this.scrollUp();
         },
@@ -87,7 +87,7 @@ module.exports = class PackageDetailView {
       event.preventDefault();
       let bugUri = this.packageManager.getRepositoryBugUri(this.pack);
       if (bugUri) {
-        atom.shell.openExternal(bugUri);
+        lumine.shell.openExternal(bugUri);
       }
     };
     this.refs.issueButton.addEventListener("click", issueButtonClickHandler);
@@ -124,7 +124,7 @@ module.exports = class PackageDetailView {
     const openButtonClickHandler = (event) => {
       event.preventDefault();
       if (fs.existsSync(this.pack.path)) {
-        atom.app.openWindow({ pathsToOpen: [this.pack.path] });
+        lumine.app.openWindow({ pathsToOpen: [this.pack.path] });
       }
     };
     this.refs.openButton.addEventListener("click", openButtonClickHandler);
@@ -138,7 +138,7 @@ module.exports = class PackageDetailView {
       event.preventDefault();
       const repoUrl = this.packageManager.getRepositoryUrl(this.pack);
       if (repoUrl) {
-        atom.shell.openExternal(repoUrl);
+        lumine.shell.openExternal(repoUrl);
       }
     };
     this.refs.learnMoreButton.addEventListener("click", learnMoreButtonClickHandler);
@@ -204,7 +204,7 @@ module.exports = class PackageDetailView {
   }
 
   getMatchingLoadedPackage() {
-    const loadedPackage = atom.packages.getLoadedPackage(this.pack.name);
+    const loadedPackage = lumine.packages.getLoadedPackage(this.pack.name);
     if (!loadedPackage) return null;
 
     // A card that stands for a directory on disk is the loaded package only if
@@ -243,7 +243,7 @@ module.exports = class PackageDetailView {
 
   activateConfig() {
     // Package.activateConfig() is part of the Private package API and should not be used outside of core.
-    if (this.getMatchingLoadedPackage() && !atom.packages.isPackageActive(this.pack.name)) {
+    if (this.getMatchingLoadedPackage() && !lumine.packages.isPackageActive(this.pack.name)) {
       this.pack.activateConfig();
     }
   }
@@ -459,7 +459,7 @@ module.exports = class PackageDetailView {
     // question, not what it is called.
     const isBundledInstance = this.pack.tier
       ? this.pack.tier === "bundled"
-      : atom.packages.isBundledPackage(this.pack.name);
+      : lumine.packages.isBundledPackage(this.pack.name);
     const sourceIsAvailable =
       loadedPackage &&
       loadedPackage.path &&
@@ -478,7 +478,7 @@ module.exports = class PackageDetailView {
   // A package only contributes settings, keybindings, grammars, and snippets
   // while it is installed at this name and enabled.
   packageIsEnabled() {
-    return !!this.getMatchingLoadedPackage() && !atom.packages.isPackageDisabled(this.pack.name);
+    return !!this.getMatchingLoadedPackage() && !lumine.packages.isPackageDisabled(this.pack.name);
   }
 
   // A copy of a package name that another directory owns. It is on disk and
@@ -563,11 +563,11 @@ module.exports = class PackageDetailView {
   subscribeToPackageEnablement() {
     const refresh = () => this.updateEnablementState();
     this.disposables.add(
-      atom.config.onDidChange("core.disabledPackages", refresh),
-      atom.packages.onDidActivatePackage((pack) => {
+      lumine.config.onDidChange("core.disabledPackages", refresh),
+      lumine.packages.onDidActivatePackage((pack) => {
         if (pack.name === this.pack.name) refresh();
       }),
-      atom.packages.onDidDeactivatePackage((pack) => {
+      lumine.packages.onDidDeactivatePackage((pack) => {
         if (pack.name === this.pack.name) refresh();
       }),
     );
@@ -577,7 +577,7 @@ module.exports = class PackageDetailView {
     if (!this.pack.metadata) return;
 
     const loadedPackage = this.getMatchingLoadedPackage();
-    const enabled = !!loadedPackage && !atom.packages.isPackageDisabled(this.pack.name);
+    const enabled = !!loadedPackage && !lumine.packages.isPackageDisabled(this.pack.name);
     // Enabling arrives twice — as the `core.disabledPackages` change and again as
     // the activation — and every package's toggle is heard on the config change,
     // so do nothing unless this package's state or its loaded copy really moved.
@@ -601,7 +601,7 @@ module.exports = class PackageDetailView {
     const meta = this.pack.metadata || {};
     const known = meta.licenseSource || this.licenseBlobUrl();
     if (known) {
-      atom.shell.openExternal(known);
+      lumine.shell.openExternal(known);
       return;
     }
 
@@ -619,10 +619,10 @@ module.exports = class PackageDetailView {
       .catch(() => null);
     if (entry && entry.source) {
       meta.licenseSource = entry.source;
-      atom.shell.openExternal(entry.source);
+      lumine.shell.openExternal(entry.source);
     } else {
       // The manifest names a license but the repository ships no file for it.
-      atom.notifications.addWarning(`No LICENSE file found in ${this.pack.name}.`);
+      lumine.notifications.addWarning(`No LICENSE file found in ${this.pack.name}.`);
     }
   }
 
@@ -855,10 +855,10 @@ module.exports = class PackageDetailView {
   }
 
   openMarkdownFile(path) {
-    if (atom.packages.isPackageActive("markdown-preview")) {
-      atom.workspace.open(encodeURI(`markdown-preview://${path}`));
+    if (lumine.packages.isPackageActive("markdown-preview")) {
+      lumine.workspace.open(encodeURI(`markdown-preview://${path}`));
     } else {
-      atom.workspace.open(path);
+      lumine.workspace.open(path);
     }
   }
 

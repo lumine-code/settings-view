@@ -17,7 +17,7 @@ To install `settings-view` search for _settings-view_ in the Install pane of the
 
 ## Commands
 
-Commands available in `atom-workspace`:
+Commands available in `lumine-workspace`:
 
 - `settings-view:open`: open the settings view,
 - `settings-view:core`: open the core settings panel,

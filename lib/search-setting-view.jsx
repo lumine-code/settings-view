@@ -1,7 +1,7 @@
 /** @jsx etch.dom */
 const etch = require("@lumine-code/etch");
 const _ = require("@lumine-code/underscore-plus");
-const { Disposable, CompositeDisposable } = require("atom");
+const { Disposable, CompositeDisposable } = require("lumine");
 const { getSettingDescription } = require("./rich-description");
 const { getSettingTitle } = require("./rich-title");
 
@@ -27,7 +27,7 @@ module.exports = class SearchSettingView {
     // Recently-opened entries reuse this card but were never scored, so there is
     // no rank to report for them.
     const metadata =
-      this.setting.rank && atom.config.get("settings-view.searchSettingsMetadata")
+      this.setting.rank && lumine.config.get("settings-view.searchSettingsMetadata")
         ? `${this.setting.rank.totalScore.toFixed(2)} search score`
         : "";
 
@@ -129,7 +129,7 @@ module.exports = class SearchSettingView {
       if (this.settingsView && typeof this.settingsView.openSetting === "function") {
         this.settingsView.openSetting(this.setting.path);
       } else {
-        atom.workspace.open(this.getDestinationURI());
+        lumine.workspace.open(this.getDestinationURI());
       }
     };
 

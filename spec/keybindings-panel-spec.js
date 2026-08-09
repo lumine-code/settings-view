@@ -5,8 +5,8 @@ describe("KeybindingsPanel", function () {
   let [keyBindings, panel] = [];
 
   beforeEach(function () {
-    expect(atom.keymaps).toBeDefined();
-    const keySource = `${atom.app.getResourcePath()}${path.sep}keymaps`;
+    expect(lumine.keymaps).toBeDefined();
+    const keySource = `${lumine.app.getResourcePath()}${path.sep}keymaps`;
     keyBindings = [
       {
         source: keySource,
@@ -36,10 +36,10 @@ describe("KeybindingsPanel", function () {
         source: keySource,
         keystrokes: "ctrl-z'",
         command: "core:toggle",
-        selector: "atom-text-editor[data-grammar~='css']",
+        selector: "lumine-text-editor[data-grammar~='css']",
       },
     ];
-    spyOn(atom.keymaps, "getKeyBindings").andReturn(keyBindings);
+    spyOn(lumine.keymaps, "getKeyBindings").andReturn(keyBindings);
     return (panel = new KeybindingsPanel());
   });
 
@@ -69,17 +69,17 @@ describe("KeybindingsPanel", function () {
   });
 
   it("opens the user keymap and keybinding resolver from the header", () => {
-    spyOn(atom.commands, "dispatch");
-    const workspaceElement = atom.views.getView(atom.workspace);
+    spyOn(lumine.commands, "dispatch");
+    const workspaceElement = lumine.views.getView(lumine.workspace);
 
     panel.refs.openKeymapButton.click();
-    expect(atom.commands.dispatch).toHaveBeenCalledWith(
+    expect(lumine.commands.dispatch).toHaveBeenCalledWith(
       workspaceElement,
       "application:open-your-keymap",
     );
 
     panel.refs.resolverButton.click();
-    expect(atom.commands.dispatch).toHaveBeenCalledWith(
+    expect(lumine.commands.dispatch).toHaveBeenCalledWith(
       workspaceElement,
       "keybinding-resolver:toggle",
     );
@@ -88,9 +88,9 @@ describe("KeybindingsPanel", function () {
   describe("when a keybinding is copied", function () {
     describe("when the keybinding file ends in .cson", () =>
       it("writes a CSON snippet to the clipboard", function () {
-        spyOn(atom.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
+        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
         panel.element.querySelector(".copy-keybinding").click();
-        expect(atom.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
+        expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 '.editor, .platform-test':
   'ctrl-a': 'core:select-all'\
 `);
@@ -98,9 +98,9 @@ describe("KeybindingsPanel", function () {
 
     describe("when the keybinding file ends in .json", () =>
       it("writes a JSON snippet to the clipboard", function () {
-        spyOn(atom.keymaps, "getUserKeymapPath").andReturn("keymap.json");
+        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.json");
         panel.element.querySelector(".copy-keybinding").click();
-        expect(atom.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
+        expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 ".editor, .platform-test": {
   "ctrl-a": "core:select-all"
 }\
@@ -109,19 +109,19 @@ describe("KeybindingsPanel", function () {
 
     describe("when the keybinding contains special characters", function () {
       it("escapes the backslashes before copying", function () {
-        spyOn(atom.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
+        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
         panel.element.querySelectorAll(".copy-keybinding")[2].click();
-        expect(atom.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
+        expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 '.editor':
   'shift-\\\\ \\\\': 'core:undo'\
 `);
       });
 
       it("escapes the single quotes before copying", function () {
-        spyOn(atom.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
+        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
         panel.element.querySelectorAll(".copy-keybinding")[1].click();
-        expect(atom.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
-'atom-text-editor[data-grammar~=\\'css\\']':
+        expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
+'lumine-text-editor[data-grammar~=\\'css\\']':
   'ctrl-z\\'': 'core:toggle'\
 `);
       });
@@ -138,12 +138,12 @@ describe("KeybindingsPanel", function () {
   describe("when the key bindings change", () =>
     it("reloads the key bindings", function () {
       keyBindings.push({
-        source: atom.keymaps.getUserKeymapPath(),
+        source: lumine.keymaps.getUserKeymapPath(),
         keystrokes: "ctrl-b",
         command: "core:undo",
         selector: ".editor",
       });
-      atom.keymaps.emitter.emit("did-reload-keymap");
+      lumine.keymaps.emitter.emit("did-reload-keymap");
 
       waitsFor(
         "the new keybinding to show up in the keybinding panel",
@@ -162,12 +162,12 @@ describe("KeybindingsPanel", function () {
   describe("when searching key bindings", function () {
     it("find case-insensitive results", function () {
       keyBindings.push({
-        source: `${atom.app.getResourcePath()}${path.sep}keymaps`,
+        source: `${lumine.app.getResourcePath()}${path.sep}keymaps`,
         keystrokes: "F11",
         command: "window:toggle-full-screen",
         selector: "body",
       });
-      atom.keymaps.emitter.emit("did-reload-keymap");
+      lumine.keymaps.emitter.emit("did-reload-keymap");
 
       panel.filterKeyBindings(keyBindings, "f11");
 
@@ -213,7 +213,7 @@ describe("KeybindingsPanel", function () {
   describe("source filters", () => {
     beforeEach(() => {
       keyBindings.push({
-        source: atom.keymaps.getUserKeymapPath(),
+        source: lumine.keymaps.getUserKeymapPath(),
         keystrokes: "ctrl-b",
         command: "core:undo",
         selector: ".editor",
@@ -233,10 +233,10 @@ describe("KeybindingsPanel", function () {
 
   it("groups identical shortcuts across their context rows", () => {
     keyBindings.push({
-      source: `${atom.app.getResourcePath()}${path.sep}keymaps`,
+      source: `${lumine.app.getResourcePath()}${path.sep}keymaps`,
       keystrokes: "ctrl-a",
       command: "editor:select-all",
-      selector: "atom-text-editor",
+      selector: "lumine-text-editor",
     });
     panel.loadKeyBindings();
 

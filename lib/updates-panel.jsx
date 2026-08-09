@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { CompositeDisposable } = require("atom");
+const { CompositeDisposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 
 const PackageCard = require("./package-card");
@@ -24,7 +24,7 @@ module.exports = class UpdatesPanel {
     );
 
     this.subscriptions.add(
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => this.scrollUp(),
         "core:move-down": () => this.scrollDown(),
         "core:page-up": () => this.pageUp(),
