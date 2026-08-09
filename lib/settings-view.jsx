@@ -199,6 +199,11 @@ module.exports = class SettingsView {
 
     if (document.body.contains(this.element)) {
       this.refs.sidebar.style.width = this.refs.sidebar.offsetWidth;
+      // Panels are initialized on the next tick. Their first `focus()` call can
+      // therefore happen before the view is attached, where the browser drops
+      // it. Restore focus once attachment is certain so keyboard scrolling is
+      // available immediately after opening Settings.
+      this.focusActivePanel();
     }
   }
 
