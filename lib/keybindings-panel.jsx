@@ -439,7 +439,7 @@ module.exports = class KeybindingsPanel {
 
   static determineSource(filePath) {
     if (!filePath || typeof filePath !== "string") return "Unknown";
-    if (filePath.indexOf(path.join(atom.getLoadSettings().resourcePath, "keymaps")) === 0) {
+    if (filePath.indexOf(path.join(atom.app.getResourcePath(), "keymaps")) === 0) {
       return "Core";
     }
     if (filePath === atom.keymaps.getUserKeymapPath()) return "User";

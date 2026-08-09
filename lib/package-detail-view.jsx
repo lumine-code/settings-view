@@ -87,7 +87,7 @@ module.exports = class PackageDetailView {
       event.preventDefault();
       let bugUri = this.packageManager.getRepositoryBugUri(this.pack);
       if (bugUri) {
-        atom.openExternal(bugUri);
+        atom.shell.openExternal(bugUri);
       }
     };
     this.refs.issueButton.addEventListener("click", issueButtonClickHandler);
@@ -124,7 +124,7 @@ module.exports = class PackageDetailView {
     const openButtonClickHandler = (event) => {
       event.preventDefault();
       if (fs.existsSync(this.pack.path)) {
-        atom.open({ pathsToOpen: [this.pack.path] });
+        atom.app.openWindow({ pathsToOpen: [this.pack.path] });
       }
     };
     this.refs.openButton.addEventListener("click", openButtonClickHandler);
@@ -138,7 +138,7 @@ module.exports = class PackageDetailView {
       event.preventDefault();
       const repoUrl = this.packageManager.getRepositoryUrl(this.pack);
       if (repoUrl) {
-        atom.openExternal(repoUrl);
+        atom.shell.openExternal(repoUrl);
       }
     };
     this.refs.learnMoreButton.addEventListener("click", learnMoreButtonClickHandler);
@@ -601,7 +601,7 @@ module.exports = class PackageDetailView {
     const meta = this.pack.metadata || {};
     const known = meta.licenseSource || this.licenseBlobUrl();
     if (known) {
-      atom.openExternal(known);
+      atom.shell.openExternal(known);
       return;
     }
 
@@ -619,7 +619,7 @@ module.exports = class PackageDetailView {
       .catch(() => null);
     if (entry && entry.source) {
       meta.licenseSource = entry.source;
-      atom.openExternal(entry.source);
+      atom.shell.openExternal(entry.source);
     } else {
       // The manifest names a license but the repository ships no file for it.
       atom.notifications.addWarning(`No LICENSE file found in ${this.pack.name}.`);

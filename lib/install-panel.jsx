@@ -928,7 +928,7 @@ module.exports = class InstallPanel {
 
   didClickOpenAtomIo(event) {
     event.preventDefault();
-    atom.openExternal(this.atomIoURL);
+    atom.shell.openExternal(this.atomIoURL);
   }
 
   scrollUp() {

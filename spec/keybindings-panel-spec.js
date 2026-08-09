@@ -6,7 +6,7 @@ describe("KeybindingsPanel", function () {
 
   beforeEach(function () {
     expect(atom.keymaps).toBeDefined();
-    const keySource = `${atom.getLoadSettings().resourcePath}${path.sep}keymaps`;
+    const keySource = `${atom.app.getResourcePath()}${path.sep}keymaps`;
     keyBindings = [
       {
         source: keySource,
@@ -162,7 +162,7 @@ describe("KeybindingsPanel", function () {
   describe("when searching key bindings", function () {
     it("find case-insensitive results", function () {
       keyBindings.push({
-        source: `${atom.getLoadSettings().resourcePath}${path.sep}keymaps`,
+        source: `${atom.app.getResourcePath()}${path.sep}keymaps`,
         keystrokes: "F11",
         command: "window:toggle-full-screen",
         selector: "body",
@@ -233,7 +233,7 @@ describe("KeybindingsPanel", function () {
 
   it("groups identical shortcuts across their context rows", () => {
     keyBindings.push({
-      source: `${atom.getLoadSettings().resourcePath}${path.sep}keymaps`,
+      source: `${atom.app.getResourcePath()}${path.sep}keymaps`,
       keystrokes: "ctrl-a",
       command: "editor:select-all",
       selector: "atom-text-editor",

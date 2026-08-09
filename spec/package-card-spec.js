@@ -1100,13 +1100,13 @@ describe("PackageCard", function () {
     };
     card = new PackageCard(pack, new SettingsView(), packageManager);
 
-    spyOn(atom, "openExternal");
+    spyOn(atom.shell, "openExternal");
     jasmine.attachToDOM(card.element);
     const badge = card.element.querySelector(".package-badge-dot");
     expect(badge).toExist();
     expect(badge).toHaveClass("badge-dot-warn");
     badge?.click();
-    expect(atom.openExternal).toHaveBeenCalledWith("https://example.com");
+    expect(atom.shell.openExternal).toHaveBeenCalledWith("https://example.com");
   });
 
   describe("when the package is not installed", function () {

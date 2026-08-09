@@ -649,7 +649,7 @@ module.exports = class PackageCard {
         this.compatibleVersionNote = null;
         this.refs.versionValue.classList.add("text-error");
         console.error(
-          `No available version compatible with the installed Lumine version: ${atom.getVersion()}`,
+          `No available version compatible with the installed Lumine version: ${atom.app.getVersion()}`,
         );
       }
 
@@ -785,7 +785,7 @@ module.exports = class PackageCard {
       event.stopPropagation();
       const repoUrl = repoUrlFromRepository(this.pack.repository);
       if (repoUrl) {
-        atom.openExternal(repoUrl);
+        atom.shell.openExternal(repoUrl);
       }
     };
     if (this.refs.repoLink) {
@@ -813,7 +813,7 @@ module.exports = class PackageCard {
       event.stopPropagation();
       const owner = ownerFromRepository(this.pack.repository);
       if (owner) {
-        atom.openExternal(`https://github.com/${owner}`);
+        atom.shell.openExternal(`https://github.com/${owner}`);
       }
     };
     this.refs.avatarLink.addEventListener("click", packageAuthorClickHandler);
@@ -876,12 +876,7 @@ module.exports = class PackageCard {
       // Don't hit the web for our bundled packages. Just use the local image.
       let avatarPath = path.join(process.resourcesPath, "lumine.png");
       if (!fs.existsSync(avatarPath)) {
-        avatarPath = path.join(
-          atom.getLoadSettings().resourcePath,
-          "resources",
-          "app-icons",
-          "lumine.png",
-        );
+        avatarPath = path.join(atom.app.getResourcePath(), "resources", "app-icons", "lumine.png");
       }
       this.refs.avatar.src = `file://${avatarPath}`;
     } else {
@@ -1279,7 +1274,7 @@ module.exports = class PackageCard {
 
   displayNotInstalledState() {
     this.refs.uninstallButton.style.display = "none";
-    const atomVersion = this.packageManager.normalizeVersion(atom.getVersion());
+    const atomVersion = this.packageManager.normalizeVersion(atom.app.getVersion());
     if (!this.packageManager.satisfiesVersion(atomVersion, this.pack)) {
       // Incompatible engine: keep the card in the list with a disabled Install.
       // A catalog card can switch to another ref (whose engine may match), so it

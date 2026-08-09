@@ -22,7 +22,7 @@ module.exports = class BadgeView {
       const clickHandler = (event) => {
         event.stopPropagation();
         event.preventDefault();
-        atom.openExternal(this.badge.link);
+        atom.shell.openExternal(this.badge.link);
       };
       this.element.addEventListener("click", clickHandler);
       this.disposables.add(

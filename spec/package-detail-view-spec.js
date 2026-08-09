@@ -348,9 +348,9 @@ describe("PackageDetailView", function () {
     expect(view.refs.sections.querySelector('[data-section="license"]')).toBeNull();
 
     expect(view.refs.licenseButton.style.display).not.toBe("none");
-    spyOn(atom, "openExternal");
+    spyOn(atom.shell, "openExternal");
     view.refs.licenseButton.click();
-    expect(atom.openExternal).toHaveBeenCalledWith(metadata.licenseSource);
+    expect(atom.shell.openExternal).toHaveBeenCalledWith(metadata.licenseSource);
   });
 
   it("asks the catalog where the LICENSE is only once the button is clicked", function () {
@@ -360,7 +360,7 @@ describe("PackageDetailView", function () {
       Promise.resolve({ body: "MIT License…", source }),
     );
     spyOn(client, "loadReadme").andReturn(Promise.resolve(null));
-    spyOn(atom, "openExternal");
+    spyOn(atom.shell, "openExternal");
 
     const metadata = {
       name: "pkg-lazy-license",
@@ -388,7 +388,7 @@ describe("PackageDetailView", function () {
     waitsForPromise(() => view.openLicense());
     runs(() => {
       expect(loadLicense).toHaveBeenCalled();
-      expect(atom.openExternal).toHaveBeenCalledWith(source);
+      expect(atom.shell.openExternal).toHaveBeenCalledWith(source);
     });
   });
 
@@ -589,32 +589,36 @@ describe("PackageDetailView", function () {
 
   it("triggers a report issue button click and checks that the fallback repository issue tracker URL was opened", function () {
     loadCustomPackageFromRemote("package-without-bugs-property");
-    spyOn(atom, "openExternal");
+    spyOn(atom.shell, "openExternal");
     view.refs.issueButton.click();
-    expect(atom.openExternal).toHaveBeenCalledWith(
+    expect(atom.shell.openExternal).toHaveBeenCalledWith(
       "https://github.com/example/package-without-bugs-property/issues/new",
     );
   });
 
   it("triggers a report issue button click and checks that the bugs URL string was opened", function () {
     loadCustomPackageFromRemote("package-with-bugs-property-url-string");
-    spyOn(atom, "openExternal");
+    spyOn(atom.shell, "openExternal");
     view.refs.issueButton.click();
-    expect(atom.openExternal).toHaveBeenCalledWith("https://example.com/custom-issue-tracker/new");
+    expect(atom.shell.openExternal).toHaveBeenCalledWith(
+      "https://example.com/custom-issue-tracker/new",
+    );
   });
 
   it("triggers a report issue button click and checks that the bugs URL was opened", function () {
     loadCustomPackageFromRemote("package-with-bugs-property-url");
-    spyOn(atom, "openExternal");
+    spyOn(atom.shell, "openExternal");
     view.refs.issueButton.click();
-    expect(atom.openExternal).toHaveBeenCalledWith("https://example.com/custom-issue-tracker/new");
+    expect(atom.shell.openExternal).toHaveBeenCalledWith(
+      "https://example.com/custom-issue-tracker/new",
+    );
   });
 
   it("triggers a report issue button click and checks that the bugs email link was opened", function () {
     loadCustomPackageFromRemote("package-with-bugs-property-email");
-    spyOn(atom, "openExternal");
+    spyOn(atom.shell, "openExternal");
     view.refs.issueButton.click();
-    expect(atom.openExternal).toHaveBeenCalledWith("mailto:issues@example.com");
+    expect(atom.shell.openExternal).toHaveBeenCalledWith("mailto:issues@example.com");
   });
 
   it("should show 'Install' as the first breadcrumb by default", function () {

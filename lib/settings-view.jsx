@@ -151,7 +151,7 @@ module.exports = class SettingsView {
     );
 
     const openDotAtomClickHandler = () => {
-      atom.open({ pathsToOpen: [atom.getConfigDirPath()] });
+      atom.app.openWindow({ pathsToOpen: [atom.getConfigDirPath()] });
     };
     this.refs.openDotAtom.addEventListener("click", openDotAtomClickHandler);
     this.disposables.add(
@@ -220,9 +220,7 @@ module.exports = class SettingsView {
     this.packages = atom.packages.getLoadedPackages();
 
     try {
-      const packageMetadata = require(
-        path.join(atom.getLoadSettings().resourcePath, "package.json"),
-      );
+      const packageMetadata = require(path.join(atom.app.getResourcePath(), "package.json"));
       bundledPackageMetadataCache = packageMetadata ? packageMetadata._atomPackages : null;
     } catch {
       /* no bundled package metadata */
