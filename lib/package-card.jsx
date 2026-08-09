@@ -759,7 +759,7 @@ module.exports = class PackageCard {
               {
                 text: "Restart now",
                 onDidClick() {
-                  return atom.restartApplication();
+                  return atom.app.restart();
                 },
               },
               {

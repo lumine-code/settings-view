@@ -7,10 +7,7 @@ function isSupported() {
 }
 
 function isDefaultProtocolClient() {
-  return require("@electron/remote").app.isDefaultProtocolClient("lumine", process.execPath, [
-    "--uri-handler",
-    "--",
-  ]);
+  return atom.app.isDefaultProtocolClient("lumine", process.execPath, ["--uri-handler", "--"]);
 }
 
 function setAsDefaultProtocolClient() {
@@ -18,10 +15,7 @@ function setAsDefaultProtocolClient() {
   // hacks to make it work on Linux; see https://github.com/electron/electron/issues/6440
   return (
     isSupported() &&
-    require("@electron/remote").app.setAsDefaultProtocolClient("lumine", process.execPath, [
-      "--uri-handler",
-      "--",
-    ])
+    atom.app.setAsDefaultProtocolClient("lumine", process.execPath, ["--uri-handler", "--"])
   );
 }
 
@@ -29,7 +23,7 @@ module.exports = class UriHandlerPanel {
   constructor() {
     this.handleChange = this.handleChange.bind(this);
     this.handleBecomeProtocolClient = this.handleBecomeProtocolClient.bind(this);
-    this.isDefaultProtocolClient = isDefaultProtocolClient();
+    this.isDefaultProtocolClient = false;
     // Seed from the registry rather than starting empty: the panel is built
     // lazily, on the first switch to it, so every URI handled before that point
     // is already in the history and would otherwise never be shown.
@@ -63,6 +57,7 @@ module.exports = class UriHandlerPanel {
         etch.update(this);
       }),
     );
+    void this.refreshProtocolClientState();
   }
 
   destroy() {
@@ -190,14 +185,18 @@ module.exports = class UriHandlerPanel {
     atom.config.set("core.uriHandlerRegistration", evt.target.value);
   }
 
-  handleBecomeProtocolClient(evt) {
+  async handleBecomeProtocolClient(evt) {
     evt.preventDefault();
-    if (setAsDefaultProtocolClient()) {
-      this.isDefaultProtocolClient = isDefaultProtocolClient();
-      etch.update(this);
+    if (await setAsDefaultProtocolClient()) {
+      await this.refreshProtocolClientState();
     } else {
       atom.notifications.addError("Could not become default protocol client");
     }
+  }
+
+  async refreshProtocolClientState() {
+    this.isDefaultProtocolClient = isSupported() && (await isDefaultProtocolClient());
+    await etch.update(this);
   }
 
   focus() {
