@@ -7,9 +7,9 @@ const SettingsView = require("../lib/settings-view");
 
 describe("PackageCard", function () {
   const setPackageStatusSpies = function (opts) {
-    spyOn(PackageCard.prototype, "isInstalled").andReturn(opts.installed);
-    spyOn(PackageCard.prototype, "isDisabled").andReturn(opts.disabled);
-    spyOn(PackageCard.prototype, "hasSettings").andReturn(opts.hasSettings);
+    spyOn(PackageCard.prototype, "isInstalled").and.returnValue(opts.installed);
+    spyOn(PackageCard.prototype, "isDisabled").and.returnValue(opts.disabled);
+    spyOn(PackageCard.prototype, "hasSettings").and.returnValue(opts.hasSettings);
   };
 
   let [card, packageManager] = [];
@@ -110,7 +110,7 @@ describe("PackageCard", function () {
   it("loads the author avatar for a hydrated installed card", function () {
     setPackageStatusSpies({ installed: false, disabled: false });
     const avatarCache = { avatar: jasmine.createSpy("avatar") };
-    spyOn(packageManager, "getAvatarCache").andReturn(avatarCache);
+    spyOn(packageManager, "getAvatarCache").and.returnValue(avatarCache);
 
     card = new PackageCard(
       {
@@ -126,7 +126,7 @@ describe("PackageCard", function () {
     // The avatar comes from the author's GitHub avatar URL by owner login, not
     // the package registry, so catalog cards show it too.
     expect(avatarCache.avatar).toHaveBeenCalled();
-    expect(avatarCache.avatar.mostRecentCall.args[0]).toBe("owner");
+    expect(avatarCache.avatar.calls.mostRecent().args[0]).toBe("owner");
   });
 
   describe("the directory a package lives in", function () {
@@ -188,7 +188,7 @@ describe("PackageCard", function () {
   describe("replacing a conflicting package", function () {
     it("offers Replace when a different package holds the name, and swaps on click", function () {
       setPackageStatusSpies({ installed: true, disabled: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "linter",
         version: "1.0.0",
         apmInstallSource: { type: "git", origin: "author-a/linter" },
@@ -208,7 +208,7 @@ describe("PackageCard", function () {
       card.refs.replaceButton.click();
 
       expect(replaceSpy).toHaveBeenCalled();
-      expect(replaceSpy.mostRecentCall.args[0].name).toBe("linter");
+      expect(replaceSpy.calls.mostRecent().args[0].name).toBe("linter");
     });
 
     it("hides Replace for a normal installable package", function () {
@@ -227,7 +227,7 @@ describe("PackageCard", function () {
       // sources (e.g. a stale Git remote vs an updated package.json), but a
       // card carrying the install path IS the installed package.
       setPackageStatusSpies({ installed: true, disabled: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "linter",
         version: "1.0.0",
         repository: "https://github.com/new-owner/linter",
@@ -280,7 +280,7 @@ describe("PackageCard", function () {
 
     it("blocks the native list, shows a spinner, and lists tags on open", async function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "lazy-refs",
         version: "1.0.0",
         repository: "owner/lazy-refs",
@@ -293,7 +293,7 @@ describe("PackageCard", function () {
         },
       });
       const client = packageManager.getCatalogClient();
-      const loadRefs = spyOn(client, "loadRefs").andCallFake((pack) =>
+      const loadRefs = spyOn(client, "loadRefs").and.callFake((pack) =>
         Promise.resolve({
           ...pack,
           refs: { defaultBranch: "main", tags: [{ name: "v1.0.0", sha: "a".repeat(40) }] },
@@ -339,7 +339,7 @@ describe("PackageCard", function () {
 
     it("reflects the installed branch, not the catalog tag, in the version selector", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "invert-colors",
         version: "0.5.0",
         repository: "asiloisad/community-invert-colors",
@@ -376,7 +376,7 @@ describe("PackageCard", function () {
 
     it("offers an update on the browse card when the installed branch HEAD advanced", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "invert-colors",
         version: "0.5.0",
         repository: "asiloisad/community-invert-colors",
@@ -421,7 +421,7 @@ describe("PackageCard", function () {
         name: "old-package-name",
         originKey: "github.com/owner/repo",
       };
-      spyOn(packageManager, "findInstalledPackageByOrigin").andCallFake(() => installed);
+      spyOn(packageManager, "findInstalledPackageByOrigin").and.callFake(() => installed);
       spyOn(packageManager, "install");
       card = new PackageCard(
         {
@@ -517,7 +517,7 @@ describe("PackageCard", function () {
 
   it("disables install with a hover note when no compatible version exists", function () {
     setPackageStatusSpies({ installed: false, disabled: false });
-    spyOn(packageManager, "loadCompatiblePackageVersion").andCallFake((name, cb) => cb(null, {}));
+    spyOn(packageManager, "loadCompatiblePackageVersion").and.callFake((name, cb) => cb(null, {}));
     card = new PackageCard(
       {
         name: "test-engines-package",
@@ -679,8 +679,8 @@ describe("PackageCard", function () {
     it("moves to the conflict state if that install succeeds", function () {
       emitFor("package-installing");
       jasmine.unspy(PackageCard.prototype, "isInstalled");
-      spyOn(PackageCard.prototype, "isInstalled").andReturn(true);
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "isInstalled").and.returnValue(true);
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "hydrogen-next",
         apmInstallSource: { type: "git", source: "lumine-code/hydrogen-next" },
       });
@@ -699,7 +699,7 @@ describe("PackageCard", function () {
       // upstream must still be treated as a *different* package (conflict), and
       // only the card matching the real install source is "installed".
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: true });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "hydrogen-next",
         repository: "https://github.com/asiloisad/community-hydrogen-next",
         apmInstallSource: {
@@ -732,7 +732,7 @@ describe("PackageCard", function () {
 
     it("offers Replace instead of Install, with an explanatory tooltip", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: true });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "shared-name",
         repository: "https://github.com/someone-else/shared-name.git",
       });
@@ -751,7 +751,7 @@ describe("PackageCard", function () {
 
     it("does not install while in the conflict state", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: true });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "shared-name",
         repository: "https://github.com/someone-else/shared-name.git",
       });
@@ -768,7 +768,7 @@ describe("PackageCard", function () {
 
     it("re-enables the install button once the origin no longer conflicts", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: true });
-      const metadataSpy = spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      const metadataSpy = spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "shared-name",
         repository: "https://github.com/someone-else/shared-name.git",
       });
@@ -781,7 +781,7 @@ describe("PackageCard", function () {
       expect(card.refs.installButton).toHaveClass("disabled");
 
       // The conflicting package is uninstalled; the origin no longer clashes.
-      metadataSpy.andReturn({
+      metadataSpy.and.returnValue({
         name: "shared-name",
         repository: "https://github.com/catalog-owner/shared-name.git",
       });
@@ -792,7 +792,7 @@ describe("PackageCard", function () {
 
     it("shows the regular installed state when the origins match", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "shared-name",
         repository: "https://github.com/catalog-owner/shared-name.git",
       });
@@ -808,7 +808,7 @@ describe("PackageCard", function () {
 
     it("offers Replace when the name matches a bundled package from another origin", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "search-panel",
         repository: "https://github.com/lumine-code/lumine.git",
       });
@@ -826,8 +826,8 @@ describe("PackageCard", function () {
 
     it("keeps the Uninstall button on a installed package overriding a bundled name", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(lumine.packages, "isBundledPackage").andCallFake((name) => name === "fuzzy-explorer");
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn(null);
+      spyOn(lumine.packages, "isBundledPackage").and.callFake((name) => name === "fuzzy-explorer");
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue(null);
       card = new PackageCard(
         {
           name: "fuzzy-explorer",
@@ -853,8 +853,8 @@ describe("PackageCard", function () {
       // Linked or copied in by hand, so there is no install receipt to go by:
       // what makes this a real install is the directory it was found in.
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(lumine.packages, "isBundledPackage").andCallFake((name) => name === "about");
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn(null);
+      spyOn(lumine.packages, "isBundledPackage").and.callFake((name) => name === "about");
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue(null);
       card = new PackageCard(
         {
           name: "about",
@@ -873,7 +873,7 @@ describe("PackageCard", function () {
 
     it("keeps the bundled copy of that name un-uninstallable", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(lumine.packages, "isBundledPackage").andCallFake((name) => name === "about");
+      spyOn(lumine.packages, "isBundledPackage").and.callFake((name) => name === "about");
       card = new PackageCard(
         { name: "about", version: "1.0.0", tier: "bundled", packageKind: "builtin" },
         new SettingsView(),
@@ -886,7 +886,7 @@ describe("PackageCard", function () {
 
     it("renders an overridden bundled package as a greyed-out informational card", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: true });
-      spyOn(lumine.packages, "isBundledPackage").andReturn(true);
+      spyOn(lumine.packages, "isBundledPackage").and.returnValue(true);
       card = new PackageCard(
         {
           name: "fuzzy-explorer",
@@ -914,7 +914,7 @@ describe("PackageCard", function () {
 
     it("blocks Override until the conflicting installed card validates", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "search-panel",
         repository: "https://github.com/lumine-code/lumine.git",
       });
@@ -939,7 +939,7 @@ describe("PackageCard", function () {
 
     it("does not open the installed package's settings from a conflicting card", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: true });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "shared-name",
         repository: "https://github.com/someone-else/shared-name.git",
       });
@@ -957,7 +957,7 @@ describe("PackageCard", function () {
 
     it("offers an update when the same package is installed with an older version", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "shared-name",
         version: "1.0.0",
         repository: "https://github.com/user/shared-name.git",
@@ -977,7 +977,7 @@ describe("PackageCard", function () {
 
     it("shows no update when the installed version matches the catalog version", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "shared-name",
         version: "1.2.0",
         repository: "https://github.com/user/shared-name.git",
@@ -995,7 +995,7 @@ describe("PackageCard", function () {
 
     it("treats an installed package without origin information as the same package", function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({ name: "shared-name" });
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({ name: "shared-name" });
       card = new PackageCard(
         { name: "shared-name", repository: "catalog-owner/shared-name" },
         new SettingsView(),
@@ -1031,9 +1031,9 @@ describe("PackageCard", function () {
     expect(card.refs.updateButton.textContent).toContain("Update to 1.2.0");
   });
 
-  it("offers Update and previews the selected version's description on an installed card", function () {
+  it("offers Update and previews the selected version's description on an installed card", async () => {
     setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-    spyOn(packageManager, "inspectPackageUpdate").andReturn(
+    spyOn(packageManager, "inspectPackageUpdate").and.returnValue(
       Promise.resolve({ name: "git-package", version: "2.0.0", description: "Two point oh" }),
     );
     card = new PackageCard(
@@ -1069,19 +1069,17 @@ describe("PackageCard", function () {
     expect(card.refs.updateButton).toBeVisible();
     expect(card.refs.updateButton.textContent).toContain("Update to 2.0.0");
     expect(card.pack.latestSha).toBe("b".repeat(40));
-    const previewArgs = packageManager.inspectPackageUpdate.mostRecentCall.args;
+    const previewArgs = packageManager.inspectPackageUpdate.calls.mostRecent().args;
     expect(previewArgs[1]).toBe("b".repeat(40));
     expect(previewArgs[2]).toEqual({ type: "tag", value: "v2.0.0" });
 
     // The description is previewed from the selected version's manifest.
-    waitsFor(() => card.refs.packageDescription.textContent === "Two point oh");
+    await conditionPromise(() => card.refs.packageDescription.textContent === "Two point oh");
 
-    runs(() => {
-      // Selecting the installed version again clears the update and restores it.
-      card.applyInstalledVersionSelection({ type: "tag", value: "v1.0.0" });
-      expect(card.refs.updateButton).not.toBeVisible();
-      expect(card.refs.packageDescription.textContent).toBe("One point oh");
-    });
+    // Selecting the installed version again clears the update and restores it.
+    card.applyInstalledVersionSelection({ type: "tag", value: "v1.0.0" });
+    expect(card.refs.updateButton).not.toBeVisible();
+    expect(card.refs.packageDescription.textContent).toBe("One point oh");
   });
 
   it("shows a badge", function () {
@@ -1142,7 +1140,7 @@ describe("PackageCard", function () {
 
     it("can be installed if currently not installed and package latest release engine match lumine version", function () {
       spyOn(packageManager, "install");
-      spyOn(packageManager, "loadCompatiblePackageVersion").andCallFake(
+      spyOn(packageManager, "loadCompatiblePackageVersion").and.callFake(
         function (packageName, callback) {
           const pack = {
             name: packageName,
@@ -1177,7 +1175,7 @@ describe("PackageCard", function () {
       expect(card.refs.uninstallButton.style.display).toBe("none");
       card.refs.installButton.click();
       expect(packageManager.install).toHaveBeenCalled();
-      expect(packageManager.install.mostRecentCall.args[0]).toEqual({
+      expect(packageManager.install.calls.mostRecent().args[0]).toEqual({
         name: "test-package",
         version: "0.1.0",
         engines: {
@@ -1188,7 +1186,7 @@ describe("PackageCard", function () {
 
     it("can be installed with a previous version whose engine match the current lumine version", function () {
       spyOn(packageManager, "install");
-      spyOn(packageManager, "loadCompatiblePackageVersion").andCallFake(
+      spyOn(packageManager, "loadCompatiblePackageVersion").and.callFake(
         function (packageName, callback) {
           const pack = {
             name: packageName,
@@ -1226,7 +1224,7 @@ describe("PackageCard", function () {
       expect(card.installNoteTooltip).toBeTruthy();
       card.refs.installButton.click();
       expect(packageManager.install).toHaveBeenCalled();
-      expect(packageManager.install.mostRecentCall.args[0]).toEqual({
+      expect(packageManager.install.calls.mostRecent().args[0]).toEqual({
         name: "test-package",
         version: "0.0.1",
         engines: {
@@ -1236,7 +1234,7 @@ describe("PackageCard", function () {
     });
 
     it("can't be installed if there is no version compatible with the current lumine version", function () {
-      spyOn(packageManager, "loadCompatiblePackageVersion").andCallFake(
+      spyOn(packageManager, "loadCompatiblePackageVersion").and.callFake(
         function (packageName, callback) {
           const pack = { name: packageName };
 
@@ -1266,14 +1264,14 @@ describe("PackageCard", function () {
   });
 
   describe("when the package is installed", function () {
-    beforeEach(function () {
+    beforeEach(async () => {
       lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
-      return waitsFor(() => lumine.packages.isPackageLoaded("package-with-config") === true);
+      await conditionPromise(() => lumine.packages.isPackageLoaded("package-with-config") === true);
     });
 
     it("can be disabled if installed", function () {
       setPackageStatusSpies({ installed: true, disabled: false });
-      spyOn(lumine.packages, "disablePackage").andReturn(true);
+      spyOn(lumine.packages, "disablePackage").and.returnValue(true);
 
       card = new PackageCard({ name: "test-package" }, new SettingsView(), packageManager);
       expect(card.refs.enablementButton.querySelector(".disable-text").textContent).toBe("Disable");
@@ -1281,7 +1279,7 @@ describe("PackageCard", function () {
       expect(lumine.packages.disablePackage).toHaveBeenCalled();
     });
 
-    it("can be updated", function () {
+    it("can be updated", async () => {
       const pack = lumine.packages.getLoadedPackage("package-with-config");
       pack.latestVersion = "1.1.0";
       pack.latestSha = "abcdef1234567890";
@@ -1296,7 +1294,7 @@ describe("PackageCard", function () {
       // installGitHubPackage resolves with the installed package's metadata,
       // which carries the apmInstallSource (and thus the origin) — mirror that so
       // the "updated" event is recognized as this card's own package.
-      spyOn(packageManager, "installGitHubPackage").andReturn(
+      spyOn(packageManager, "installGitHubPackage").and.returnValue(
         Promise.resolve({
           name: "package-with-config",
           apmInstallSource: { type: "git", source: "example/package-with-config" },
@@ -1304,7 +1302,7 @@ describe("PackageCard", function () {
       );
 
       const originalLoadPackage = lumine.packages.loadPackage;
-      spyOn(lumine.packages, "loadPackage").andCallFake(() =>
+      spyOn(lumine.packages, "loadPackage").and.callFake(() =>
         originalLoadPackage.call(
           lumine.packages,
           path.join(__dirname, "fixtures", "package-with-config"),
@@ -1317,12 +1315,12 @@ describe("PackageCard", function () {
 
       card.update().catch(() => {});
 
-      waitsFor(() => packageUpdated);
+      await conditionPromise(() => packageUpdated);
 
-      runs(() => expect(card.refs.updateButton).not.toBeVisible());
+      expect(card.refs.updateButton).not.toBeVisible();
     });
 
-    it("keeps the update button visible if the update failed", function () {
+    it("keeps the update button visible if the update failed", async () => {
       const pack = lumine.packages.getLoadedPackage("package-with-config");
       pack.latestVersion = "1.1.0";
       pack.latestSha = "abcdef1234567890";
@@ -1334,10 +1332,12 @@ describe("PackageCard", function () {
       let updateFailed = false;
 
       packageManager.on("package-update-failed", () => (updateFailed = true));
-      spyOn(packageManager, "installGitHubPackage").andReturn(Promise.reject(new Error("boom")));
+      spyOn(packageManager, "installGitHubPackage").and.returnValue(
+        Promise.reject(new Error("boom")),
+      );
 
       const originalLoadPackage = lumine.packages.loadPackage;
-      spyOn(lumine.packages, "loadPackage").andCallFake(() =>
+      spyOn(lumine.packages, "loadPackage").and.callFake(() =>
         originalLoadPackage.call(
           lumine.packages,
           path.join(__dirname, "fixtures", "package-with-config"),
@@ -1350,12 +1350,12 @@ describe("PackageCard", function () {
 
       card.update();
 
-      waitsFor(() => updateFailed);
+      await conditionPromise(() => updateFailed);
 
-      runs(() => expect(card.refs.updateButton).toBeVisible());
+      expect(card.refs.updateButton).toBeVisible();
     });
 
-    it("does not error when attempting to update without any update available", function () {
+    it("does not error when attempting to update without any update available", async () => {
       // While this cannot be done through the package card UI,
       // updates can still be triggered through the Updates panel's Update All button
       // https://github.com/atom/settings-view/issues/879
@@ -1363,7 +1363,7 @@ describe("PackageCard", function () {
       const pack = lumine.packages.getLoadedPackage("package-with-config");
 
       const originalLoadPackage = lumine.packages.loadPackage;
-      spyOn(lumine.packages, "loadPackage").andCallFake(() =>
+      spyOn(lumine.packages, "loadPackage").and.callFake(() =>
         originalLoadPackage.call(
           lumine.packages,
           path.join(__dirname, "fixtures", "package-with-config"),
@@ -1374,12 +1374,12 @@ describe("PackageCard", function () {
       jasmine.attachToDOM(card.element);
       expect(card.refs.updateButton).not.toBeVisible();
 
-      waitsForPromise(() => card.update());
+      await card.update();
 
-      runs(() => expect(card.refs.updateButton).not.toBeVisible());
+      expect(card.refs.updateButton).not.toBeVisible();
     });
 
-    it("will stay disabled after an update", function () {
+    it("will stay disabled after an update", async () => {
       const pack = lumine.packages.getLoadedPackage("package-with-config");
       pack.latestVersion = "1.1.0";
       pack.latestSha = "abcdef1234567890";
@@ -1392,7 +1392,7 @@ describe("PackageCard", function () {
 
       packageManager.on("package-updated", () => (packageUpdated = true));
       // See "can be updated": the resolved pack keeps its apmInstallSource/origin.
-      spyOn(packageManager, "installGitHubPackage").andReturn(
+      spyOn(packageManager, "installGitHubPackage").and.returnValue(
         Promise.resolve({
           name: "package-with-config",
           apmInstallSource: { type: "git", source: "example/package-with-config" },
@@ -1400,7 +1400,7 @@ describe("PackageCard", function () {
       );
 
       const originalLoadPackage = lumine.packages.loadPackage;
-      spyOn(lumine.packages, "loadPackage").andCallFake(() =>
+      spyOn(lumine.packages, "loadPackage").and.callFake(() =>
         originalLoadPackage.call(
           lumine.packages,
           path.join(__dirname, "fixtures", "package-with-config"),
@@ -1412,17 +1412,17 @@ describe("PackageCard", function () {
       expect(lumine.packages.isPackageDisabled("package-with-config")).toBe(true);
       card.update();
 
-      waitsFor(() => packageUpdated);
+      await conditionPromise(() => packageUpdated);
 
-      runs(() => expect(lumine.packages.isPackageDisabled("package-with-config")).toBe(true));
+      expect(lumine.packages.isPackageDisabled("package-with-config")).toBe(true);
     });
 
-    it("is uninstalled when the uninstallButton is clicked", function () {
+    it("is uninstalled when the uninstallButton is clicked", async () => {
       setPackageStatusSpies({ installed: true, disabled: false });
 
       let [uninstallCallback] = [];
-      spyOn(packageManager, "install").andCallThrough();
-      spyOn(packageManager, "uninstall").andCallFake(function (pack, callback) {
+      spyOn(packageManager, "install").and.callThrough();
+      spyOn(packageManager, "uninstall").and.callFake(function (pack, callback) {
         packageManager.emitPackageEvent("uninstalling", pack);
         uninstallCallback = function () {
           if (typeof callback === "function") {
@@ -1445,26 +1445,26 @@ describe("PackageCard", function () {
       expect(card.refs.uninstallButton).toHaveClass("is-uninstalling");
 
       expect(packageManager.uninstall).toHaveBeenCalled();
-      expect(packageManager.uninstall.mostRecentCall.args[0].name).toEqual("package-with-config");
+      expect(packageManager.uninstall.calls.mostRecent().args[0].name).toEqual(
+        "package-with-config",
+      );
 
       jasmine.unspy(PackageCard.prototype, "isInstalled");
-      spyOn(PackageCard.prototype, "isInstalled").andReturn(false);
+      spyOn(PackageCard.prototype, "isInstalled").and.returnValue(false);
       uninstallCallback(0, "", "");
 
-      waits(1);
-      runs(function () {
-        expect(card.refs.uninstallButton.disabled).toBe(false);
-        expect(card.refs.uninstallButton).not.toHaveClass("is-uninstalling");
-        expect(card.refs.installButtonGroup).toBeVisible();
-        expect(card.refs.updateButtonGroup).not.toBeVisible();
-        expect(card.refs.packageActionButtonGroup).not.toBeVisible();
-      });
+      await timeoutPromise(1);
+      expect(card.refs.uninstallButton.disabled).toBe(false);
+      expect(card.refs.uninstallButton).not.toHaveClass("is-uninstalling");
+      expect(card.refs.installButtonGroup).toBeVisible();
+      expect(card.refs.updateButtonGroup).not.toBeVisible();
+      expect(card.refs.packageActionButtonGroup).not.toBeVisible();
     });
 
     it("shows the settings, uninstall, and enable buttons when disabled", function () {
       lumine.config.set("package-with-config.setting", "something");
       const pack = lumine.packages.getLoadedPackage("package-with-config");
-      spyOn(lumine.packages, "isPackageDisabled").andReturn(true);
+      spyOn(lumine.packages, "isPackageDisabled").and.returnValue(true);
       card = new PackageCard(pack, new SettingsView(), packageManager);
       jasmine.attachToDOM(card.element);
 
@@ -1495,7 +1495,7 @@ describe("PackageCard", function () {
 
     it("does not show the settings button when there are no settings", function () {
       const pack = lumine.packages.getLoadedPackage("package-with-config");
-      spyOn(PackageCard.prototype, "hasSettings").andReturn(false);
+      spyOn(PackageCard.prototype, "hasSettings").and.returnValue(false);
       card = new PackageCard(pack, new SettingsView(), packageManager);
 
       jasmine.attachToDOM(card.element);
@@ -1521,7 +1521,7 @@ describe("PackageCard", function () {
 
     beforeEach(function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
-      spyOn(PackageCard.prototype, "getInstalledMetadata").andReturn({
+      spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "x-pkg",
         version: "1.2.3",
         description: "Colors the cursor.",
@@ -1540,7 +1540,7 @@ describe("PackageCard", function () {
     });
 
     it("does not adopt local metadata for a same-named package from another origin", function () {
-      PackageCard.prototype.getInstalledMetadata.andReturn({
+      PackageCard.prototype.getInstalledMetadata.and.returnValue({
         name: "x-pkg",
         version: "9.9.9",
         description: "An unrelated package.",

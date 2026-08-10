@@ -4,7 +4,7 @@ let view;
 describe("PackageKeymapView", () => {
   beforeEach(() => {
     // Just prevent this stuff from calling through, it doesn't matter for this test
-    spyOn(lumine.packages, "getLoadedPackage").andReturn({ keymaps: [] });
+    spyOn(lumine.packages, "getLoadedPackage").and.returnValue({ keymaps: [] });
 
     view = new PackageKeymapView({
       name: "test-package",
@@ -44,7 +44,7 @@ describe("PackageKeymapView", () => {
   });
 
   it("escapes special characters in copied CSON overrides", () => {
-    spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
+    spyOn(lumine.keymaps, "getUserKeymapPath").and.returnValue("keymap.cson");
     view.writeKeyBindingToClipboard({
       selector: "lumine-text-editor[data-grammar~='css']",
       keystrokes: "ctrl-\\",

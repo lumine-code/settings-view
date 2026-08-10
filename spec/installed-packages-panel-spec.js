@@ -7,59 +7,57 @@ const SettingsView = require("../lib/settings-view");
 
 describe("InstalledPackagesPanel", function () {
   describe("when the packages are loading", () =>
-    it("filters packages by name once they have loaded", function () {
+    it("filters packages by name once they have loaded", async function () {
       const settingsView = new SettingsView();
       this.packageManager = new PackageManager();
       this.installed = JSON.parse(
         fs.readFileSync(path.join(__dirname, "fixtures", "installed.json")),
       );
-      spyOn(this.packageManager, "getOutdated").andReturn(new Promise(function () {}));
-      spyOn(this.packageManager, "loadCompatiblePackageVersion").andCallFake(function () {});
-      spyOn(this.packageManager, "getInstalled").andReturn(Promise.resolve(this.installed));
+      spyOn(this.packageManager, "getOutdated").and.returnValue(new Promise(function () {}));
+      spyOn(this.packageManager, "loadCompatiblePackageVersion").and.callFake(function () {});
+      spyOn(this.packageManager, "getInstalled").and.returnValue(Promise.resolve(this.installed));
       this.panel = new InstalledPackagesPanel(settingsView, this.packageManager);
       this.panel.refs.filterEditor.setText("user-");
       window.advanceClock(this.panel.refs.filterEditor.getBuffer().stoppedChangingDelay);
 
-      waitsFor(function () {
+      await conditionPromise(() => {
         return (
-          this.packageManager.getInstalled.callCount === 1 &&
+          this.packageManager.getInstalled.calls.count() === 1 &&
           this.panel.refs.installedCount.textContent.indexOf("…") < 0
         );
       });
 
-      runs(function () {
-        expect(this.panel.refs.installedCount.textContent.trim()).toBe("1/1");
-        expect(
-          this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
-        ).toBe(1);
+      expect(this.panel.refs.installedCount.textContent.trim()).toBe("1/1");
+      expect(
+        this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
+      ).toBe(1);
 
-        expect(this.panel.refs.coreCount.textContent.trim()).toBe("0/1");
-        expect(
-          this.panel.refs.corePackages.querySelectorAll(".package-card:not(.hidden)").length,
-        ).toBe(0);
+      expect(this.panel.refs.coreCount.textContent.trim()).toBe("0/1");
+      expect(
+        this.panel.refs.corePackages.querySelectorAll(".package-card:not(.hidden)").length,
+      ).toBe(0);
 
-        expect(this.panel.refs.devCount.textContent.trim()).toBe("0/1");
-        expect(
-          this.panel.refs.devPackages.querySelectorAll(".package-card:not(.hidden)").length,
-        ).toBe(0);
-      });
+      expect(this.panel.refs.devCount.textContent.trim()).toBe("0/1");
+      expect(
+        this.panel.refs.devPackages.querySelectorAll(".package-card:not(.hidden)").length,
+      ).toBe(0);
     }));
 
   describe("when the packages have finished loading", function () {
-    beforeEach(function () {
+    beforeEach(async function () {
       const settingsView = new SettingsView();
       this.packageManager = new PackageManager();
       this.installed = JSON.parse(
         fs.readFileSync(path.join(__dirname, "fixtures", "installed.json")),
       );
-      spyOn(this.packageManager, "getOutdated").andReturn(new Promise(function () {}));
-      spyOn(this.packageManager, "loadCompatiblePackageVersion").andCallFake(function () {});
-      spyOn(this.packageManager, "getInstalled").andReturn(Promise.resolve(this.installed));
+      spyOn(this.packageManager, "getOutdated").and.returnValue(new Promise(function () {}));
+      spyOn(this.packageManager, "loadCompatiblePackageVersion").and.callFake(function () {});
+      spyOn(this.packageManager, "getInstalled").and.returnValue(Promise.resolve(this.installed));
       this.panel = new InstalledPackagesPanel(settingsView, this.packageManager);
 
-      waitsFor(function () {
+      await conditionPromise(() => {
         return (
-          this.packageManager.getInstalled.callCount === 1 &&
+          this.packageManager.getInstalled.calls.count() === 1 &&
           this.panel.refs.installedCount.textContent.indexOf("…") < 0
         );
       });
@@ -115,7 +113,7 @@ describe("InstalledPackagesPanel", function () {
       ).toBe(0);
     });
 
-    it("adds newly installed packages to the list", function () {
+    it("adds newly installed packages to the list", async function () {
       expect(this.panel.refs.installedCount.textContent.trim()).toBe("1");
       expect(
         this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
@@ -127,53 +125,49 @@ describe("InstalledPackagesPanel", function () {
       });
 
       advanceClock(InstalledPackagesPanel.loadPackagesDelay());
-      waits(1);
-      runs(function () {
-        expect(this.panel.refs.installedCount.textContent.trim()).toBe("2");
-        expect(
-          this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
-        ).toBe(2);
-      });
+      await timeoutPromise(1);
+      expect(this.panel.refs.installedCount.textContent.trim()).toBe("2");
+      expect(
+        this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
+      ).toBe(2);
     });
 
-    it("keeps uninstalled packages visible without rebuilding the list", function () {
+    it("keeps uninstalled packages visible without rebuilding the list", async function () {
       expect(this.panel.refs.installedCount.textContent.trim()).toBe("1");
       expect(
         this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
       ).toBe(1);
 
-      spyOn(this.panel, "loadPackages").andCallThrough();
+      spyOn(this.panel, "loadPackages").and.callThrough();
       this.installed.user = [];
       this.packageManager.emitter.emit("package-uninstalled", { pack: { name: "user-package" } });
 
       advanceClock(InstalledPackagesPanel.loadPackagesDelay());
-      waits(1);
-      runs(function () {
-        // The list is not rebuilt; the card stays in place (the card itself
-        // switches to the not-installed state).
-        expect(this.panel.loadPackages).not.toHaveBeenCalled();
-        expect(
-          this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
-        ).toBe(1);
-      });
+      await timeoutPromise(1);
+      // The list is not rebuilt; the card stays in place (the card itself
+      // switches to the not-installed state).
+      expect(this.panel.loadPackages).not.toHaveBeenCalled();
+      expect(
+        this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
+      ).toBe(1);
     });
   });
 
   describe("expanding and collapsing sub-sections", function () {
-    beforeEach(function () {
+    beforeEach(async function () {
       const settingsView = new SettingsView();
       this.packageManager = new PackageManager();
       this.installed = JSON.parse(
         fs.readFileSync(path.join(__dirname, "fixtures", "installed.json")),
       );
-      spyOn(this.packageManager, "getOutdated").andReturn(new Promise(function () {}));
-      spyOn(this.packageManager, "loadCompatiblePackageVersion").andCallFake(function () {});
-      spyOn(this.packageManager, "getInstalled").andReturn(Promise.resolve(this.installed));
+      spyOn(this.packageManager, "getOutdated").and.returnValue(new Promise(function () {}));
+      spyOn(this.packageManager, "loadCompatiblePackageVersion").and.callFake(function () {});
+      spyOn(this.packageManager, "getInstalled").and.returnValue(Promise.resolve(this.installed));
       this.panel = new InstalledPackagesPanel(settingsView, this.packageManager);
 
-      waitsFor(function () {
+      await conditionPromise(() => {
         return (
-          this.packageManager.getInstalled.callCount === 1 &&
+          this.packageManager.getInstalled.calls.count() === 1 &&
           this.panel.refs.installedCount.textContent.indexOf("…") < 0
         );
       });
@@ -271,7 +265,7 @@ describe("InstalledPackagesPanel", function () {
   });
 
   describe("when there are no packages", function () {
-    beforeEach(function () {
+    beforeEach(async function () {
       const settingsView = new SettingsView();
       this.packageManager = new PackageManager();
       this.installed = {
@@ -279,14 +273,14 @@ describe("InstalledPackagesPanel", function () {
         user: [],
         core: [],
       };
-      spyOn(this.packageManager, "getOutdated").andReturn(new Promise(function () {}));
-      spyOn(this.packageManager, "loadCompatiblePackageVersion").andCallFake(function () {});
-      spyOn(this.packageManager, "getInstalled").andReturn(Promise.resolve(this.installed));
+      spyOn(this.packageManager, "getOutdated").and.returnValue(new Promise(function () {}));
+      spyOn(this.packageManager, "loadCompatiblePackageVersion").and.callFake(function () {});
+      spyOn(this.packageManager, "getInstalled").and.returnValue(Promise.resolve(this.installed));
       this.panel = new InstalledPackagesPanel(settingsView, this.packageManager);
 
-      waitsFor(function () {
+      await conditionPromise(() => {
         return (
-          this.packageManager.getInstalled.callCount === 1 &&
+          this.packageManager.getInstalled.calls.count() === 1 &&
           this.panel.refs.installedCount.textContent.indexOf("…") < 0
         );
       });

@@ -23,183 +23,151 @@ let SnippetsProvider = {
 
 describe("InstalledPackageView", function () {
   beforeEach(() => {
-    spyOn(PackageManager.prototype, "loadCompatiblePackageVersion").andCallFake(() => {});
+    spyOn(PackageManager.prototype, "loadCompatiblePackageVersion").and.callFake(() => {});
   });
 
-  it("displays the grammars registered by the package", () => {
-    let settingsPanels = null;
+  it("displays the grammars registered by the package", async () => {
+    await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-    waitsForPromise(() => {
-      return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
-    });
+    const pack = lumine.packages.getActivePackage("language-test");
+    const view = new PackageDetailView(
+      pack,
+      new SettingsView(),
+      new PackageManager(),
+      SnippetsProvider,
+    );
+    const settingsPanels = view.element.querySelectorAll(".package-grammars .settings-panel");
 
-    runs(() => {
-      const pack = lumine.packages.getActivePackage("language-test");
-      const view = new PackageDetailView(
-        pack,
-        new SettingsView(),
-        new PackageManager(),
-        SnippetsProvider,
-      );
-      settingsPanels = view.element.querySelectorAll(".package-grammars .settings-panel");
+    await conditionPromise(
+      () => Array.from(settingsPanels).reduce((total, s) => total + s.children.length, 0) === 2,
+      "both grammar panels to render",
+    );
 
-      waitsFor(() => {
-        const children = Array.from(settingsPanels).map((s) => s.children.length);
-        const childrenCount = children.reduce((a, b) => a + b, 0);
-        return childrenCount === 2;
-      });
+    expect(settingsPanels[0].querySelector(".grammar-scope").textContent).toBe("Scope: source.a");
+    expect(settingsPanels[0].querySelector(".grammar-filetypes").textContent).toBe(
+      "File Types: .a, .aa, a",
+    );
 
-      expect(settingsPanels[0].querySelector(".grammar-scope").textContent).toBe("Scope: source.a");
-      expect(settingsPanels[0].querySelector(".grammar-filetypes").textContent).toBe(
-        "File Types: .a, .aa, a",
-      );
+    expect(settingsPanels[1].querySelector(".grammar-scope").textContent).toBe("Scope: source.b");
+    expect(settingsPanels[1].querySelector(".grammar-filetypes").textContent).toBe("File Types: ");
 
-      expect(settingsPanels[1].querySelector(".grammar-scope").textContent).toBe("Scope: source.b");
-      expect(settingsPanels[1].querySelector(".grammar-filetypes").textContent).toBe(
-        "File Types: ",
-      );
-
-      expect(settingsPanels[2]).toBeUndefined();
-    });
+    expect(settingsPanels[2]).toBeUndefined();
   });
 
-  it("displays the snippets registered by the package", () => {
+  it("displays the snippets registered by the package", async () => {
     let snippetsTable = null;
     let snippetsModule = null;
 
     // Relies on behavior not present in the snippets package before 1.103.
     const shouldRunScopeTest = parseFloat(lumine.app.getVersion()) >= 1.103;
 
-    waitsForPromise(() => {
-      return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
-    });
+    await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-    waitsForPromise(() => {
-      return lumine.packages.activatePackage("snippets").then((p) => {
-        snippetsModule = p.mainModule;
-        if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
-          return;
-        }
+    const p = await lumine.packages.activatePackage("snippets");
+    snippetsModule = p.mainModule;
+    if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
+      return;
+    }
 
-        SnippetsProvider = {
-          getSnippets() {
-            return snippetsModule.provideSnippets().getUnparsedSnippets();
-          },
-        };
-      });
-    });
+    SnippetsProvider = {
+      getSnippets() {
+        return snippetsModule.provideSnippets().getUnparsedSnippets();
+      },
+    };
 
-    waitsFor("snippets to load", () => {
+    await conditionPromise(() => {
       return snippetsModule.provideSnippets().bundledSnippetsLoaded();
-    });
+    }, "snippets to load");
 
-    runs(() => {
+    const pack = lumine.packages.getActivePackage("language-test");
+    const view = new PackageDetailView(
+      pack,
+      new SettingsView(),
+      new PackageManager(),
+      SnippetsProvider,
+    );
+    snippetsTable = view.element.querySelector(".package-snippets-table tbody");
+
+    await conditionPromise(() => {
+      return snippetsTable.children.length >= 2;
+    }, "snippets table children to contain 2 items");
+
+    expect(snippetsTable.querySelector("tr:nth-child(1) td:nth-child(1)").textContent).toBe("b");
+    if (shouldRunScopeTest) {
+      expect(snippetsTable.querySelector("tr:nth-child(1) td:nth-child(2)").textContent).toBe(
+        "language-test:sample-command",
+      );
+    }
+    expect(snippetsTable.querySelector("tr:nth-child(1) td:nth-child(3)").textContent).toBe("BAR");
+
+    if (shouldRunScopeTest) {
+      expect(snippetsTable.querySelector("tr:nth-child(1) td.snippet-scope-name").textContent).toBe(
+        ".source.b",
+      );
+    }
+
+    expect(snippetsTable.querySelector("tr:nth-child(2) td:nth-child(1)").textContent).toBe("f");
+
+    //if (shouldRunScopeTest) { # TODO FIX
+    //  expect(
+    //    snippetsTable.querySelector('tr:nth-child(1) td:nth-child(2)').textContent
+    //  ).toBe('');
+    //}
+    expect(snippetsTable.querySelector("tr:nth-child(2) td:nth-child(3)").textContent).toBe("FOO");
+
+    if (shouldRunScopeTest) {
+      expect(snippetsTable.querySelector("tr:nth-child(2) td.snippet-scope-name").textContent).toBe(
+        ".source.a, .source.aa",
+      );
+    }
+  });
+
+  describe("when a snippet body is viewed", () =>
+    it("shows a tooltip", async () => {
+      let snippetsTable = null;
+      let snippetsModule = null;
+
+      await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
+
+      const p = await lumine.packages.activatePackage("snippets");
+      snippetsModule = p.mainModule;
+      if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
+        return;
+      }
+
+      SnippetsProvider = {
+        getSnippets() {
+          return snippetsModule.provideSnippets().getUnparsedSnippets();
+        },
+      };
+
+      await conditionPromise(() => {
+        return snippetsModule.provideSnippets().bundledSnippetsLoaded();
+      }, "snippets to load");
+
       const pack = lumine.packages.getActivePackage("language-test");
-      const view = new PackageDetailView(
+      view = new PackageDetailView(
         pack,
         new SettingsView(),
         new PackageManager(),
         SnippetsProvider,
       );
       snippetsTable = view.element.querySelector(".package-snippets-table tbody");
-    });
 
-    waitsFor("snippets table children to contain 2 items", () => {
-      return snippetsTable.children.length >= 2;
-    });
-
-    runs(() => {
-      expect(snippetsTable.querySelector("tr:nth-child(1) td:nth-child(1)").textContent).toBe("b");
-      if (shouldRunScopeTest) {
-        expect(snippetsTable.querySelector("tr:nth-child(1) td:nth-child(2)").textContent).toBe(
-          "language-test:sample-command",
-        );
-      }
-      expect(snippetsTable.querySelector("tr:nth-child(1) td:nth-child(3)").textContent).toBe(
-        "BAR",
-      );
-
-      if (shouldRunScopeTest) {
-        expect(
-          snippetsTable.querySelector("tr:nth-child(1) td.snippet-scope-name").textContent,
-        ).toBe(".source.b");
-      }
-
-      expect(snippetsTable.querySelector("tr:nth-child(2) td:nth-child(1)").textContent).toBe("f");
-
-      //if (shouldRunScopeTest) { # TODO FIX
-      //  expect(
-      //    snippetsTable.querySelector('tr:nth-child(1) td:nth-child(2)').textContent
-      //  ).toBe('');
-      //}
-      expect(snippetsTable.querySelector("tr:nth-child(2) td:nth-child(3)").textContent).toBe(
-        "FOO",
-      );
-
-      if (shouldRunScopeTest) {
-        expect(
-          snippetsTable.querySelector("tr:nth-child(2) td.snippet-scope-name").textContent,
-        ).toBe(".source.a, .source.aa");
-      }
-    });
-  });
-
-  describe("when a snippet body is viewed", () =>
-    it("shows a tooltip", () => {
-      let view = null;
-      let snippetsTable = null;
-      let snippetsModule = null;
-
-      waitsForPromise(() => {
-        return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
-      });
-
-      waitsForPromise(() =>
-        lumine.packages.activatePackage("snippets").then((p) => {
-          snippetsModule = p.mainModule;
-          if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
-            return;
-          }
-
-          SnippetsProvider = {
-            getSnippets() {
-              return snippetsModule.provideSnippets().getUnparsedSnippets();
-            },
-          };
-        }),
-      );
-
-      waitsFor("snippets to load", () => {
-        return snippetsModule.provideSnippets().bundledSnippetsLoaded();
-      });
-
-      runs(() => {
-        const pack = lumine.packages.getActivePackage("language-test");
-        view = new PackageDetailView(
-          pack,
-          new SettingsView(),
-          new PackageManager(),
-          SnippetsProvider,
-        );
-        snippetsTable = view.element.querySelector(".package-snippets-table tbody");
-      });
-
-      waitsFor(
-        "snippets table children to contain 2 items",
+      await conditionPromise(
         () => snippetsTable.children.length >= 2,
+        "snippets table children to contain 2 items",
       );
 
-      runs(() => {
-        expect(view.element.ownerDocument.querySelector(".snippet-body-tooltip")).not.toExist();
+      expect(view.element.ownerDocument.querySelector(".snippet-body-tooltip")).not.toExist();
 
-        view.element
-          .querySelector(
-            ".package-snippets-table tbody tr:nth-child(1) td.snippet-body .snippet-view-btn",
-          )
-          .click();
+      view.element
+        .querySelector(
+          ".package-snippets-table tbody tr:nth-child(1) td.snippet-body .snippet-view-btn",
+        )
+        .click();
 
-        expect(view.element.ownerDocument.querySelector(".snippet-body-tooltip")).toExist();
-      });
+      expect(view.element.ownerDocument.querySelector(".snippet-body-tooltip")).toExist();
     }));
 
   // Relies on behavior not present in the snippets package before 1.33.
@@ -210,46 +178,39 @@ describe("InstalledPackageView", function () {
       let snippetsTable = null;
       let snippetsModule = null;
 
-      beforeEach(() => {
-        waitsForPromise(() => {
-          return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
-        });
+      beforeEach(async () => {
+        await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-        waitsForPromise(() => {
-          return lumine.packages.activatePackage("snippets").then((p) => {
-            snippetsModule = p.mainModule;
-            if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
-              return;
-            }
+        const p = await lumine.packages.activatePackage("snippets");
+        snippetsModule = p.mainModule;
+        if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
+          return;
+        }
 
-            SnippetsProvider = {
-              getSnippets() {
-                return snippetsModule.provideSnippets().getUnparsedSnippets();
-              },
-              getUserSnippetsPath: () => snippetsModule.getUserSnippetsPath(),
-            };
-          });
-        });
+        SnippetsProvider = {
+          getSnippets() {
+            return snippetsModule.provideSnippets().getUnparsedSnippets();
+          },
+          getUserSnippetsPath: () => snippetsModule.getUserSnippetsPath(),
+        };
 
-        waitsFor("snippets to load", () => {
+        await conditionPromise(() => {
           return snippetsModule.provideSnippets().bundledSnippetsLoaded();
-        });
+        }, "snippets to load");
 
-        runs(() => {
-          pack = lumine.packages.getActivePackage("language-test");
-          card = new PackageSnippetsView(pack, SnippetsProvider);
-          snippetsTable = card.element.querySelector(".package-snippets-table tbody");
-        });
+        pack = lumine.packages.getActivePackage("language-test");
+        card = new PackageSnippetsView(pack, SnippetsProvider);
+        snippetsTable = card.element.querySelector(".package-snippets-table tbody");
 
-        waitsFor(
-          "snippets table children to contain 2 items",
+        await conditionPromise(
           () => snippetsTable.children.length >= 2,
+          "snippets table children to contain 2 items",
         );
       });
 
       describe("when the snippets file ends in .cson", () =>
         it("writes a CSON snippet to the clipboard", () => {
-          spyOn(SnippetsProvider, "getUserSnippetsPath").andReturn("snippets.cson");
+          spyOn(SnippetsProvider, "getUserSnippetsPath").and.returnValue("snippets.cson");
           card.element
             .querySelector(
               ".package-snippets-table tbody tr:nth-child(1) td.snippet-body .snippet-copy-btn",
@@ -265,7 +226,7 @@ describe("InstalledPackageView", function () {
 
       describe("when the snippets file ends in .json", () =>
         it("writes a JSON snippet to the clipboard", () => {
-          spyOn(SnippetsProvider, "getUserSnippetsPath").andReturn("snippets.json");
+          spyOn(SnippetsProvider, "getUserSnippetsPath").and.returnValue("snippets.json");
           card.element
             .querySelector(
               ".package-snippets-table tbody tr:nth-child(1) td.snippet-body .btn:nth-child(2)",
@@ -284,134 +245,107 @@ describe("InstalledPackageView", function () {
   }
 
   describe("when the snippets toggle is clicked", () =>
-    it("sets the packagesWithSnippetsDisabled config to include the package name", function () {
-      let pack, card;
-      let snippetsModule = null;
+    it("sets the packagesWithSnippetsDisabled config to include the package name", async () => {
+      await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-      waitsForPromise(() => {
-        return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
-      });
+      const { mainModule: snippetsModule } = await lumine.packages.activatePackage("snippets");
+      SnippetsProvider = {
+        getSnippets() {
+          return snippetsModule.provideSnippets().getUnparsedSnippets();
+        },
+      };
 
-      waitsForPromise(() =>
-        lumine.packages.activatePackage("snippets").then((p) => {
-          snippetsModule = p.mainModule;
-          if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
-            return;
-          }
-
-          return (SnippetsProvider = {
-            getSnippets() {
-              return snippetsModule.provideSnippets().getUnparsedSnippets();
-            },
-          });
-        }),
+      await conditionPromise(
+        () => snippetsModule.provideSnippets().bundledSnippetsLoaded(),
+        "the bundled snippets to load",
       );
 
-      waitsFor("snippets to load", () => {
-        return snippetsModule.provideSnippets().bundledSnippetsLoaded();
-      });
+      const pack = lumine.packages.getActivePackage("language-test");
+      const card = new PackageSnippetsView(pack, SnippetsProvider);
+      jasmine.attachToDOM(card.element);
 
-      runs(() => {
-        pack = lumine.packages.getActivePackage("language-test");
-        card = new PackageSnippetsView(pack, SnippetsProvider);
-        jasmine.attachToDOM(card.element);
+      const disabledPackages = () => lumine.config.get("core.packagesWithSnippetsDisabled") || [];
 
-        card.refs.snippetToggle.click();
-        expect(card.refs.snippetToggle.checked).toBe(false);
-        let disabledSnippetsPackages = lumine.config.get("core.packagesWithSnippetsDisabled") || [];
-        expect(_.include(disabledSnippetsPackages, "language-test")).toBe(true);
-      });
+      card.refs.snippetToggle.click();
+      expect(card.refs.snippetToggle.checked).toBe(false);
+      expect(_.include(disabledPackages(), "language-test")).toBe(true);
 
-      waitsFor("snippets table to update", () => {
-        return card.refs.snippets.classList.contains("text-subtle");
-      });
+      await conditionPromise(
+        () => card.refs.snippets.classList.contains("text-subtle"),
+        "the snippets table to dim",
+      );
 
-      runs(() => {
-        card.refs.snippetToggle.click();
-        expect(card.refs.snippetToggle.checked).toBe(true);
-        let disabledSnippetsPackages = lumine.config.get("core.packagesWithSnippetsDisabled") || [];
-        expect(_.include(disabledSnippetsPackages, "language-test")).toBe(false);
-      });
+      card.refs.snippetToggle.click();
+      expect(card.refs.snippetToggle.checked).toBe(true);
+      expect(_.include(disabledPackages(), "language-test")).toBe(false);
 
-      waitsFor("snippets table to update", () => {
-        return !card.refs.snippets.classList.contains("text-subtle");
-      });
+      await conditionPromise(
+        () => !card.refs.snippets.classList.contains("text-subtle"),
+        "the snippets table to undim",
+      );
     }));
 
-  it("does not display keybindings from other platforms", () => {
-    let keybindingsTable = null;
+  it("does not display keybindings from other platforms", async () => {
 
-    waitsForPromise(() => {
-      return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
-    });
+    await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-    runs(() => {
-      const pack = lumine.packages.getActivePackage("language-test");
-      const view = new PackageDetailView(
-        pack,
-        new SettingsView(),
-        new PackageManager(),
-        SnippetsProvider,
-      );
-      keybindingsTable = view.element.querySelector(".package-keymap-table tbody");
-      expect(keybindingsTable.children.length).toBe(1);
-    });
+    const pack = lumine.packages.getActivePackage("language-test");
+    const view = new PackageDetailView(
+      pack,
+      new SettingsView(),
+      new PackageManager(),
+      SnippetsProvider,
+    );
+    keybindingsTable = view.element.querySelector(".package-keymap-table tbody");
+    expect(keybindingsTable.children.length).toBe(1);
   });
 
   describe("when the keybindings toggle is clicked", () =>
-    it("sets the packagesWithKeymapsDisabled config to include the package name", () => {
-      waitsForPromise(() => {
-        return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
-      });
+    it("sets the packagesWithKeymapsDisabled config to include the package name", async () => {
+      await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-      runs(() => {
-        let keybindingRows;
-        const pack = lumine.packages.getActivePackage("language-test");
-        const card = new PackageKeymapView(pack);
-        jasmine.attachToDOM(card.element);
+      let keybindingRows;
+      const pack = lumine.packages.getActivePackage("language-test");
+      const card = new PackageKeymapView(pack);
+      jasmine.attachToDOM(card.element);
 
-        card.refs.keybindingToggle.click();
-        expect(card.refs.keybindingToggle.checked).toBe(false);
-        let disabledKeymapsPackages = lumine.config.get("core.packagesWithKeymapsDisabled") || [];
-        expect(_.include(disabledKeymapsPackages, "language-test")).toBe(true);
+      card.refs.keybindingToggle.click();
+      expect(card.refs.keybindingToggle.checked).toBe(false);
+      let disabledKeymapsPackages = lumine.config.get("core.packagesWithKeymapsDisabled") || [];
+      expect(_.include(disabledKeymapsPackages, "language-test")).toBe(true);
 
-        if (lumine.keymaps.build) {
-          keybindingRows = card.element.querySelectorAll(
-            ".package-keymap-table tbody.text-subtle tr",
-          );
-          expect(keybindingRows.length).toBe(1);
-        }
+      if (lumine.keymaps.build) {
+        keybindingRows = card.element.querySelectorAll(
+          ".package-keymap-table tbody.text-subtle tr",
+        );
+        expect(keybindingRows.length).toBe(1);
+      }
 
-        card.refs.keybindingToggle.click();
-        expect(card.refs.keybindingToggle.checked).toBe(true);
-        disabledKeymapsPackages = lumine.config.get("core.packagesWithKeymapsDisabled") || [];
+      card.refs.keybindingToggle.click();
+      expect(card.refs.keybindingToggle.checked).toBe(true);
+      disabledKeymapsPackages = lumine.config.get("core.packagesWithKeymapsDisabled") || [];
 
-        expect(_.include(disabledKeymapsPackages, "language-test")).toBe(false);
+      expect(_.include(disabledKeymapsPackages, "language-test")).toBe(false);
 
-        if (lumine.keymaps.build) {
-          keybindingRows = card.element.querySelectorAll(".package-keymap-table tbody tr");
-          expect(keybindingRows.length).toBe(1);
-        }
-      });
+      if (lumine.keymaps.build) {
+        keybindingRows = card.element.querySelectorAll(".package-keymap-table tbody tr");
+        expect(keybindingRows.length).toBe(1);
+      }
     }));
 
   describe("when a keybinding is copied", () => {
     let [pack, card] = Array.from([]);
 
-    beforeEach(() => {
-      waitsForPromise(() => {
-        return lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
-      });
+    beforeEach(async () => {
+      await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-      runs(() => {
-        pack = lumine.packages.getActivePackage("language-test");
-        card = new PackageKeymapView(pack);
-      });
+      pack = lumine.packages.getActivePackage("language-test");
+      card = new PackageKeymapView(pack);
     });
 
     describe("when the keybinding file ends in .cson", () =>
       it("writes a CSON snippet to the clipboard", () => {
-        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
+        spyOn(lumine.keymaps, "getUserKeymapPath").and.returnValue("keymap.cson");
         card.element.querySelector(".copy-keybinding").click();
         expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 'test':
@@ -421,7 +355,7 @@ describe("InstalledPackageView", function () {
 
     describe("when the keybinding file ends in .json", () => {
       it("writes a JSON snippet to the clipboard", () => {
-        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.json");
+        spyOn(lumine.keymaps, "getUserKeymapPath").and.returnValue("keymap.json");
         card.element.querySelector(".copy-keybinding").click();
         expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 "test": {
@@ -433,33 +367,26 @@ describe("InstalledPackageView", function () {
   });
 
   describe("when the package is active", () =>
-    it("displays the correct enablement state", () => {
-      let packageCard = null;
+    it("displays the correct enablement state", async () => {
 
-      waitsForPromise(() => {
-        return lumine.packages.activatePackage("status-bar");
-      });
+      await lumine.packages.activatePackage("status-bar");
 
-      runs(() => {
-        expect(lumine.packages.isPackageActive("status-bar")).toBe(true);
-        const pack = lumine.packages.getLoadedPackage("status-bar");
-        const view = new PackageDetailView(
-          pack,
-          new SettingsView(),
-          new PackageManager(),
-          SnippetsProvider,
-        );
-        packageCard = view.element.querySelector(".package-card");
-      });
+      expect(lumine.packages.isPackageActive("status-bar")).toBe(true);
+      const pack = lumine.packages.getLoadedPackage("status-bar");
+      const view = new PackageDetailView(
+        pack,
+        new SettingsView(),
+        new PackageManager(),
+        SnippetsProvider,
+      );
+      packageCard = view.element.querySelector(".package-card");
 
-      runs(() => {
-        // Trigger observeDisabledPackages() here
-        // because it is not default in specs
-        lumine.packages.observeDisabledPackages();
-        lumine.packages.disablePackage("status-bar");
-        expect(lumine.packages.isPackageDisabled("status-bar")).toBe(true);
-        expect(packageCard.classList.contains("disabled")).toBe(true);
-      });
+      // Trigger observeDisabledPackages() here
+      // because it is not default in specs
+      lumine.packages.observeDisabledPackages();
+      lumine.packages.disablePackage("status-bar");
+      expect(lumine.packages.isPackageDisabled("status-bar")).toBe(true);
+      expect(packageCard.classList.contains("disabled")).toBe(true);
     }));
 
   describe("when the package is not active", () => {
@@ -483,49 +410,45 @@ describe("InstalledPackageView", function () {
       expect(packageCard.classList.contains("disabled")).toBe(true);
     });
 
-    it("still loads the config schema for the package", () => {
+    it("still loads the config schema for the package", async () => {
       lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
 
-      waitsFor(() => lumine.packages.isPackageLoaded("package-with-config") === true);
+      await conditionPromise(() => lumine.packages.isPackageLoaded("package-with-config") === true);
 
-      runs(() => {
-        expect(lumine.config.get("package-with-config.setting")).toBe(undefined);
+      expect(lumine.config.get("package-with-config.setting")).toBe(undefined);
 
-        const pack = lumine.packages.getLoadedPackage("package-with-config");
-        new PackageDetailView(pack, new SettingsView(), new PackageManager(), SnippetsProvider);
+      const pack = lumine.packages.getLoadedPackage("package-with-config");
+      new PackageDetailView(pack, new SettingsView(), new PackageManager(), SnippetsProvider);
 
-        expect(lumine.config.get("package-with-config.setting")).toBe("something");
-      });
+      expect(lumine.config.get("package-with-config.setting")).toBe("something");
     });
   });
 
   describe("when the package was not installed from lumine.io", () => {
     const normalizePackageDataReadmeError = "ERROR: No README data found!";
 
-    it("still displays the Readme", () => {
+    it("still displays the Readme", async () => {
       lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-readme"));
 
-      waitsFor(() => {
+      await conditionPromise(() => {
         return lumine.packages.isPackageLoaded("package-with-readme") === true;
       });
 
-      runs(() => {
-        const pack = lumine.packages.getLoadedPackage("package-with-readme");
-        expect(pack.metadata.readme).toBe(normalizePackageDataReadmeError);
+      const pack = lumine.packages.getLoadedPackage("package-with-readme");
+      expect(pack.metadata.readme).toBe(normalizePackageDataReadmeError);
 
-        const view = new PackageDetailView(
-          pack,
-          new SettingsView(),
-          new PackageManager(),
-          SnippetsProvider,
-        );
-        expect(view.refs.sections.querySelector(".package-readme").textContent).not.toBe(
-          normalizePackageDataReadmeError,
-        );
-        expect(view.refs.sections.querySelector(".package-readme").textContent.trim()).toContain(
-          "I am a Readme!",
-        );
-      });
+      const view = new PackageDetailView(
+        pack,
+        new SettingsView(),
+        new PackageManager(),
+        SnippetsProvider,
+      );
+      expect(view.refs.sections.querySelector(".package-readme").textContent).not.toBe(
+        normalizePackageDataReadmeError,
+      );
+      expect(view.refs.sections.querySelector(".package-readme").textContent.trim()).toContain(
+        "I am a Readme!",
+      );
     });
   });
 });

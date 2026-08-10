@@ -15,8 +15,8 @@ describe("InstallPanel", function () {
     catalogClient = {
       load: jasmine
         .createSpy("load")
-        .andReturn(Promise.resolve({ schemaVersion: 1, packages: [] })),
-      loadAll: jasmine.createSpy("loadAll").andReturn(
+        .and.returnValue(Promise.resolve({ schemaVersion: 1, packages: [] })),
+      loadAll: jasmine.createSpy("loadAll").and.returnValue(
         Promise.resolve({
           schemaVersion: 2,
           packages: [],
@@ -26,7 +26,7 @@ describe("InstallPanel", function () {
       ),
       cancel: jasmine.createSpy("cancel"),
       mergeInstalledUpdates: jasmine.createSpy("mergeInstalledUpdates"),
-      hydrateSource: jasmine.createSpy("hydrateSource").andCallFake((source, catalogSource) =>
+      hydrateSource: jasmine.createSpy("hydrateSource").and.callFake((source, catalogSource) =>
         Promise.resolve({
           name: source.split("/").pop(),
           repository: source,
@@ -34,7 +34,7 @@ describe("InstallPanel", function () {
         }),
       ),
     };
-    spyOn(packageManager, "getCatalogClient").andReturn(catalogClient);
+    spyOn(packageManager, "getCatalogClient").and.returnValue(catalogClient);
     panel = new InstallPanel(settingsView, packageManager);
   });
 
@@ -114,18 +114,15 @@ describe("InstallPanel", function () {
     expect(panel.refs.catalogSourceError.style.display).toBe("none");
   });
 
-  it("reports catalog fetch failures as a notification", function () {
-    spyOn(lumine.notifications, "addError").andCallThrough();
-    catalogClient.loadAll.andReturn(Promise.reject(new Error("boom")));
+  it("reports catalog fetch failures as a notification", async () => {
+    spyOn(lumine.notifications, "addError").and.callThrough();
+    catalogClient.loadAll.and.returnValue(Promise.reject(new Error("boom")));
     panel.refs.fetchButton.click();
 
-    waitsForPromise(() =>
-      panel.catalogPromise.then(() => {
-        expect(lumine.notifications.addError).toHaveBeenCalled();
-        const [message] = lumine.notifications.addError.mostRecentCall.args;
-        expect(message).toContain("boom");
-      }),
-    );
+    await panel.catalogPromise;
+    expect(lumine.notifications.addError).toHaveBeenCalled();
+    const [message] = lumine.notifications.addError.calls.mostRecent().args;
+    expect(message).toContain("boom");
   });
 
   it("restores the default catalog sources", function () {
@@ -141,36 +138,30 @@ describe("InstallPanel", function () {
     expect(panel.catalogFetched).toBe(false);
   });
 
-  it("fetches the catalogs the first time the tab is shown", function () {
+  it("fetches the catalogs the first time the tab is shown", async () => {
     catalogClient.loadAll.reset();
     panel.beforeShow();
-    waitsForPromise(() =>
-      panel.catalogPromise.then(() => {
-        expect(panel.catalogFetched).toBe(true);
-        expect(catalogClient.loadAll.callCount).toBe(2);
-        expect(catalogClient.loadAll.argsForCall[0][1].cacheOnly).toBe(true);
-        expect(catalogClient.loadAll.mostRecentCall.args[1].refresh).toBe(true);
-      }),
-    );
+    await panel.catalogPromise;
+    expect(panel.catalogFetched).toBe(true);
+    expect(catalogClient.loadAll.calls.count()).toBe(2);
+    expect(catalogClient.loadAll.calls.argsFor(0)[1].cacheOnly).toBe(true);
+    expect(catalogClient.loadAll.calls.mostRecent().args[1].refresh).toBe(true);
   });
 
-  it("does not re-fetch on later shows", function () {
+  it("does not re-fetch on later shows", async () => {
     panel.beforeShow();
-    waitsForPromise(() =>
-      panel.catalogPromise.then(() => {
-        expect(panel.catalogFetched).toBe(true);
-        catalogClient.loadAll.reset();
-        panel.beforeShow();
-        expect(catalogClient.loadAll).not.toHaveBeenCalled();
-      }),
-    );
+    await panel.catalogPromise;
+    expect(panel.catalogFetched).toBe(true);
+    catalogClient.loadAll.reset();
+    panel.beforeShow();
+    expect(catalogClient.loadAll).not.toHaveBeenCalled();
   });
 
   it("downloads the catalogs without the cache when fetch is clicked", function () {
     catalogClient.loadAll.reset();
     panel.refs.fetchButton.click();
-    expect(catalogClient.loadAll.mostRecentCall.args[0]).toEqual(["official/catalog"]);
-    expect(catalogClient.loadAll.mostRecentCall.args[1].refresh).toBe(true);
+    expect(catalogClient.loadAll.calls.mostRecent().args[0]).toEqual(["official/catalog"]);
+    expect(catalogClient.loadAll.calls.mostRecent().args[1].refresh).toBe(true);
   });
 
   it("auto-downloads the catalogs on the first search if never fetched", function () {
@@ -195,8 +186,8 @@ describe("InstallPanel", function () {
     expect(catalogClient.loadAll).not.toHaveBeenCalled();
   });
 
-  it("aggregates catalogs in order and dedupes packages by repository", function () {
-    catalogClient.loadAll.andReturn(
+  it("aggregates catalogs in order and dedupes packages by repository", async () => {
+    catalogClient.loadAll.and.returnValue(
       Promise.resolve({
         schemaVersion: 2,
         packages: [
@@ -218,17 +209,14 @@ describe("InstallPanel", function () {
     lumine.config.set("settings-view.packageCatalogs", ["first/catalog", "second/catalog"]);
     panel.refs.fetchButton.click();
 
-    waitsForPromise(() =>
-      panel.catalogPromise.then(() => {
-        // The same repository from both catalogs is deduped; the first wins.
-        expect(panel.catalogPackages.map(({ name }) => name)).toEqual(["shared", "second-only"]);
-        expect(panel.catalogPackages[0].description).toBe("first/catalog");
-      }),
-    );
+    await panel.catalogPromise;
+    // The same repository from both catalogs is deduped; the first wins.
+    expect(panel.catalogPackages.map(({ name }) => name)).toEqual(["shared", "second-only"]);
+    expect(panel.catalogPackages[0].description).toBe("first/catalog");
   });
 
-  it("keeps same-named packages from different repositories", function () {
-    catalogClient.loadAll.andReturn(
+  it("keeps same-named packages from different repositories", async () => {
+    catalogClient.loadAll.and.returnValue(
       Promise.resolve({
         schemaVersion: 2,
         packages: [
@@ -240,17 +228,14 @@ describe("InstallPanel", function () {
     );
     panel.refs.fetchButton.click();
 
-    waitsForPromise(() =>
-      panel.catalogPromise.then(() => {
-        expect(panel.catalogPackages.map(({ repository }) => repository)).toEqual([
-          "author-one/twin",
-          "author-two/twin",
-        ]);
-      }),
-    );
+    await panel.catalogPromise;
+    expect(panel.catalogPackages.map(({ repository }) => repository)).toEqual([
+      "author-one/twin",
+      "author-two/twin",
+    ]);
   });
 
-  it("erases the current catalog list when a fetch starts, then loads incrementally", function () {
+  it("erases the current catalog list when a fetch starts, then loads incrementally", async () => {
     panel.catalogPackages = [
       { name: "old-package", repository: "owner/old", installSource: "owner/old" },
     ];
@@ -258,7 +243,7 @@ describe("InstallPanel", function () {
     expect(panel.refs.browseContainer.querySelectorAll(".package-card").length).toBe(1);
 
     let listAtFetchStart = null;
-    catalogClient.loadAll.andCallFake((sources, opts) => {
+    catalogClient.loadAll.and.callFake((sources, opts) => {
       // The old list is erased before any records arrive.
       listAtFetchStart = panel.catalogPackages.slice();
       opts.onRecord({ name: "new-1", repository: "owner/new-1", installSource: "owner/new-1" });
@@ -274,12 +259,9 @@ describe("InstallPanel", function () {
 
     panel.refs.fetchButton.click();
 
-    waitsForPromise(() =>
-      panel.catalogPromise.then(() => {
-        expect(listAtFetchStart).toEqual([]);
-        expect(panel.catalogPackages.map(({ name }) => name)).toEqual(["new-1", "new-2"]);
-      }),
-    );
+    await panel.catalogPromise;
+    expect(listAtFetchStart).toEqual([]);
+    expect(panel.catalogPackages.map(({ name }) => name)).toEqual(["new-1", "new-2"]);
   });
 
   it("reuses cards across a filter switch instead of rebuilding them", function () {
@@ -379,27 +361,21 @@ describe("InstallPanel", function () {
       panel.catalogPromise = Promise.resolve({ schemaVersion: 1, packages: panel.catalogPackages });
     });
 
-    it("shows one card per repository and records every catalog that lists it", function () {
-      waitsForPromise(() =>
-        panel.search("shared").then((results) => {
-          expect(results.map(({ name }) => name)).toEqual(["shared"]);
-          expect(results[0].catalogSources).toEqual(["owner/catalog", "other/catalog"]);
-          expect(panel.refs.resultsContainer.querySelectorAll(".package-card").length).toBe(1);
-        }),
-      );
+    it("shows one card per repository and records every catalog that lists it", async () => {
+      const results = await panel.search("shared");
+      expect(results.map(({ name }) => name)).toEqual(["shared"]);
+      expect(results[0].catalogSources).toEqual(["owner/catalog", "other/catalog"]);
+      expect(panel.refs.resultsContainer.querySelectorAll(".package-card").length).toBe(1);
     });
   });
 
   describe("searching packages", () =>
-    it("does not query the package registry", function () {
-      waitsForPromise(() =>
-        panel.search("first").then(() => {
-          expect(panel.refs.searchMessage.textContent).toContain("owner/repo");
-        }),
-      );
+    it("does not query the package registry", async () => {
+      await panel.search("first");
+      expect(panel.refs.searchMessage.textContent).toContain("owner/repo");
     }));
 
-  it("searches catalog metadata and preserves the repository install source", function () {
+  it("searches catalog metadata and preserves the repository install source", async () => {
     panel.catalogPackages = [
       {
         name: "sample-package",
@@ -411,16 +387,13 @@ describe("InstallPanel", function () {
     ];
     panel.catalogPromise = Promise.resolve({ schemaVersion: 1, packages: panel.catalogPackages });
 
-    waitsForPromise(() =>
-      panel.search("sample").then((results) => {
-        expect(results.length).toBe(1);
-        expect(results[0].installSource).toBe("owner/sample-package@2.1.0");
-        expect(panel.refs.resultsContainer.querySelectorAll(".package-card").length).toBe(1);
-      }),
-    );
+    const results = await panel.search("sample");
+    expect(results.length).toBe(1);
+    expect(results[0].installSource).toBe("owner/sample-package@2.1.0");
+    expect(panel.refs.resultsContainer.querySelectorAll(".package-card").length).toBe(1);
   });
 
-  it("matches by name and keywords but not by description text", function () {
+  it("matches by name and keywords but not by description text", async () => {
     panel.catalogPackages = [
       {
         name: "seti-ui",
@@ -441,15 +414,12 @@ describe("InstallPanel", function () {
     ];
     panel.catalogPromise = Promise.resolve({ schemaVersion: 1, packages: panel.catalogPackages });
 
-    waitsForPromise(() =>
-      panel.search("ui").then((results) => {
-        // seti-syntax only mentions "UI" in its description and must not match.
-        expect(results.map(({ name }) => name)).toEqual(["seti-ui"]);
-      }),
-    );
+    const results = await panel.search("ui");
+    // seti-syntax only mentions "UI" in its description and must not match.
+    expect(results.map(({ name }) => name)).toEqual(["seti-ui"]);
   });
 
-  it("filters search results by package and theme", function () {
+  it("filters search results by package and theme", async () => {
     panel.catalogPackages = [
       {
         name: "sample-package",
@@ -468,20 +438,12 @@ describe("InstallPanel", function () {
     panel.catalogPromise = Promise.resolve({ schemaVersion: 1, packages: panel.catalogPackages });
 
     panel.filterType = "themes";
-    waitsForPromise(() =>
-      panel.search("sample").then((results) => {
-        expect(results.map(({ name }) => name)).toEqual(["sample-theme"]);
-      }),
-    );
+    let results = await panel.search("sample");
+    expect(results.map(({ name }) => name)).toEqual(["sample-theme"]);
 
-    runs(() => {
-      panel.filterType = "packages";
-    });
-    waitsForPromise(() =>
-      panel.search("sample").then((results) => {
-        expect(results.map(({ name }) => name)).toEqual(["sample-package"]);
-      }),
-    );
+    panel.filterType = "packages";
+    results = await panel.search("sample");
+    expect(results.map(({ name }) => name)).toEqual(["sample-package"]);
   });
 
   it("browses all catalog packages matching the active filter", function () {
@@ -522,13 +484,13 @@ describe("InstallPanel", function () {
 
   describe("searching git packages", function () {
     beforeEach(() => {
-      return spyOn(panel, "showGitInstallPackageCard").andCallThrough();
+      return spyOn(panel, "showGitInstallPackageCard").and.callThrough();
     });
 
     it("shows a git installation card with git specific info for ssh URLs", function () {
       const query = "git@github.com:user/repo.git";
       panel.performSearchForQuery(query);
-      const args = panel.showGitInstallPackageCard.argsForCall[0][0];
+      const args = panel.showGitInstallPackageCard.calls.argsFor(0)[0];
       expect(args.name).toEqual(query);
       expect(args.gitUrlInfo).toBeTruthy();
     });
@@ -536,7 +498,7 @@ describe("InstallPanel", function () {
     it("shows a git installation card with git specific info for https URLs", function () {
       const query = "https://github.com/user/repo.git";
       panel.performSearchForQuery(query);
-      const args = panel.showGitInstallPackageCard.argsForCall[0][0];
+      const args = panel.showGitInstallPackageCard.calls.argsFor(0)[0];
       expect(args.name).toEqual(query);
       expect(args.gitUrlInfo).toBeTruthy();
     });
@@ -544,7 +506,7 @@ describe("InstallPanel", function () {
     it("shows a git installation card with git specific info for shortcut URLs", function () {
       const query = "user/repo";
       panel.performSearchForQuery(query);
-      const args = panel.showGitInstallPackageCard.argsForCall[0][0];
+      const args = panel.showGitInstallPackageCard.calls.argsFor(0)[0];
       expect(args.name).toEqual(query);
       expect(args.gitUrlInfo).toBeTruthy();
     });
@@ -552,20 +514,17 @@ describe("InstallPanel", function () {
     it("keeps a version selector in the install source, not just the repository", function () {
       const query = "asiloisad/community-invert-colors@0.4.0";
       panel.performSearchForQuery(query);
-      const args = panel.showGitInstallPackageCard.argsForCall[0][0];
+      const args = panel.showGitInstallPackageCard.calls.argsFor(0)[0];
       expect(args.name).toEqual(query);
       expect(args.installSource).toEqual(query);
       expect(args.repository).toEqual("asiloisad/community-invert-colors");
     });
 
-    it("doesn't show a git installation card for normal packages", function () {
+    it("doesn't show a git installation card for normal packages", async () => {
       const query = "this-package-is-so-normal";
-      waitsForPromise(() =>
-        panel.performSearchForQuery(query).then(() => {
-          expect(panel.showGitInstallPackageCard).not.toHaveBeenCalled();
-          expect(panel.refs.searchMessage.textContent).toContain("owner/repo");
-        }),
-      );
+      await panel.performSearchForQuery(query);
+      expect(panel.showGitInstallPackageCard).not.toHaveBeenCalled();
+      expect(panel.refs.searchMessage.textContent).toContain("owner/repo");
     });
 
     describe("when a package with the same gitUrlInfo property is installed", function () {

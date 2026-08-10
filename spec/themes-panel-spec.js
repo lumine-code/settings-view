@@ -5,7 +5,7 @@ const CSON = require("@lumine-code/season");
 
 const PackageManager = require("../lib/package-manager");
 const ThemesPanel = require("../lib/themes-panel");
-const { conditionPromise, timeoutPromise: wait } = require("./async-spec-helpers");
+const wait = timeoutPromise;
 
 describe("ThemesPanel", function () {
   let [panel, packageManager, reloadedHandler] = [];
@@ -22,26 +22,26 @@ describe("ThemesPanel", function () {
     lumine.themes.onDidChangeActiveThemes(reloadedHandler);
     await lumine.themes.activatePackages();
 
-    await conditionPromise(() => reloadedHandler.callCount === 1, "themes to be reloaded");
+    await conditionPromise(() => reloadedHandler.calls.count() === 1, "themes to be reloaded");
 
     packageManager = new PackageManager();
     const themeMetadata = CSON.readFileSync(
       path.join(__dirname, "fixtures", "a-theme", "package.json"),
     );
-    spyOn(packageManager, "getFeatured").andCallFake((_) => Promise.resolve([themeMetadata]));
+    spyOn(packageManager, "getFeatured").and.callFake((_) => Promise.resolve([themeMetadata]));
     panel = new ThemesPanel(settingsView, packageManager);
 
     // Make updates synchronous
-    spyOn(panel, "scheduleUpdateThemeConfig").andCallFake(function () {
+    spyOn(panel, "scheduleUpdateThemeConfig").and.callFake(function () {
       return this.updateThemeConfig();
     });
   });
 
-  afterEach(function () {
+  afterEach(async () => {
     if (lumine.packages.isPackageLoaded("a-theme")) {
       lumine.packages.unloadPackage("a-theme");
     }
-    waitsForPromise(() => Promise.resolve(lumine.themes.deactivateThemes()));
+    await Promise.resolve(lumine.themes.deactivateThemes());
   }); // Ensure works on promise and non-promise versions
 
   it("selects the configured mode and theme pairs", function () {
@@ -55,89 +55,88 @@ describe("ThemesPanel", function () {
   });
 
   describe("when a UI theme is selected for the active pair", () =>
-    it("updates the pair config key and switches the active themes", function () {
+    it("updates the pair config key and switches the active themes", async () => {
       for (let child of Array.from(panel.refs.darkUiMenu.children)) {
         child.selected = child.value === "one-day-ui";
         child.dispatchEvent(new Event("change", { bubbles: true }));
       }
-      waitsFor(() => reloadedHandler.callCount === 2);
-      runs(function () {
-        expect(lumine.config.get("theme.dark")).toEqual(["one-day-ui", "one-night-syntax"]);
-        expect(lumine.config.get(lumine.themes.getActiveThemesKeyPath())).toEqual([
-          "one-day-ui",
-          "one-night-syntax",
-        ]);
-      });
+      await conditionPromise(() => reloadedHandler.calls.count() === 2);
+      expect(lumine.config.get("theme.dark")).toEqual(["one-day-ui", "one-night-syntax"]);
+      expect(lumine.config.get(lumine.themes.getActiveThemesKeyPath())).toEqual([
+        "one-day-ui",
+        "one-night-syntax",
+      ]);
     }));
 
   describe("when a syntax theme is selected for the inactive pair", () =>
-    it("updates the pair config key without switching the active themes", function () {
+    it("updates the pair config key without switching the active themes", async () => {
       reloadedHandler.reset();
       for (let child of Array.from(panel.refs.lightSyntaxMenu.children)) {
         child.selected = child.value === "one-night-syntax";
         child.dispatchEvent(new Event("change", { bubbles: true }));
       }
-      waitsFor(
+      await conditionPromise(
         () => lumine.config.get("theme.light")[1] === "one-night-syntax",
         "the light pair to update",
       );
-      runs(function () {
-        expect(lumine.config.get("theme.light")).toEqual(["one-day-ui", "one-night-syntax"]);
-        expect(lumine.config.get(lumine.themes.getActiveThemesKeyPath())).toEqual([
-          "one-night-ui",
-          "one-night-syntax",
-        ]);
-        expect(reloadedHandler.callCount).toBe(0);
-      });
+      expect(lumine.config.get("theme.light")).toEqual(["one-day-ui", "one-night-syntax"]);
+      expect(lumine.config.get(lumine.themes.getActiveThemesKeyPath())).toEqual([
+        "one-night-ui",
+        "one-night-syntax",
+      ]);
+      expect(reloadedHandler.calls.count()).toBe(0);
     }));
 
   describe("when the theme mode is selected", () =>
-    it("updates 'theme.mode' and switches to the matching pair", function () {
+    it("updates 'theme.mode' and switches to the matching pair", async () => {
       panel.refs.modeMenu.value = "light";
       panel.refs.modeMenu.dispatchEvent(new Event("change", { bubbles: true }));
 
-      waitsFor(() => reloadedHandler.callCount === 2);
-      runs(function () {
-        expect(lumine.config.get("theme.mode")).toBe("light");
-        expect(lumine.config.get(lumine.themes.getActiveThemesKeyPath())).toEqual([
-          "one-day-ui",
-          "one-day-syntax",
-        ]);
-        expect(panel.refs.lightActiveBadge.style.display).toBe("");
-        expect(panel.refs.darkActiveBadge.style.display).toBe("none");
-      });
+      await conditionPromise(() => reloadedHandler.calls.count() === 2);
+      expect(lumine.config.get("theme.mode")).toBe("light");
+      expect(lumine.config.get(lumine.themes.getActiveThemesKeyPath())).toEqual([
+        "one-day-ui",
+        "one-day-syntax",
+      ]);
+      expect(panel.refs.lightActiveBadge.style.display).toBe("");
+      expect(panel.refs.darkActiveBadge.style.display).toBe("none");
     }));
 
   describe("when the theme pair config keys change", () =>
-    it("refreshes the theme menus", function () {
+    it("refreshes the theme menus", async () => {
       reloadedHandler.reset();
       lumine.config.set("theme.dark", ["one-day-ui", "one-day-syntax"]);
 
-      waitsFor(() => reloadedHandler.callCount === 1);
+      await conditionPromise(() => reloadedHandler.calls.count() === 1);
 
-      runs(function () {
-        expect(panel.refs.darkUiMenu.value).toBe("one-day-ui");
-        expect(panel.refs.darkSyntaxMenu.value).toBe("one-day-syntax");
-      });
+      expect(panel.refs.darkUiMenu.value).toBe("one-day-ui");
+      expect(panel.refs.darkSyntaxMenu.value).toBe("one-day-syntax");
     }));
 
-  xdescribe("when the themes panel is navigated to", () =>
-    xit("focuses the search filter", function () {
-      settingsView.showPanel("Themes");
+  // `settingsView` is null throughout this file, so the spec that used to sit
+  // here called `showPanel` on nothing. What the panel actually owes the
+  // settings view is that focusing it puts the cursor in the filter.
+  jasmine.describeWithDocumentFocus("when the themes panel is focused", () =>
+    it("focuses the search filter", () => {
+      jasmine.attachToDOM(panel.element);
+
+      panel.focus();
+
       expect(panel.refs.filterEditor.element).toHaveFocus();
-    }));
+    }),
+  );
 
   describe("theme lists", function () {
     let [installed] = [];
-    beforeEach(function () {
+    beforeEach(async () => {
       installed = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "installed.json")));
-      spyOn(packageManager, "loadCompatiblePackageVersion").andCallFake(function () {});
-      spyOn(packageManager, "getInstalled").andReturn(Promise.resolve(installed));
+      spyOn(packageManager, "loadCompatiblePackageVersion").and.callFake(function () {});
+      spyOn(packageManager, "getInstalled").and.returnValue(Promise.resolve(installed));
       panel = new ThemesPanel(settingsView, packageManager);
 
-      waitsFor(
+      await conditionPromise(
         () =>
-          packageManager.getInstalled.callCount === 1 &&
+          packageManager.getInstalled.calls.count() === 1 &&
           panel.refs.installedCount.textContent.indexOf("…") < 0,
       );
     });
@@ -209,11 +208,11 @@ describe("ThemesPanel", function () {
       // installGitHubPackage now loads the freshly installed package itself (via
       // its afterSwap hook → activateInstalledPackage); mirror that here so the
       // new theme shows up the next time the panel reads getInstalled().
-      spyOn(packageManager, "installGitHubPackage").andCallFake((pack) => {
+      spyOn(packageManager, "installGitHubPackage").and.callFake((pack) => {
         packageManager.activateInstalledPackage(pack.name, { theme: "ui" });
         return Promise.resolve({ name: pack.name, theme: "ui" });
       });
-      spyOn(lumine.packages, "loadPackage").andCallFake((name) =>
+      spyOn(lumine.packages, "loadPackage").and.callFake((name) =>
         installed.user.push({ name, theme: "ui" }),
       );
 
@@ -292,25 +291,27 @@ describe("ThemesPanel", function () {
   });
 
   describe("when there are no themes", function () {
-    beforeEach(function () {
+    beforeEach(async () => {
       const installed = {
         dev: [],
         user: [],
         core: [],
       };
 
-      spyOn(packageManager, "loadCompatiblePackageVersion").andCallFake(function () {});
-      spyOn(packageManager, "getInstalled").andReturn(Promise.resolve(installed));
+      spyOn(packageManager, "loadCompatiblePackageVersion").and.callFake(function () {});
+      spyOn(packageManager, "getInstalled").and.returnValue(Promise.resolve(installed));
       panel = new ThemesPanel(settingsView, packageManager);
 
-      waitsFor(
+      await conditionPromise(
         () =>
-          packageManager.getInstalled.callCount === 1 &&
+          packageManager.getInstalled.calls.count() === 1 &&
           panel.refs.installedCount.textContent.indexOf("…") < 0,
       );
     });
 
-    afterEach(() => waitsForPromise(() => Promise.resolve(lumine.themes.deactivateThemes()))); // Ensure works on promise and non-promise versions
+    afterEach(async () => {
+      await Promise.resolve(lumine.themes.deactivateThemes());
+    }); // Ensure works on promise and non-promise versions
 
     it("has a count of zero in all headings", function () {
       for (let heading of Array.from(panel.element.querySelector(".section-heading-count"))) {

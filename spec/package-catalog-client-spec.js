@@ -27,7 +27,7 @@ function textResponse(status, body, headers = {}) {
 function createPackageManager({ branches = false } = {}) {
   return {
     getGitCommand: () => "git",
-    runProcess: jasmine.createSpy("runProcess").andCallFake((_command, args) => {
+    runProcess: jasmine.createSpy("runProcess").and.callFake((_command, args) => {
       if (args[0] !== "ls-remote") return Promise.resolve({ stdout: "" });
       const includeBranches = args.includes("refs/heads/*");
       return Promise.resolve({
@@ -46,7 +46,7 @@ function createPackageManager({ branches = false } = {}) {
 }
 
 function createFetch(catalogs = {}) {
-  return jasmine.createSpy("fetchImpl").andCallFake((url) => {
+  return jasmine.createSpy("fetchImpl").and.callFake((url) => {
     if (Object.hasOwn(catalogs, url)) return Promise.resolve(textResponse(200, catalogs[url]));
     if (url.includes("raw.githubusercontent.com/owner/package/")) {
       return Promise.resolve(
@@ -140,7 +140,7 @@ describe("PackageCatalogClient", function () {
     expect(() => client.validate(["https://user:secret@example.test/package"])).toThrow();
   });
 
-  it("hydrates names and metadata from the exact selected SHA", function () {
+  it("hydrates names and metadata from the exact selected SHA", async () => {
     const catalogUrl = "https://catalog.test/sources.json";
     const fetchImpl = createFetch({ [catalogUrl]: ["owner/package"] });
     const client = new PackageCatalogClient({
@@ -150,30 +150,27 @@ describe("PackageCatalogClient", function () {
       lumineVersion: () => "1.132.1",
     });
 
-    waitsForPromise(() =>
-      client.loadAll([catalogUrl], { refresh: true }).then((catalog) => {
-        expect(catalog.packages.length).toBe(1);
-        expect(catalog.packages[0]).toEqual(
-          jasmine.objectContaining({
-            name: "sample-package",
-            originKey: "github.com/owner/package",
-            resolvedSha: SHA_1,
-            selectedRef: { type: "latest", value: "v1.0.0" },
-            status: "ready",
-            readme: undefined,
-            badges: [],
-          }),
-        );
-        expect(
-          fetchImpl.argsForCall.some((args) => args[0].includes(`/${SHA_1}/package.json`)),
-        ).toBe(true);
+    const catalog = await client.loadAll([catalogUrl], { refresh: true });
+    expect(catalog.packages.length).toBe(1);
+    expect(catalog.packages[0]).toEqual(
+      jasmine.objectContaining({
+        name: "sample-package",
+        originKey: "github.com/owner/package",
+        resolvedSha: SHA_1,
+        selectedRef: { type: "latest", value: "v1.0.0" },
+        status: "ready",
+        readme: undefined,
+        badges: [],
       }),
     );
+    expect(
+      fetchImpl.calls.allArgs().some((args) => args[0].includes(`/${SHA_1}/package.json`)),
+    ).toBe(true);
   });
 
-  it("shows an engine-incompatible package instead of rejecting it", function () {
+  it("shows an engine-incompatible package instead of rejecting it", async () => {
     const catalogUrl = "https://catalog.test/index.json";
-    const fetchImpl = jasmine.createSpy("fetchImpl").andCallFake((url) => {
+    const fetchImpl = jasmine.createSpy("fetchImpl").and.callFake((url) => {
       if (url === catalogUrl) return Promise.resolve(textResponse(200, ["owner/package"]));
       if (url.includes(`/${SHA_1}/package.json`)) {
         return Promise.resolve(
@@ -194,21 +191,18 @@ describe("PackageCatalogClient", function () {
       lumineVersion: () => "1.132.1",
     });
 
-    waitsForPromise(() =>
-      client.loadAll([catalogUrl], { refresh: true }).then((catalog) => {
-        expect(catalog.packages[0]).toEqual(
-          jasmine.objectContaining({
-            name: "sample-package",
-            originKey: "github.com/owner/package",
-            status: "ready",
-          }),
-        );
-        expect(catalog.packages[0].engines).toEqual({ lumine: ">=999.0.0" });
+    const catalog = await client.loadAll([catalogUrl], { refresh: true });
+    expect(catalog.packages[0]).toEqual(
+      jasmine.objectContaining({
+        name: "sample-package",
+        originKey: "github.com/owner/package",
+        status: "ready",
       }),
     );
+    expect(catalog.packages[0].engines).toEqual({ lumine: ">=999.0.0" });
   });
 
-  it("clears an earlier origin mismatch once a corrected release is published", function () {
+  it("clears an earlier origin mismatch once a corrected release is published", async () => {
     const catalogUrl = "https://catalog.test/sources.json";
     // v1.0.0 ships a manifest whose repository points at the wrong origin; a
     // later v1.1.0 corrects it. Manifests are keyed by SHA, so the corrected
@@ -216,14 +210,14 @@ describe("PackageCatalogClient", function () {
     let tags = [`${SHA_1}\trefs/tags/v1.0.0`];
     const packageManager = {
       getGitCommand: () => "git",
-      runProcess: jasmine.createSpy("runProcess").andCallFake((_command, args) => {
+      runProcess: jasmine.createSpy("runProcess").and.callFake((_command, args) => {
         if (args[0] !== "ls-remote") return Promise.resolve({ stdout: "" });
         return Promise.resolve({
           stdout: ["ref: refs/heads/main\tHEAD", `${SHA_1}\tHEAD`, ...tags].join("\n"),
         });
       }),
     };
-    const fetchImpl = jasmine.createSpy("fetchImpl").andCallFake((url) => {
+    const fetchImpl = jasmine.createSpy("fetchImpl").and.callFake((url) => {
       if (url === catalogUrl) return Promise.resolve(textResponse(200, ["owner/package"]));
       if (url.includes(`/${SHA_1}/package.json`)) {
         return Promise.resolve(
@@ -254,44 +248,38 @@ describe("PackageCatalogClient", function () {
       lumineVersion: () => "1.132.1",
     });
 
-    waitsForPromise(() =>
-      client
-        .loadAll([catalogUrl], { refresh: true })
-        .then((catalog) => {
-          // The mismatched manifest fails strict origin validation.
-          expect(catalog.packages[0]).toEqual(
-            jasmine.objectContaining({
-              originKey: "github.com/owner/package",
-              status: "error",
-              unverifiedName: true,
-            }),
-          );
-          // Upstream corrects the repository field and publishes a new stable tag.
-          tags = [`${SHA_1}\trefs/tags/v1.0.0`, `${SHA_2}\trefs/tags/v1.1.0`];
-          return client.loadAll([catalogUrl], { refresh: true });
-        })
-        .then((catalog) => {
-          expect(catalog.packages[0]).toEqual(
-            jasmine.objectContaining({
-              name: "sample-package",
-              originKey: "github.com/owner/package",
-              resolvedSha: SHA_2,
-              selectedRef: { type: "latest", value: "v1.1.0" },
-              status: "ready",
-            }),
-          );
+    const catalog = await client.loadAll([catalogUrl], { refresh: true }).then((catalog) => {
+      // The mismatched manifest fails strict origin validation.
+      expect(catalog.packages[0]).toEqual(
+        jasmine.objectContaining({
+          originKey: "github.com/owner/package",
+          status: "error",
+          unverifiedName: true,
         }),
+      );
+      // Upstream corrects the repository field and publishes a new stable tag.
+      tags = [`${SHA_1}\trefs/tags/v1.0.0`, `${SHA_2}\trefs/tags/v1.1.0`];
+      return client.loadAll([catalogUrl], { refresh: true });
+    });
+    expect(catalog.packages[0]).toEqual(
+      jasmine.objectContaining({
+        name: "sample-package",
+        originKey: "github.com/owner/package",
+        resolvedSha: SHA_2,
+        selectedRef: { type: "latest", value: "v1.1.0" },
+        status: "ready",
+      }),
     );
   });
 
-  it("inspects an installed update at its exact SHA through Git", function () {
+  it("inspects an installed update at its exact SHA through Git", async () => {
     const storage = createStorage();
     const client = new PackageCatalogClient({
       packageManager: createPackageManager(),
       storage,
       lumineVersion: () => "1.132.1",
     });
-    spyOn(client, "fetchManifest").andReturn(
+    spyOn(client, "fetchManifest").and.returnValue(
       Promise.resolve({
         name: "renamed-package",
         version: "2.0.0",
@@ -300,35 +288,30 @@ describe("PackageCatalogClient", function () {
       }),
     );
 
-    waitsForPromise(() =>
-      client
-        .inspectResolvedManifest(
-          {
-            name: "old-package",
-            apmInstallSource: {
-              origin: "github.com/owner/package",
-              repository: "owner/package",
-            },
-          },
-          SHA_2,
-          { type: "latest", value: "v2.0.0" },
-        )
-        .then((metadata) => {
-          expect(metadata.name).toBe("renamed-package");
-          expect(client.fetchManifest).toHaveBeenCalledWith(
-            {
-              originKey: "github.com/owner/package",
-              repository: "owner/package",
-              manualSource: true,
-            },
-            SHA_2,
-            null,
-          );
-        }),
+    const metadata = await client.inspectResolvedManifest(
+      {
+        name: "old-package",
+        apmInstallSource: {
+          origin: "github.com/owner/package",
+          repository: "owner/package",
+        },
+      },
+      SHA_2,
+      { type: "latest", value: "v2.0.0" },
+    );
+    expect(metadata.name).toBe("renamed-package");
+    expect(client.fetchManifest).toHaveBeenCalledWith(
+      {
+        originKey: "github.com/owner/package",
+        repository: "owner/package",
+        manualSource: true,
+      },
+      SHA_2,
+      null,
     );
   });
 
-  it("uses the persistent cache without automatic revalidation", function () {
+  it("uses the persistent cache without automatic revalidation", async () => {
     const catalogUrl = "https://catalog.test/sources.json";
     const storage = createStorage();
     const fetchImpl = createFetch({ [catalogUrl]: ["owner/package"] });
@@ -338,29 +321,25 @@ describe("PackageCatalogClient", function () {
       storage,
     });
 
-    waitsForPromise(() =>
-      client
-        .loadAll([catalogUrl], { refresh: true })
-        .then(() => {
-          fetchImpl.reset();
-          return client.loadAll([catalogUrl]);
-        })
-        .then((catalog) => {
-          expect(catalog.cached).toBe(true);
-          expect(catalog.packages[0].name).toBe("sample-package");
-          expect(fetchImpl).not.toHaveBeenCalled();
-          return client.loadAll([catalogUrl, "new/catalog"], { cacheOnly: true });
-        })
-        .then((catalog) => {
-          expect(catalog.packages[0].name).toBe("sample-package");
-          expect(catalog.pendingSources).toEqual([
-            "https://raw.githubusercontent.com/new/catalog/HEAD/index.json",
-          ]);
-        }),
-    );
+    const catalog = await client
+      .loadAll([catalogUrl], { refresh: true })
+      .then(() => {
+        fetchImpl.reset();
+        return client.loadAll([catalogUrl]);
+      })
+      .then((catalog) => {
+        expect(catalog.cached).toBe(true);
+        expect(catalog.packages[0].name).toBe("sample-package");
+        expect(fetchImpl).not.toHaveBeenCalled();
+        return client.loadAll([catalogUrl, "new/catalog"], { cacheOnly: true });
+      });
+    expect(catalog.packages[0].name).toBe("sample-package");
+    expect(catalog.pendingSources).toEqual([
+      "https://raw.githubusercontent.com/new/catalog/HEAD/index.json",
+    ]);
   });
 
-  it("preserves the complete previous cache when a refresh is cancelled", function () {
+  it("preserves the complete previous cache when a refresh is cancelled", async () => {
     const catalogUrl = "https://catalog.test/sources.json";
     const storage = createStorage();
     storage.setItem(
@@ -389,27 +368,23 @@ describe("PackageCatalogClient", function () {
       storage,
     });
 
-    waitsForPromise(() =>
-      client
-        .loadAll([catalogUrl], {
-          refresh: true,
-          onProgress({ processed }) {
-            if (processed === 0) client.cancel();
-          },
-        })
-        .then((catalog) => {
-          expect(catalog.cancelled).toBe(true);
-          expect(catalog.lastFetch).toBe(123);
-          expect(catalog.packages.map(({ name }) => name)).toEqual(["cached-package"]);
-          return client.loadAll([catalogUrl], { cacheOnly: true });
-        })
-        .then((catalog) => {
-          expect(catalog.packages.map(({ name }) => name)).toEqual(["cached-package"]);
-        }),
-    );
+    const catalog = await client
+      .loadAll([catalogUrl], {
+        refresh: true,
+        onProgress({ processed }) {
+          if (processed === 0) client.cancel();
+        },
+      })
+      .then((catalog) => {
+        expect(catalog.cancelled).toBe(true);
+        expect(catalog.lastFetch).toBe(123);
+        expect(catalog.packages.map(({ name }) => name)).toEqual(["cached-package"]);
+        return client.loadAll([catalogUrl], { cacheOnly: true });
+      });
+    expect(catalog.packages.map(({ name }) => name)).toEqual(["cached-package"]);
   });
 
-  it("merges provenance and keeps the first catalog selector", function () {
+  it("merges provenance and keeps the first catalog selector", async () => {
     const first = "https://one.test/sources.json";
     const second = "https://two.test/sources.json";
     const client = new PackageCatalogClient({
@@ -420,17 +395,14 @@ describe("PackageCatalogClient", function () {
       packageManager: createPackageManager(),
       storage: createStorage(),
     });
-    waitsForPromise(() =>
-      client.loadAll([first, second], { refresh: true }).then((catalog) => {
-        expect(catalog.packages.length).toBe(1);
-        expect(catalog.packages[0].installSource).toBe("owner/package@1.0.0");
-        expect(catalog.packages[0].catalogSources).toEqual([first, second]);
-        expect(catalog.packages[0].selectorConflict).toBe(true);
-      }),
-    );
+    const catalog = await client.loadAll([first, second], { refresh: true });
+    expect(catalog.packages.length).toBe(1);
+    expect(catalog.packages[0].installSource).toBe("owner/package@1.0.0");
+    expect(catalog.packages[0].catalogSources).toEqual([first, second]);
+    expect(catalog.packages[0].selectorConflict).toBe(true);
   });
 
-  it("loads the complete branch list lazily and caches it", function () {
+  it("loads the complete branch list lazily and caches it", async () => {
     const catalogUrl = "https://catalog.test/sources.json";
     const packageManager = createPackageManager();
     const client = new PackageCatalogClient({
@@ -438,34 +410,28 @@ describe("PackageCatalogClient", function () {
       packageManager,
       storage: createStorage(),
     });
-    waitsForPromise(() =>
-      client
-        .loadAll([catalogUrl], { refresh: true })
-        .then((catalog) => {
-          expect(catalog.packages[0].refs.branches).toBeNull();
-          return client.loadBranches(catalog.packages[0]);
-        })
-        .then((pack) => {
-          expect(pack.refs.branches.map(({ name }) => name)).toEqual(["main", "Next"]);
-          expect(packageManager.runProcess.mostRecentCall.args[1]).toContain("refs/heads/*");
-        }),
-    );
+    const pack = await client.loadAll([catalogUrl], { refresh: true }).then((catalog) => {
+      expect(catalog.packages[0].refs.branches).toBeNull();
+      return client.loadBranches(catalog.packages[0]);
+    });
+    expect(pack.refs.branches.map(({ name }) => name)).toEqual(["main", "Next"]);
+    expect(packageManager.runProcess.calls.mostRecent().args[1]).toContain("refs/heads/*");
   });
 
-  it("keeps the previous hydrated record as stale when a repository refresh fails", function () {
+  it("keeps the previous hydrated record as stale when a repository refresh fails", async () => {
     const catalogUrl = "https://catalog.test/sources.json";
     const storage = createStorage();
     let sha = SHA_1;
     let failManifest = false;
     const packageManager = createPackageManager();
-    packageManager.runProcess.andCallFake(() =>
+    packageManager.runProcess.and.callFake(() =>
       Promise.resolve({
         stdout: ["ref: refs/heads/main\tHEAD", `${sha}\tHEAD`, `${sha}\trefs/tags/v1.0.0`].join(
           "\n",
         ),
       }),
     );
-    const fetchImpl = jasmine.createSpy("fetchImpl").andCallFake((url) => {
+    const fetchImpl = jasmine.createSpy("fetchImpl").and.callFake((url) => {
       if (url === catalogUrl) return Promise.resolve(textResponse(200, ["owner/package"]));
       if (failManifest) return Promise.resolve(textResponse(404, "missing"));
       return Promise.resolve(
@@ -479,28 +445,22 @@ describe("PackageCatalogClient", function () {
     });
     const client = new PackageCatalogClient({ fetchImpl, packageManager, storage });
 
-    waitsForPromise(() =>
-      client
-        .loadAll([catalogUrl], { refresh: true })
-        .then(() => {
-          sha = SHA_2;
-          failManifest = true;
-          return client.loadAll([catalogUrl], { refresh: true });
-        })
-        .then((catalog) => {
-          expect(catalog.packages[0].name).toBe("sample-package");
-          expect(catalog.packages[0].status).toBe("stale");
-          expect(catalog.packages[0].error).toContain("does not contain");
-        }),
-    );
+    const catalog = await client.loadAll([catalogUrl], { refresh: true }).then(() => {
+      sha = SHA_2;
+      failManifest = true;
+      return client.loadAll([catalogUrl], { refresh: true });
+    });
+    expect(catalog.packages[0].name).toBe("sample-package");
+    expect(catalog.packages[0].status).toBe("stale");
+    expect(catalog.packages[0].error).toContain("does not contain");
   });
 
-  it("keeps a renderable origin-based error record when first hydration fails", function () {
+  it("keeps a renderable origin-based error record when first hydration fails", async () => {
     const catalogUrl = "https://catalog.test/sources.json";
     const client = new PackageCatalogClient({
       fetchImpl: jasmine
         .createSpy("fetchImpl")
-        .andCallFake((url) =>
+        .and.callFake((url) =>
           Promise.resolve(
             url === catalogUrl
               ? textResponse(200, ["owner/broken-package"])
@@ -511,21 +471,18 @@ describe("PackageCatalogClient", function () {
       storage: createStorage(),
     });
 
-    waitsForPromise(() =>
-      client.loadAll([catalogUrl], { refresh: true }).then((catalog) => {
-        expect(catalog.packages[0]).toEqual(
-          jasmine.objectContaining({
-            name: "broken-package",
-            originKey: "github.com/owner/broken-package",
-            unverifiedName: true,
-            status: "error",
-          }),
-        );
+    const catalog = await client.loadAll([catalogUrl], { refresh: true });
+    expect(catalog.packages[0]).toEqual(
+      jasmine.objectContaining({
+        name: "broken-package",
+        originKey: "github.com/owner/broken-package",
+        unverifiedName: true,
+        status: "error",
       }),
     );
   });
 
-  it("rejects more than 2000 unique origins before hydration", function () {
+  it("rejects more than 2000 unique origins before hydration", async () => {
     const catalogUrl = "https://catalog.test/sources.json";
     const sources = Array.from({ length: 2001 }, (_value, index) => `owner/package-${index}`);
     const client = new PackageCatalogClient({
@@ -533,15 +490,13 @@ describe("PackageCatalogClient", function () {
       packageManager: createPackageManager(),
       storage: createStorage(),
     });
-    waitsForPromise(() =>
-      client.loadAll([catalogUrl], { refresh: true }).then(
-        () => Promise.reject(new Error("expected rejection")),
-        (error) => expect(error.message).toContain("safety limit"),
-      ),
+    await client.loadAll([catalogUrl], { refresh: true }).then(
+      () => Promise.reject(new Error("expected rejection")),
+      (error) => expect(error.message).toContain("safety limit"),
     );
   });
 
-  it("hydrates and persists an index of 1000 repositories with bounded host concurrency", function () {
+  it("hydrates and persists an index of 1000 repositories with bounded host concurrency", async () => {
     const catalogUrl = "https://catalog.test/sources.json";
     const sources = Array.from({ length: 1000 }, (_value, index) => `owner/package-${index}`);
     const storage = createStorage();
@@ -552,7 +507,7 @@ describe("PackageCatalogClient", function () {
     let finalProgress = null;
     const packageManager = {
       getGitCommand: () => "git",
-      runProcess: jasmine.createSpy("runProcess").andCallFake(() => {
+      runProcess: jasmine.createSpy("runProcess").and.callFake(() => {
         activeGit++;
         maximumGit = Math.max(maximumGit, activeGit);
         return Promise.resolve().then(() => {
@@ -567,7 +522,7 @@ describe("PackageCatalogClient", function () {
         });
       }),
     };
-    const fetchImpl = jasmine.createSpy("fetchImpl").andCallFake((url) => {
+    const fetchImpl = jasmine.createSpy("fetchImpl").and.callFake((url) => {
       activeHttp++;
       maximumHttp = Math.max(maximumHttp, activeHttp);
       return Promise.resolve().then(() => {
@@ -588,55 +543,47 @@ describe("PackageCatalogClient", function () {
       storage,
     });
 
-    waitsForPromise(() =>
-      client
-        .loadAll([catalogUrl], {
-          refresh: true,
-          onProgress(progress) {
-            finalProgress = progress;
-          },
-        })
-        .then((catalog) => {
-          expect(catalog.packages.length).toBe(1000);
-          expect(finalProgress).toEqual({ processed: 1000, total: 1000, errors: 0 });
-          expect(maximumGit).toBeLessThanOrEqual(4);
-          expect(maximumHttp).toBeLessThanOrEqual(4);
-          return new PackageCatalogClient({ storage }).loadAll([catalogUrl], {
-            cacheOnly: true,
-          });
-        })
-        .then((catalog) => expect(catalog.packages.length).toBe(1000)),
-    );
+    const catalog = await client
+      .loadAll([catalogUrl], {
+        refresh: true,
+        onProgress(progress) {
+          finalProgress = progress;
+        },
+      })
+      .then((catalog) => {
+        expect(catalog.packages.length).toBe(1000);
+        expect(finalProgress).toEqual({ processed: 1000, total: 1000, errors: 0 });
+        expect(maximumGit).toBeLessThanOrEqual(4);
+        expect(maximumHttp).toBeLessThanOrEqual(4);
+        return new PackageCatalogClient({ storage }).loadAll([catalogUrl], {
+          cacheOnly: true,
+        });
+      });
+    expect(catalog.packages.length).toBe(1000);
   });
 
-  it("loads README lazily at the exact SHA and reuses its bounded cache", function () {
+  it("loads README lazily at the exact SHA and reuses its bounded cache", async () => {
     const storage = createStorage();
     const fetchImpl = jasmine
       .createSpy("fetchImpl")
-      .andReturn(Promise.resolve(textResponse(200, "# Exact README")));
+      .and.returnValue(Promise.resolve(textResponse(200, "# Exact README")));
     const client = new PackageCatalogClient({ fetchImpl, storage });
     const pack = {
       originKey: "github.com/owner/package",
       repository: "owner/package",
       resolvedSha: SHA_1,
     };
-    waitsForPromise(() =>
-      client
-        .loadReadme(pack)
-        .then((readme) => {
-          expect(readme.body).toBe("# Exact README");
-          expect(fetchImpl.mostRecentCall.args[0]).toContain(`/${SHA_1}/README.md`);
-          fetchImpl.reset();
-          return client.loadReadme(pack);
-        })
-        .then((readme) => {
-          expect(readme.body).toBe("# Exact README");
-          expect(fetchImpl).not.toHaveBeenCalled();
-        }),
-    );
+    const readme = await client.loadReadme(pack).then((readme) => {
+      expect(readme.body).toBe("# Exact README");
+      expect(fetchImpl.calls.mostRecent().args[0]).toContain(`/${SHA_1}/README.md`);
+      fetchImpl.reset();
+      return client.loadReadme(pack);
+    });
+    expect(readme.body).toBe("# Exact README");
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it("enforces queue and per-host concurrency", function () {
+  it("enforces queue and per-host concurrency", async () => {
     const queue = new TaskQueue(3, 2);
     let active = 0;
     let maximum = 0;
@@ -648,17 +595,14 @@ describe("PackageCatalogClient", function () {
         active--;
       }, "same-host"),
     );
-    waitsForPromise(() =>
-      Promise.all(tasks).then(() => {
-        expect(maximum).toBe(2);
-      }),
-    );
+    await Promise.all(tasks);
+    expect(maximum).toBe(2);
   });
 
-  it("retries transient HTTP failures with bounded backoff", function () {
+  it("retries transient HTTP failures with bounded backoff", async () => {
     let attempts = 0;
     const client = new PackageCatalogClient({
-      fetchImpl: jasmine.createSpy("fetchImpl").andCallFake(() => {
+      fetchImpl: jasmine.createSpy("fetchImpl").and.callFake(() => {
         attempts++;
         return Promise.resolve(
           attempts === 1 ? textResponse(500, "temporary") : textResponse(200, "ready"),
@@ -668,11 +612,8 @@ describe("PackageCatalogClient", function () {
       delay: () => Promise.resolve(),
     });
 
-    waitsForPromise(() =>
-      client.requestText("https://catalog.test/sources.json", { maxBytes: 1024 }).then((body) => {
-        expect(body).toBe("ready");
-        expect(attempts).toBe(2);
-      }),
-    );
+    const body = await client.requestText("https://catalog.test/sources.json", { maxBytes: 1024 });
+    expect(body).toBe("ready");
+    expect(attempts).toBe(2);
   });
 });

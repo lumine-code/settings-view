@@ -8,38 +8,38 @@ const SnippetsProvider = {
   },
 };
 
-const { conditionPromise, timeoutPromise: wait } = require("./async-spec-helpers");
+const wait = timeoutPromise;
 
 describe("SettingsView", function () {
   let settingsView = null;
   const packageManager = new PackageManager();
 
-  beforeEach(function () {
+  beforeEach(async () => {
     // `openSetting` records into a module singleton, so specs below would
     // otherwise seed the Search panel for every later spec in the run.
     recentSettings.clear();
     settingsView = main.createSettingsView({ packageManager, snippetsProvider: SnippetsProvider });
-    spyOn(settingsView, "initializePanels").andCallThrough();
+    spyOn(settingsView, "initializePanels").and.callThrough();
     window.advanceClock(10000);
-    waitsFor(() => settingsView.initializePanels.callCount > 0);
+    await conditionPromise(() => settingsView.initializePanels.calls.count() > 0);
   });
 
   describe("when a package operation fails", function () {
-    it("surfaces the failure as a single editor notification with the stderr detail", function () {
-      spyOn(lumine.notifications, "addError").andCallThrough();
+    it("surfaces the failure as a single editor notification with the stderr detail", async () => {
+      spyOn(lumine.notifications, "addError").and.callThrough();
       const error = new Error("Installing “broken” failed.");
       error.stderr = "npm ERR! boom";
       settingsView.packageManager.emitPackageEvent("install-failed", { name: "broken" }, error);
 
-      expect(lumine.notifications.addError.callCount).toBe(1);
-      const [message, options] = lumine.notifications.addError.mostRecentCall.args;
+      expect(lumine.notifications.addError.calls.count()).toBe(1);
+      const [message, options] = lumine.notifications.addError.calls.mostRecent().args;
       expect(message).toBe("Installing “broken” failed.");
       expect(options.detail).toBe("npm ERR! boom");
     });
   });
 
   describe("serialization", function () {
-    it("remembers which panel was visible", function () {
+    it("remembers which panel was visible", async () => {
       settingsView.showPanel("Themes");
       const newSettingsView = main.createSettingsView(settingsView.serialize());
       settingsView.destroy();
@@ -48,7 +48,7 @@ describe("SettingsView", function () {
       expect(newSettingsView.activePanel).toEqual({ name: "Themes", options: {} });
     });
 
-    it("shows the previously active panel if it is added after deserialization", function () {
+    it("shows the previously active panel if it is added after deserialization", async () => {
       settingsView.addCorePanel("Panel 1", "panel-1", function () {
         const div = document.createElement("div");
         div.id = "panel-1";
@@ -88,7 +88,7 @@ describe("SettingsView", function () {
       expect(newSettingsView.activePanel).toEqual({ name: "Panel 1", options: {} });
     });
 
-    it("shows the Settings panel if the last saved active panel name no longer exists", function () {
+    it("shows the Settings panel if the last saved active panel name no longer exists", async () => {
       settingsView.addCorePanel("Panel 1", "panel1", function () {
         const div = document.createElement("div");
         div.id = "panel-1";
@@ -113,7 +113,7 @@ describe("SettingsView", function () {
       expect(newSettingsView.activePanel).toEqual({ name: "Core", options: {} });
     });
 
-    it("serializes the active panel name even when the panels were never initialized", function () {
+    it("serializes the active panel name even when the panels were never initialized", async () => {
       settingsView.showPanel("Themes");
       const settingsView2 = main.createSettingsView(settingsView.serialize());
       const settingsView3 = main.createSettingsView(settingsView2.serialize());
@@ -124,7 +124,7 @@ describe("SettingsView", function () {
   });
 
   describe("the default panel", function () {
-    it("defaults to the Search panel when settings search is enabled", function () {
+    it("defaults to the Search panel when settings search is enabled", async () => {
       lumine.config.set("settings-view.enableSettingsSearch", true);
       const view = main.createSettingsView({ packageManager, snippetsProvider: SnippetsProvider });
       jasmine.attachToDOM(view.element);
@@ -133,7 +133,7 @@ describe("SettingsView", function () {
       view.destroy();
     });
 
-    it("falls back to the Core panel when settings search is disabled", function () {
+    it("falls back to the Core panel when settings search is disabled", async () => {
       lumine.config.set("settings-view.enableSettingsSearch", false);
       const view = main.createSettingsView({ packageManager, snippetsProvider: SnippetsProvider });
       jasmine.attachToDOM(view.element);
@@ -144,7 +144,7 @@ describe("SettingsView", function () {
   });
 
   describe(".addCorePanel(name, iconName, view)", () =>
-    it("adds a menu entry to the left and a panel that can be activated by clicking it", function () {
+    it("adds a menu entry to the left and a panel that can be activated by clicking it", async () => {
       settingsView.addCorePanel("Panel 1", "panel1", function () {
         const div = document.createElement("div");
         div.id = "panel-1";
@@ -196,105 +196,93 @@ describe("SettingsView", function () {
     }));
 
   describe("when the package is activated", function () {
-    const openWithCommand = (command) =>
-      waitsFor(function (done) {
-        var openSubscription = lumine.workspace.onDidOpen(function () {
-          openSubscription.dispose();
-          return done();
+    const openWithCommand = async (command) => {
+      const opened = new Promise((resolve) => {
+        const subscription = lumine.workspace.onDidOpen(() => {
+          subscription.dispose();
+          resolve();
         });
-        return lumine.commands.dispatch(lumine.views.getView(lumine.workspace), command);
       });
+      lumine.commands.dispatch(lumine.views.getView(lumine.workspace), command);
+      await opened;
+    };
 
-    beforeEach(function () {
+    beforeEach(async () => {
       jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
-      waitsForPromise(() => lumine.packages.activatePackage("settings-view"));
+      await lumine.packages.activatePackage("settings-view");
     });
 
     describe("when the settings view is opened with a settings-view:* command", function () {
       beforeEach(() => (settingsView = null));
 
       describe("settings-view:open", function () {
-        it("opens the settings view", function () {
-          openWithCommand("settings-view:open");
-          runs(() =>
-            expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
-              name: "Core",
-              options: {},
-            }),
-          );
+        it("opens the settings view", async () => {
+          await openWithCommand("settings-view:open");
+          expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
+            name: "Core",
+            options: {},
+          });
         });
 
-        it("always open existing item in workspace", function () {
+        it("always open existing item in workspace", async () => {
           const center = lumine.workspace.getCenter();
           let [pane1, pane2] = [];
 
-          waitsForPromise(() => lumine.workspace.open(null, { split: "right" }));
-          runs(function () {
-            expect(center.getPanes()).toHaveLength(2);
-            [pane1, pane2] = center.getPanes();
-            expect(lumine.workspace.getActivePane()).toBe(pane2);
+          await lumine.workspace.open(null, { split: "right" });
+          expect(center.getPanes()).toHaveLength(2);
+          [pane1, pane2] = center.getPanes();
+          expect(lumine.workspace.getActivePane()).toBe(pane2);
+
+          await openWithCommand("settings-view:open");
+
+          expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
+            name: "Core",
+            options: {},
           });
+          expect(lumine.workspace.getActivePane()).toBe(pane2);
 
-          openWithCommand("settings-view:open");
+          pane1.activate();
 
-          runs(function () {
-            expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
-              name: "Core",
-              options: {},
-            });
-            expect(lumine.workspace.getActivePane()).toBe(pane2);
+          await openWithCommand("settings-view:open");
+
+          expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
+            name: "Core",
+            options: {},
           });
-
-          runs(() => pane1.activate());
-
-          openWithCommand("settings-view:open");
-
-          runs(function () {
-            expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
-              name: "Core",
-              options: {},
-            });
-            expect(lumine.workspace.getActivePane()).toBe(pane2);
-          });
+          expect(lumine.workspace.getActivePane()).toBe(pane2);
         });
       });
 
       describe("settings-view:core", () =>
-        it("opens the core settings view", function () {
-          openWithCommand("settings-view:editor");
-          openWithCommand("settings-view:core");
-          runs(() =>
-            expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
-              name: "Core",
-              options: { uri: "lumine://config/core" },
-            }),
-          );
+        it("opens the core settings view", async () => {
+          await openWithCommand("settings-view:editor");
+          await openWithCommand("settings-view:core");
+          expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
+            name: "Core",
+            options: { uri: "lumine://config/core" },
+          });
         }));
 
       describe("settings-view:editor", () =>
-        it("opens the editor settings view", function () {
-          openWithCommand("settings-view:editor");
-          runs(() =>
-            expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
-              name: "Editor",
-              options: { uri: "lumine://config/editor" },
-            }),
-          );
+        it("opens the editor settings view", async () => {
+          await openWithCommand("settings-view:editor");
+          expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
+            name: "Editor",
+            options: { uri: "lumine://config/editor" },
+          });
         }));
 
       describe("settings-view:show-keybindings", () =>
-        it("opens the settings view to the keybindings page", function () {
-          openWithCommand("settings-view:show-keybindings");
-          runs(() =>
-            expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
-              name: "Keybindings",
-              options: { uri: "lumine://config/keybindings" },
-            }),
-          );
+        it("opens the settings view to the keybindings page", async () => {
+          await openWithCommand("settings-view:show-keybindings");
+          expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
+            name: "Keybindings",
+            options: { uri: "lumine://config/keybindings" },
+          });
         }));
 
       describe("the theme mode commands", () =>
-        it("set theme.mode without opening a settings view", function () {
+        it("set theme.mode without opening a settings view", async () => {
           const workspaceElement = lumine.views.getView(lumine.workspace);
 
           lumine.commands.dispatch(workspaceElement, "settings-view:use-dark-mode");
@@ -308,36 +296,30 @@ describe("SettingsView", function () {
         }));
 
       describe("settings-view:uninstall-themes", () =>
-        it("opens the settings view to the themes page", function () {
-          openWithCommand("settings-view:uninstall-themes");
-          runs(() =>
-            expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
-              name: "Themes",
-              options: { uri: "lumine://config/themes" },
-            }),
-          );
+        it("opens the settings view to the themes page", async () => {
+          await openWithCommand("settings-view:uninstall-themes");
+          expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
+            name: "Themes",
+            options: { uri: "lumine://config/themes" },
+          });
         }));
 
       describe("settings-view:uninstall-packages", () =>
-        it("opens the settings view to the install page", function () {
-          openWithCommand("settings-view:uninstall-packages");
-          runs(() =>
-            expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
-              name: "Packages",
-              options: { uri: "lumine://config/packages" },
-            }),
-          );
+        it("opens the settings view to the install page", async () => {
+          await openWithCommand("settings-view:uninstall-packages");
+          expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
+            name: "Packages",
+            options: { uri: "lumine://config/packages" },
+          });
         }));
 
       describe("settings-view:install-packages-and-themes", () =>
-        it("opens the settings view to the install page", function () {
-          openWithCommand("settings-view:install-packages-and-themes");
-          runs(() =>
-            expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
-              name: "Install",
-              options: { uri: "lumine://config/install" },
-            }),
-          );
+        it("opens the settings view to the install page", async () => {
+          await openWithCommand("settings-view:install-packages-and-themes");
+          expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
+            name: "Install",
+            options: { uri: "lumine://config/install" },
+          });
         }));
     });
 
@@ -362,163 +344,121 @@ describe("SettingsView", function () {
 
       beforeEach(() => (settingsView = null));
 
-      it("opens the settings to the correct panel with lumine://config/<panel-name> and that panel is keyboard-scrollable", function () {
-        waitsForPromise(() =>
-          lumine.workspace.open("lumine://config").then((s) => (settingsView = s)),
-        );
+      it("opens the settings to the correct panel with lumine://config/<panel-name> and that panel is keyboard-scrollable", async () => {
+        settingsView = await lumine.workspace.open("lumine://config");
 
-        waitsFor((done) => process.nextTick(done));
-        runs(function () {
-          expect(settingsView.activePanel).toEqual({ name: "Core", options: {} });
-          expect(focusIsWithinActivePanel()).toBe(true);
-          expectActivePanelToBeKeyboardScrollable();
+        await new Promise((done) => process.nextTick(done));
+        expect(settingsView.activePanel).toEqual({ name: "Core", options: {} });
+        expect(focusIsWithinActivePanel()).toBe(true);
+        expectActivePanelToBeKeyboardScrollable();
+
+        settingsView = await lumine.workspace.open("lumine://config/editor");
+
+        await timeoutPromise(1);
+        expect(settingsView.activePanel).toEqual({
+          name: "Editor",
+          options: { uri: "lumine://config/editor" },
         });
+        expect(focusIsWithinActivePanel()).toBe(true);
+        expectActivePanelToBeKeyboardScrollable();
 
-        waitsForPromise(() =>
-          lumine.workspace.open("lumine://config/editor").then((s) => (settingsView = s)),
-        );
+        settingsView = await lumine.workspace.open("lumine://config/language");
 
-        waits(1);
-        runs(function () {
-          expect(settingsView.activePanel).toEqual({
-            name: "Editor",
-            options: { uri: "lumine://config/editor" },
-          });
-          expect(focusIsWithinActivePanel()).toBe(true);
-          expectActivePanelToBeKeyboardScrollable();
+        await timeoutPromise(1);
+        expect(settingsView.activePanel).toEqual({
+          name: "Language",
+          options: { uri: "lumine://config/language" },
         });
+        expect(focusIsWithinActivePanel()).toBe(true);
+        expectActivePanelToBeKeyboardScrollable();
 
-        waitsForPromise(() =>
-          lumine.workspace.open("lumine://config/language").then((s) => (settingsView = s)),
-        );
+        settingsView = await lumine.workspace.open("lumine://config/keybindings");
 
-        waits(1);
-        runs(function () {
-          expect(settingsView.activePanel).toEqual({
-            name: "Language",
-            options: { uri: "lumine://config/language" },
-          });
-          expect(focusIsWithinActivePanel()).toBe(true);
-          expectActivePanelToBeKeyboardScrollable();
+        await timeoutPromise(1);
+        expect(settingsView.activePanel).toEqual({
+          name: "Keybindings",
+          options: { uri: "lumine://config/keybindings" },
         });
+        expect(focusIsWithinActivePanel()).toBe(true);
+        expectActivePanelToBeKeyboardScrollable();
 
-        waitsForPromise(() =>
-          lumine.workspace.open("lumine://config/keybindings").then((s) => (settingsView = s)),
-        );
+        settingsView = await lumine.workspace.open("lumine://config/packages");
 
-        waits(1);
-        runs(function () {
-          expect(settingsView.activePanel).toEqual({
-            name: "Keybindings",
-            options: { uri: "lumine://config/keybindings" },
-          });
-          expect(focusIsWithinActivePanel()).toBe(true);
-          expectActivePanelToBeKeyboardScrollable();
+        await timeoutPromise(1);
+        expect(settingsView.activePanel).toEqual({
+          name: "Packages",
+          options: { uri: "lumine://config/packages" },
         });
+        expect(focusIsWithinActivePanel()).toBe(true);
+        expectActivePanelToBeKeyboardScrollable();
 
-        waitsForPromise(() =>
-          lumine.workspace.open("lumine://config/packages").then((s) => (settingsView = s)),
-        );
+        settingsView = await lumine.workspace.open("lumine://config/themes");
 
-        waits(1);
-        runs(function () {
-          expect(settingsView.activePanel).toEqual({
-            name: "Packages",
-            options: { uri: "lumine://config/packages" },
-          });
-          expect(focusIsWithinActivePanel()).toBe(true);
-          expectActivePanelToBeKeyboardScrollable();
+        await timeoutPromise(1);
+        expect(settingsView.activePanel).toEqual({
+          name: "Themes",
+          options: { uri: "lumine://config/themes" },
         });
+        expect(focusIsWithinActivePanel()).toBe(true);
+        expectActivePanelToBeKeyboardScrollable();
 
-        waitsForPromise(() =>
-          lumine.workspace.open("lumine://config/themes").then((s) => (settingsView = s)),
-        );
+        settingsView = await lumine.workspace.open("lumine://config/updates");
 
-        waits(1);
-        runs(function () {
-          expect(settingsView.activePanel).toEqual({
-            name: "Themes",
-            options: { uri: "lumine://config/themes" },
-          });
-          expect(focusIsWithinActivePanel()).toBe(true);
-          expectActivePanelToBeKeyboardScrollable();
+        await timeoutPromise(1);
+        // The legacy updates URI redirects to the Update panel.
+        expect(settingsView.activePanel).toEqual({
+          name: "Update",
+          options: { uri: "lumine://config/updates" },
         });
+        expect(focusIsWithinActivePanel()).toBe(true);
+        expectActivePanelToBeKeyboardScrollable();
 
-        waitsForPromise(() =>
-          lumine.workspace.open("lumine://config/updates").then((s) => (settingsView = s)),
-        );
+        settingsView = await lumine.workspace.open("lumine://config/install");
 
-        waits(1);
-        runs(function () {
-          // The legacy updates URI redirects to the Update panel.
-          expect(settingsView.activePanel).toEqual({
-            name: "Update",
-            options: { uri: "lumine://config/updates" },
-          });
-          expect(focusIsWithinActivePanel()).toBe(true);
-          expectActivePanelToBeKeyboardScrollable();
+        let hasSystemPanel;
+        await timeoutPromise(1);
+        expect(settingsView.activePanel).toEqual({
+          name: "Install",
+          options: { uri: "lumine://config/install" },
         });
-
-        waitsForPromise(() =>
-          lumine.workspace.open("lumine://config/install").then((s) => (settingsView = s)),
-        );
-
-        let hasSystemPanel = false;
-        waits(1);
-        runs(function () {
-          expect(settingsView.activePanel).toEqual({
-            name: "Install",
-            options: { uri: "lumine://config/install" },
-          });
-          expect(focusIsWithinActivePanel()).toBe(true);
-          expectActivePanelToBeKeyboardScrollable();
-          return (hasSystemPanel = settingsView.panelsByName["System"] != null);
-        });
+        expect(focusIsWithinActivePanel()).toBe(true);
+        expectActivePanelToBeKeyboardScrollable();
+        hasSystemPanel = settingsView.panelsByName["System"] != null;
 
         if (hasSystemPanel) {
-          waitsForPromise(() =>
-            lumine.workspace.open("lumine://config/system").then((s) => (settingsView = s)),
-          );
+          settingsView = await lumine.workspace.open("lumine://config/system");
 
-          waits(1);
-          runs(function () {
-            expect(settingsView.activePanel).toEqual({
-              name: "System",
-              options: { uri: "lumine://config/system" },
-            });
-            expect(focusIsWithinActivePanel()).toBe(true);
-            expectActivePanelToBeKeyboardScrollable();
+          await timeoutPromise(1);
+          expect(settingsView.activePanel).toEqual({
+            name: "System",
+            options: { uri: "lumine://config/system" },
           });
+          expect(focusIsWithinActivePanel()).toBe(true);
+          expectActivePanelToBeKeyboardScrollable();
         }
       });
 
-      it("opens the package settings view with lumine://config/packages/<package-name>", function () {
-        waitsForPromise(() =>
-          lumine.packages.activatePackage(path.join(__dirname, "fixtures", "package-with-readme")),
+      it("opens the package settings view with lumine://config/packages/<package-name>", async () => {
+        await lumine.packages.activatePackage(
+          path.join(__dirname, "fixtures", "package-with-readme"),
         );
 
-        waitsForPromise(() =>
-          lumine.workspace
-            .open("lumine://config/packages/package-with-readme")
-            .then((s) => (settingsView = s)),
-        );
+        settingsView = await lumine.workspace.open("lumine://config/packages/package-with-readme");
 
-        waitsFor((done) => process.nextTick(done));
-        runs(() =>
-          expect(settingsView.activePanel).toEqual({
-            name: "package-with-readme",
-            options: {
-              uri: "lumine://config/packages/package-with-readme",
-              pack: {
+        await new Promise((done) => process.nextTick(done));
+        expect(settingsView.activePanel).toEqual({
+          name: "package-with-readme",
+          options: {
+            uri: "lumine://config/packages/package-with-readme",
+            pack: {
+              name: "package-with-readme",
+              metadata: {
                 name: "package-with-readme",
-                metadata: {
-                  name: "package-with-readme",
-                },
               },
-              back: "Packages",
             },
-          }),
-        );
+            back: "Packages",
+          },
+        });
       });
 
       it("keeps the open package detail panel and refreshes it when the package is re-activated", async () => {
@@ -549,7 +489,7 @@ describe("SettingsView", function () {
         expect(settingsView.refs.panels.contains(detailInitial.element)).toBe(true);
       });
 
-      it("recreates an origin-keyed detail panel when a selected ref changes the package name", function () {
+      it("recreates an origin-keyed detail panel when a selected ref changes the package name", async () => {
         settingsView = main.createSettingsView({
           packageManager,
           snippetsProvider: SnippetsProvider,
@@ -583,56 +523,46 @@ describe("SettingsView", function () {
         expect(settingsView.panelsByName[`origin:${originKey}`]).toBe(detailAfterRename);
       });
 
-      it("passes the URI to a pane's beforeShow() method on settings view initialization", function () {
+      it("passes the URI to a pane's beforeShow() method on settings view initialization", async () => {
         const InstallPanel = require("../lib/install-panel");
         spyOn(InstallPanel.prototype, "beforeShow");
 
-        waitsForPromise(() =>
-          lumine.workspace
-            .open("lumine://config/install/package:something")
-            .then((s) => (settingsView = s)),
+        settingsView = await lumine.workspace.open("lumine://config/install/package:something");
+
+        await conditionPromise(
+          () => settingsView.activePanel != null,
+          "The activePanel should be set",
+          5000,
         );
 
-        waitsFor(() => settingsView.activePanel != null, "The activePanel should be set", 5000);
-
-        runs(function () {
-          expect(settingsView.activePanel).toEqual({
-            name: "Install",
-            options: { uri: "lumine://config/install/package:something" },
-          });
-          expect(InstallPanel.prototype.beforeShow).toHaveBeenCalledWith({
-            uri: "lumine://config/install/package:something",
-          });
+        expect(settingsView.activePanel).toEqual({
+          name: "Install",
+          options: { uri: "lumine://config/install/package:something" },
+        });
+        expect(InstallPanel.prototype.beforeShow).toHaveBeenCalledWith({
+          uri: "lumine://config/install/package:something",
         });
       });
 
-      it("passes the URI to a pane's beforeShow() method after initialization", function () {
+      it("passes the URI to a pane's beforeShow() method after initialization", async () => {
         const InstallPanel = require("../lib/install-panel");
         spyOn(InstallPanel.prototype, "beforeShow");
 
-        waitsForPromise(() =>
-          lumine.workspace.open("lumine://config").then((s) => (settingsView = s)),
-        );
+        settingsView = await lumine.workspace.open("lumine://config");
 
-        waitsFor((done) => process.nextTick(done));
+        await new Promise((done) => process.nextTick(done));
 
-        runs(() => expect(settingsView.activePanel).toEqual({ name: "Core", options: {} }));
+        expect(settingsView.activePanel).toEqual({ name: "Core", options: {} });
 
-        waitsForPromise(() =>
-          lumine.workspace
-            .open("lumine://config/install/package:something")
-            .then((s) => (settingsView = s)),
-        );
+        settingsView = await lumine.workspace.open("lumine://config/install/package:something");
 
-        waits(1);
-        runs(function () {
-          expect(settingsView.activePanel).toEqual({
-            name: "Install",
-            options: { uri: "lumine://config/install/package:something" },
-          });
-          expect(InstallPanel.prototype.beforeShow).toHaveBeenCalledWith({
-            uri: "lumine://config/install/package:something",
-          });
+        await timeoutPromise(1);
+        expect(settingsView.activePanel).toEqual({
+          name: "Install",
+          options: { uri: "lumine://config/install/package:something" },
+        });
+        expect(InstallPanel.prototype.beforeShow).toHaveBeenCalledWith({
+          uri: "lumine://config/install/package:something",
         });
       });
     });
@@ -640,54 +570,38 @@ describe("SettingsView", function () {
     describe("when the package is then deactivated", function () {
       beforeEach(() => (settingsView = null));
 
-      it("calls the dispose method on all panels", function () {
-        openWithCommand("settings-view:open");
+      it("calls the dispose method on all panels", async () => {
+        await openWithCommand("settings-view:open");
 
-        waitsFor((done) => process.nextTick(done));
+        settingsView = lumine.workspace.getActivePaneItem();
+        const panels = [
+          settingsView.getOrCreatePanel("Core"),
+          settingsView.getOrCreatePanel("Editor"),
+          settingsView.getOrCreatePanel("Keybindings"),
+          settingsView.getOrCreatePanel("Packages"),
+          settingsView.getOrCreatePanel("Themes"),
+          settingsView.getOrCreatePanel("Install"),
+        ];
+        const systemPanel = settingsView.getOrCreatePanel("System");
+        if (systemPanel != null) {
+          panels.push(systemPanel);
+        }
 
-        runs(function () {
-          let panel;
-          settingsView = lumine.workspace.getActivePaneItem();
-          const panels = [
-            settingsView.getOrCreatePanel("Core"),
-            settingsView.getOrCreatePanel("Editor"),
-            settingsView.getOrCreatePanel("Keybindings"),
-            settingsView.getOrCreatePanel("Packages"),
-            settingsView.getOrCreatePanel("Themes"),
-            settingsView.getOrCreatePanel("Install"),
-          ];
-          const systemPanel = settingsView.getOrCreatePanel("System");
-          if (systemPanel != null) {
-            panels.push(systemPanel);
-          }
-          for (panel of Array.from(panels)) {
-            if (panel.dispose) {
-              spyOn(panel, "dispose");
-            } else {
-              spyOn(panel, "destroy");
-            }
-          }
+        // A panel either disposes or destroys; spy on whichever it has.
+        const teardown = panels.map((panel) => (panel.dispose ? "dispose" : "destroy"));
+        panels.forEach((panel, index) => spyOn(panel, teardown[index]));
 
-          waitsForPromise(() =>
-            Promise.resolve(lumine.packages.deactivatePackage("settings-view")),
-          ); // Ensure works on promise and non-promise versions
+        await lumine.packages.deactivatePackage("settings-view");
 
-          runs(function () {
-            for (panel of Array.from(panels)) {
-              if (panel.dispose) {
-                expect(panel.dispose).toHaveBeenCalled();
-              } else {
-                expect(panel.destroy).toHaveBeenCalled();
-              }
-            }
-          });
+        panels.forEach((panel, index) => {
+          expect(panel[teardown[index]]).toHaveBeenCalled();
         });
       });
     });
   });
 
   describe("opening a search result", () => {
-    it("routes settings that live outside the Core panel", () => {
+    it("routes settings that live outside the Core panel", async () => {
       spyOn(settingsView, "showPanel");
       spyOn(settingsView, "revealSetting");
 
@@ -707,7 +621,7 @@ describe("SettingsView", function () {
       });
     });
 
-    it("round-trips the recently opened list through the package state", () => {
+    it("round-trips the recently opened list through the package state", async () => {
       spyOn(settingsView, "showPanel");
       spyOn(settingsView, "revealSetting");
 
@@ -727,7 +641,7 @@ describe("SettingsView", function () {
       expect(recentSettings.getPaths()).toEqual([]);
     });
 
-    it("records the setting as recently opened, most recent first", () => {
+    it("records the setting as recently opened, most recent first", async () => {
       spyOn(settingsView, "showPanel");
       spyOn(settingsView, "revealSetting");
 
@@ -738,7 +652,7 @@ describe("SettingsView", function () {
       expect(recentSettings.getPaths()).toEqual(["editor.fontSize", "core.closeDeletedFileTabs"]);
     });
 
-    it("expands, scrolls to, focuses, and highlights a nested setting", () => {
+    it("expands, scrolls to, focuses, and highlights a nested setting", async () => {
       const panelElement = document.createElement("div");
       const section = document.createElement("section");
       section.classList.add("sub-section", "collapsed");
@@ -778,7 +692,7 @@ describe("SettingsView", function () {
       lumine.themes.activatePackages();
 
       await conditionPromise(() => {
-        return reloadedHandler.callCount === 1;
+        return reloadedHandler.calls.count() === 1;
       }, "themes to be reloaded");
 
       settingsView.showPanel("Themes");
@@ -788,7 +702,7 @@ describe("SettingsView", function () {
     afterEach(() => lumine.themes.unwatchUserStylesheet());
 
     describe("when the UI theme's settings button is clicked", () => {
-      it("navigates to that theme's detail view", function () {
+      it("navigates to that theme's detail view", async () => {
         jasmine.attachToDOM(settingsView.element);
         expect(panel.querySelector(".dark-ui-theme-settings")).toBeVisible();
 
@@ -799,7 +713,7 @@ describe("SettingsView", function () {
     });
 
     describe("when the syntax theme's settings button is clicked", () => {
-      it("navigates to that theme's detail view", function () {
+      it("navigates to that theme's detail view", async () => {
         jasmine.attachToDOM(settingsView.element);
         expect(panel.querySelector(".dark-syntax-theme-settings")).toBeVisible();
 

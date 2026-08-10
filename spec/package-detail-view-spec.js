@@ -68,7 +68,7 @@ describe("PackageDetailView", function () {
     lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
     const pack = lumine.packages.getLoadedPackage("package-with-config");
     const settingsView = new SettingsView();
-    const showToc = spyOn(settingsView, "showTableOfContents").andCallThrough();
+    const showToc = spyOn(settingsView, "showTableOfContents").and.callThrough();
     view = new PackageDetailView(pack, settingsView, packageManager, SnippetsProvider);
 
     // Sections stack in one long scrolling list, so nothing is hidden…
@@ -82,7 +82,7 @@ describe("PackageDetailView", function () {
 
     // The sidebar table of contents is the navigation: one entry per section, in
     // list order, and clicking it scrolls there.
-    const sections = showToc.mostRecentCall.args[0].filter((entry) => entry.level === 1);
+    const sections = showToc.calls.mostRecent().args[0].filter((entry) => entry.level === 1);
     expect(sections.map((entry) => entry.label)).toEqual(["Settings", "README"]);
     const scrollIntoView = spyOn(settingsSection, "scrollIntoView");
     sections[0].onClick();
@@ -93,14 +93,14 @@ describe("PackageDetailView", function () {
     lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
     const pack = lumine.packages.getLoadedPackage("package-with-config");
     const settingsView = new SettingsView();
-    const showToc = spyOn(settingsView, "showTableOfContents").andCallThrough();
+    const showToc = spyOn(settingsView, "showTableOfContents").and.callThrough();
     view = new PackageDetailView(pack, settingsView, packageManager, SnippetsProvider);
 
     view.updateInstalledState();
 
     const settingsSection = view.refs.sections.querySelector('[data-section="settings"]');
     expect(settingsSection.style.display).toBe("");
-    const labels = showToc.mostRecentCall.args[0].map((entry) => entry.label);
+    const labels = showToc.calls.mostRecent().args[0].map((entry) => entry.label);
     expect(labels).toContain("Settings");
     expect(labels).toContain("README");
   });
@@ -109,13 +109,16 @@ describe("PackageDetailView", function () {
     lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
     const pack = lumine.packages.getLoadedPackage("package-with-config");
     const settingsView = new SettingsView();
-    const showToc = spyOn(settingsView, "showTableOfContents").andCallThrough();
+    const showToc = spyOn(settingsView, "showTableOfContents").and.callThrough();
     view = new PackageDetailView(pack, settingsView, packageManager, SnippetsProvider);
 
     const sectionKeys = () =>
       Array.from(view.refs.sections.children).map((element) => element.dataset.section);
     const listedSections = () =>
-      showToc.mostRecentCall.args[0].filter((entry) => entry.level === 1).map((e) => e.label);
+      showToc.calls
+        .mostRecent()
+        .args[0].filter((entry) => entry.level === 1)
+        .map((e) => e.label);
     expect(sectionKeys()).toContain("settings");
 
     // Disabling the package takes effect in the panel that is open: a disabled
@@ -203,10 +206,10 @@ describe("PackageDetailView", function () {
 
     it("nests the document headers under its entry in the table of contents", () => {
       const settingsView = new SettingsView();
-      const showToc = spyOn(settingsView, "showTableOfContents").andCallThrough();
+      const showToc = spyOn(settingsView, "showTableOfContents").and.callThrough();
       openDetailView("package-with-docs", settingsView);
 
-      const entries = showToc.mostRecentCall.args[0];
+      const entries = showToc.calls.mostRecent().args[0];
 
       // One entry for the section, last of the list.
       expect(entries.filter((entry) => entry.level === 1).map((entry) => entry.label)).toEqual([
@@ -292,12 +295,12 @@ describe("PackageDetailView", function () {
     const packagePath = path.join(__dirname, "fixtures", "package-with-readme");
     lumine.packages.loadPackage(packagePath);
     const pack = lumine.packages.getLoadedPackage("package-with-readme");
-    const render = spyOn(lumine.tools.markdown, "render").andCallThrough();
+    const render = spyOn(lumine.tools.markdown, "render").and.callThrough();
 
     view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
 
     expect(render).toHaveBeenCalled();
-    expect(render.mostRecentCall.args[1].filePath).toBe(path.join(packagePath, "README.md"));
+    expect(render.calls.mostRecent().args[1].filePath).toBe(path.join(packagePath, "README.md"));
   });
 
   it("shows only the README while a version other than the installed one is selected", function () {
@@ -353,13 +356,13 @@ describe("PackageDetailView", function () {
     expect(lumine.shell.openExternal).toHaveBeenCalledWith(metadata.licenseSource);
   });
 
-  it("asks the catalog where the LICENSE is only once the button is clicked", function () {
+  it("asks the catalog where the LICENSE is only once the button is clicked", async () => {
     const client = packageManager.getCatalogClient();
     const source = `https://github.com/owner/pkg-lazy-license/blob/${"b".repeat(40)}/LICENSE.md`;
-    const loadLicense = spyOn(client, "loadLicense").andReturn(
+    const loadLicense = spyOn(client, "loadLicense").and.returnValue(
       Promise.resolve({ body: "MIT License…", source }),
     );
-    spyOn(client, "loadReadme").andReturn(Promise.resolve(null));
+    spyOn(client, "loadReadme").and.returnValue(Promise.resolve(null));
     spyOn(lumine.shell, "openExternal");
 
     const metadata = {
@@ -385,11 +388,9 @@ describe("PackageDetailView", function () {
     expect(loadLicense).not.toHaveBeenCalled();
     expect(view.refs.licenseButton.style.display).not.toBe("none");
 
-    waitsForPromise(() => view.openLicense());
-    runs(() => {
-      expect(loadLicense).toHaveBeenCalled();
-      expect(lumine.shell.openExternal).toHaveBeenCalledWith(source);
-    });
+    await view.openLicense();
+    expect(loadLicense).toHaveBeenCalled();
+    expect(lumine.shell.openExternal).toHaveBeenCalledWith(source);
   });
 
   it("hides the LICENSE button for a package with no license at all", function () {
@@ -413,14 +414,14 @@ describe("PackageDetailView", function () {
     view.scrollPosition = 120;
     view.beforeShow({ initialSection: "settings" });
     view.show();
-    expect(scrollIntoView.callCount).toBe(1);
+    expect(scrollIntoView.calls.count()).toBe(1);
     expect(view.scrollPosition).toBeUndefined();
 
     // Any other open leaves the list where the reader left it.
     view.scrollPosition = 120;
     view.beforeShow({});
     view.show();
-    expect(scrollIntoView.callCount).toBe(1);
+    expect(scrollIntoView.calls.count()).toBe(1);
     expect(view.scrollPosition).toBe(120);
   });
 
@@ -448,7 +449,7 @@ describe("PackageDetailView", function () {
 
   it("nests the README headers under its entry in the table of contents", function () {
     const settingsView = new SettingsView();
-    const showToc = spyOn(settingsView, "showTableOfContents").andCallThrough();
+    const showToc = spyOn(settingsView, "showTableOfContents").and.callThrough();
     const metadata = {
       name: "toc-pkg",
       version: "1.0.0",
@@ -465,7 +466,7 @@ describe("PackageDetailView", function () {
     );
 
     expect(showToc).toHaveBeenCalled();
-    const entries = showToc.mostRecentCall.args[0];
+    const entries = showToc.calls.mostRecent().args[0];
 
     // This package is not installed, so the README is the only section there is
     // to list, and its own headers follow it indented one level below.
@@ -499,7 +500,7 @@ describe("PackageDetailView", function () {
     );
 
     // The package is already loaded locally, so no registry request is made.
-    expect(packageManager.client.package.callCount).toBe(0);
+    expect(packageManager.client.package.calls.count()).toBe(0);
   });
 
   it("uses hydrated metadata without calling the legacy API by name", function () {

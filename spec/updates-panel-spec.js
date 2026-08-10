@@ -14,8 +14,8 @@ describe("UpdatesPanel", () => {
     if (panel) panel.destroy();
   });
 
-  it("lists the installed packages that have a newer version", function () {
-    const getUpdates = spyOn(packageManager, "getGitPackageUpdates").andReturn(
+  it("lists the installed packages that have a newer version", async () => {
+    const getUpdates = spyOn(packageManager, "getGitPackageUpdates").and.returnValue(
       Promise.resolve([
         { name: "updatable", repository: "owner/updatable", latestSha: "a".repeat(40) },
       ]),
@@ -23,25 +23,21 @@ describe("UpdatesPanel", () => {
 
     panel = new UpdatesPanel(new SettingsView(), packageManager);
 
-    waitsForPromise(() => panel.loadPromise);
-    runs(() => {
-      // Updates come from the install receipts, not the catalog.
-      expect(getUpdates).toHaveBeenCalled();
-      expect(panel.packageCards.map((card) => card.pack.name)).toEqual(["updatable"]);
-      expect(panel.refs.updateCount.textContent).toBe("1");
-    });
+    await panel.loadPromise;
+    // Updates come from the install receipts, not the catalog.
+    expect(getUpdates).toHaveBeenCalled();
+    expect(panel.packageCards.map((card) => card.pack.name)).toEqual(["updatable"]);
+    expect(panel.refs.updateCount.textContent).toBe("1");
   });
 
-  it("reports when everything is up to date", function () {
-    spyOn(packageManager, "getGitPackageUpdates").andReturn(Promise.resolve([]));
+  it("reports when everything is up to date", async () => {
+    spyOn(packageManager, "getGitPackageUpdates").and.returnValue(Promise.resolve([]));
 
     panel = new UpdatesPanel(new SettingsView(), packageManager);
 
-    waitsForPromise(() => panel.loadPromise);
-    runs(() => {
-      expect(panel.packageCards.length).toBe(0);
-      expect(panel.refs.updateCount.textContent).toBe("0");
-      expect(panel.refs.statusMessage.textContent).toContain("up to date");
-    });
+    await panel.loadPromise;
+    expect(panel.packageCards.length).toBe(0);
+    expect(panel.refs.updateCount.textContent).toBe("0");
+    expect(panel.refs.statusMessage.textContent).toContain("up to date");
   });
 });

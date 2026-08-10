@@ -39,7 +39,7 @@ describe("KeybindingsPanel", function () {
         selector: "lumine-text-editor[data-grammar~='css']",
       },
     ];
-    spyOn(lumine.keymaps, "getKeyBindings").andReturn(keyBindings);
+    spyOn(lumine.keymaps, "getKeyBindings").and.returnValue(keyBindings);
     return (panel = new KeybindingsPanel());
   });
 
@@ -88,7 +88,7 @@ describe("KeybindingsPanel", function () {
   describe("when a keybinding is copied", function () {
     describe("when the keybinding file ends in .cson", () =>
       it("writes a CSON snippet to the clipboard", function () {
-        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
+        spyOn(lumine.keymaps, "getUserKeymapPath").and.returnValue("keymap.cson");
         panel.element.querySelector(".copy-keybinding").click();
         expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 '.editor, .platform-test':
@@ -98,7 +98,7 @@ describe("KeybindingsPanel", function () {
 
     describe("when the keybinding file ends in .json", () =>
       it("writes a JSON snippet to the clipboard", function () {
-        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.json");
+        spyOn(lumine.keymaps, "getUserKeymapPath").and.returnValue("keymap.json");
         panel.element.querySelector(".copy-keybinding").click();
         expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 ".editor, .platform-test": {
@@ -109,7 +109,7 @@ describe("KeybindingsPanel", function () {
 
     describe("when the keybinding contains special characters", function () {
       it("escapes the backslashes before copying", function () {
-        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
+        spyOn(lumine.keymaps, "getUserKeymapPath").and.returnValue("keymap.cson");
         panel.element.querySelectorAll(".copy-keybinding")[2].click();
         expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 '.editor':
@@ -118,7 +118,7 @@ describe("KeybindingsPanel", function () {
       });
 
       it("escapes the single quotes before copying", function () {
-        spyOn(lumine.keymaps, "getUserKeymapPath").andReturn("keymap.cson");
+        spyOn(lumine.keymaps, "getUserKeymapPath").and.returnValue("keymap.cson");
         panel.element.querySelectorAll(".copy-keybinding")[1].click();
         expect(lumine.clipboard.read().replace(/\r\n/g, "\n")).toBe(`\
 'lumine-text-editor[data-grammar~=\\'css\\']':
@@ -136,7 +136,7 @@ describe("KeybindingsPanel", function () {
   });
 
   describe("when the key bindings change", () =>
-    it("reloads the key bindings", function () {
+    it("reloads the key bindings", async () => {
       keyBindings.push({
         source: lumine.keymaps.getUserKeymapPath(),
         keystrokes: "ctrl-b",
@@ -145,18 +145,16 @@ describe("KeybindingsPanel", function () {
       });
       lumine.keymaps.emitter.emit("did-reload-keymap");
 
-      waitsFor(
-        "the new keybinding to show up in the keybinding panel",
+      await conditionPromise(
         () => panel.refs.keybindingRows.children.length === 4,
+        "the new keybinding to show up in the keybinding panel",
       );
 
-      runs(function () {
-        const row = panel.refs.keybindingRows.children[1];
-        expect(row.querySelector(".keystroke").textContent).toBe("ctrl-b");
-        expect(row.querySelector(".command").textContent).toBe("core:undo");
-        expect(row.querySelector(".source").textContent).toBe("User");
-        expect(row.querySelector(".selector").textContent).toBe(".editor");
-      });
+      const row = panel.refs.keybindingRows.children[1];
+      expect(row.querySelector(".keystroke").textContent).toBe("ctrl-b");
+      expect(row.querySelector(".command").textContent).toBe("core:undo");
+      expect(row.querySelector(".source").textContent).toBe("User");
+      expect(row.querySelector(".selector").textContent).toBe(".editor");
     }));
 
   describe("when searching key bindings", function () {

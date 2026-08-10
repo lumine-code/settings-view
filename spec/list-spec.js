@@ -16,8 +16,8 @@ describe("List", () => {
       { name: "two", text: "b" },
     ];
     list.setItems(items);
-    expect(addHandler.callCount).toBe(2);
-    expect(removeHandler.callCount).toBe(0);
+    expect(addHandler.calls.count()).toBe(2);
+    expect(removeHandler.calls.count()).toBe(0);
 
     addHandler.reset();
     removeHandler.reset();
@@ -27,16 +27,16 @@ describe("List", () => {
       { name: "two", text: "b" },
     ];
     list.setItems(items);
-    expect(addHandler.callCount).toBe(1);
-    expect(removeHandler.callCount).toBe(1);
-    expect(addHandler.mostRecentCall.args[0]).toEqual({ name: "three", text: "c" });
-    expect(removeHandler.mostRecentCall.args[0]).toEqual({ name: "one", text: "a" });
+    expect(addHandler.calls.count()).toBe(1);
+    expect(removeHandler.calls.count()).toBe(1);
+    expect(addHandler.calls.mostRecent().args[0]).toEqual({ name: "three", text: "c" });
+    expect(removeHandler.calls.mostRecent().args[0]).toEqual({ name: "one", text: "a" });
     expect(list.getItems()).toEqual(items);
 
     addHandler.reset();
     removeHandler.reset();
     items.push({ name: "four" });
     list.setItems(items);
-    expect(addHandler.callCount).toBe(1);
+    expect(addHandler.calls.count()).toBe(1);
   });
 });
