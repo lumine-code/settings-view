@@ -226,7 +226,7 @@ describe("SettingsView", function () {
 
         it("always open existing item in workspace", async () => {
           const center = lumine.workspace.getCenter();
-          let [pane1, pane2] = [];
+          let pane1, pane2;
 
           await lumine.workspace.open(null, { split: "right" });
           expect(center.getPanes()).toHaveLength(2);

@@ -139,7 +139,7 @@ describe("InstallPanel", function () {
   });
 
   it("fetches the catalogs the first time the tab is shown", async () => {
-    catalogClient.loadAll.reset();
+    catalogClient.loadAll.calls.reset();
     panel.beforeShow();
     await panel.catalogPromise;
     expect(panel.catalogFetched).toBe(true);
@@ -152,13 +152,13 @@ describe("InstallPanel", function () {
     panel.beforeShow();
     await panel.catalogPromise;
     expect(panel.catalogFetched).toBe(true);
-    catalogClient.loadAll.reset();
+    catalogClient.loadAll.calls.reset();
     panel.beforeShow();
     expect(catalogClient.loadAll).not.toHaveBeenCalled();
   });
 
   it("downloads the catalogs without the cache when fetch is clicked", function () {
-    catalogClient.loadAll.reset();
+    catalogClient.loadAll.calls.reset();
     panel.refs.fetchButton.click();
     expect(catalogClient.loadAll.calls.mostRecent().args[0]).toEqual(["official/catalog"]);
     expect(catalogClient.loadAll.calls.mostRecent().args[1].refresh).toBe(true);
@@ -166,7 +166,7 @@ describe("InstallPanel", function () {
 
   it("auto-downloads the catalogs on the first search if never fetched", function () {
     expect(panel.catalogFetched).toBe(false);
-    catalogClient.loadAll.reset();
+    catalogClient.loadAll.calls.reset();
 
     panel.refs.searchEditor.setText("something");
     panel.performSearch();
@@ -178,7 +178,7 @@ describe("InstallPanel", function () {
   it("does not auto-download again once the catalogs have been fetched", function () {
     panel.refs.fetchButton.click();
     expect(panel.catalogFetched).toBe(true);
-    catalogClient.loadAll.reset();
+    catalogClient.loadAll.calls.reset();
 
     panel.refs.searchEditor.setText("something");
     panel.performSearch();

@@ -324,7 +324,7 @@ describe("PackageCatalogClient", function () {
     const catalog = await client
       .loadAll([catalogUrl], { refresh: true })
       .then(() => {
-        fetchImpl.reset();
+        fetchImpl.calls.reset();
         return client.loadAll([catalogUrl]);
       })
       .then((catalog) => {
@@ -576,7 +576,7 @@ describe("PackageCatalogClient", function () {
     const readme = await client.loadReadme(pack).then((readme) => {
       expect(readme.body).toBe("# Exact README");
       expect(fetchImpl.calls.mostRecent().args[0]).toContain(`/${SHA_1}/README.md`);
-      fetchImpl.reset();
+      fetchImpl.calls.reset();
       return client.loadReadme(pack);
     });
     expect(readme.body).toBe("# Exact README");

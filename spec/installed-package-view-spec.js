@@ -22,6 +22,7 @@ let SnippetsProvider = {
 };
 
 describe("InstalledPackageView", function () {
+  let packageCard;
   beforeEach(() => {
     spyOn(PackageManager.prototype, "loadCompatiblePackageVersion").and.callFake(() => {});
   });
@@ -124,6 +125,7 @@ describe("InstalledPackageView", function () {
 
   describe("when a snippet body is viewed", () =>
     it("shows a tooltip", async () => {
+      let view;
       let snippetsTable = null;
       let snippetsModule = null;
 
@@ -286,7 +288,7 @@ describe("InstalledPackageView", function () {
     }));
 
   it("does not display keybindings from other platforms", async () => {
-
+    let keybindingsTable;
     await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
     const pack = lumine.packages.getActivePackage("language-test");
@@ -368,7 +370,6 @@ describe("InstalledPackageView", function () {
 
   describe("when the package is active", () =>
     it("displays the correct enablement state", async () => {
-
       await lumine.packages.activatePackage("status-bar");
 
       expect(lumine.packages.isPackageActive("status-bar")).toBe(true);

@@ -70,7 +70,7 @@ describe("ThemesPanel", function () {
 
   describe("when a syntax theme is selected for the inactive pair", () =>
     it("updates the pair config key without switching the active themes", async () => {
-      reloadedHandler.reset();
+      reloadedHandler.calls.reset();
       for (let child of Array.from(panel.refs.lightSyntaxMenu.children)) {
         child.selected = child.value === "one-night-syntax";
         child.dispatchEvent(new Event("change", { bubbles: true }));
@@ -104,7 +104,7 @@ describe("ThemesPanel", function () {
 
   describe("when the theme pair config keys change", () =>
     it("refreshes the theme menus", async () => {
-      reloadedHandler.reset();
+      reloadedHandler.calls.reset();
       lumine.config.set("theme.dark", ["one-day-ui", "one-day-syntax"]);
 
       await conditionPromise(() => reloadedHandler.calls.count() === 1);

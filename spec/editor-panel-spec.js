@@ -85,14 +85,14 @@ describe("EditorPanel", function () {
   it("does not save the config value until it has been changed to a new value", function () {
     const observeHandler = jasmine.createSpy("observeHandler");
     lumine.config.observe("editor.simpleArray", observeHandler);
-    observeHandler.reset();
+    observeHandler.calls.reset();
 
     window.advanceClock(10000); // wait for contents-modified to be triggered
     expect(observeHandler).not.toHaveBeenCalled();
 
     setValueForId("editor.simpleArray", 2);
     expect(observeHandler).toHaveBeenCalled();
-    observeHandler.reset();
+    observeHandler.calls.reset();
 
     setValueForId("editor.simpleArray", 2);
     expect(observeHandler).not.toHaveBeenCalled();

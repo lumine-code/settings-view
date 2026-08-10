@@ -74,14 +74,14 @@ describe("GeneralPanel", () => {
   it("does not save the config value until it has been changed to a new value", () => {
     const observeHandler = jasmine.createSpy("observeHandler");
     lumine.config.observe("core.int", observeHandler);
-    observeHandler.reset();
+    observeHandler.calls.reset();
 
     window.advanceClock(10000); // wait for contents-modified to be triggered
     expect(observeHandler).not.toHaveBeenCalled();
 
     setValueForId("core.int", 2);
     expect(observeHandler).toHaveBeenCalled();
-    observeHandler.reset();
+    observeHandler.calls.reset();
 
     setValueForId("core.int", 2);
     expect(observeHandler).not.toHaveBeenCalled();
