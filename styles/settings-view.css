@@ -214,6 +214,13 @@
     .setting-title {
       display: inline-block;
     }
+    /* The box is positioned against the row, not against the line it labels,
+       so a setting's title — larger than the label text the base rule assumes
+       — leaves it riding above the words. Measured to put the box's middle on
+       the title's cap centre. */
+    input[type="checkbox"] {
+      top: 3px;
+    }
   }
   input[type="checkbox"] {
     margin: 0 0.75em 0 -2.25em;
