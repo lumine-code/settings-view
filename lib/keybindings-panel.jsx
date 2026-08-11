@@ -445,7 +445,7 @@ module.exports = class KeybindingsPanel {
 
   static determineSource(filePath) {
     if (!filePath || typeof filePath !== "string") return "Unknown";
-    if (filePath.indexOf(path.join(lumine.app.getResourcePath(), "keymaps")) === 0) {
+    if (filePath.indexOf(path.join(lumine.application.getResourcePath(), "keymaps")) === 0) {
       return "Core";
     }
     if (filePath === lumine.keymaps.getUserKeymapPath()) return "User";

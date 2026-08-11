@@ -60,7 +60,7 @@ describe("InstalledPackageView", function () {
     let snippetsModule = null;
 
     // Relies on behavior not present in the snippets package before 1.103.
-    const shouldRunScopeTest = parseFloat(lumine.app.getVersion()) >= 1.103;
+    const shouldRunScopeTest = parseFloat(lumine.application.getVersion()) >= 1.103;
 
     await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
@@ -174,7 +174,7 @@ describe("InstalledPackageView", function () {
 
   // Relies on behavior not present in the snippets package before 1.33.
   // TODO: These tests should always run once 1.33 is released.
-  if (parseFloat(lumine.app.getVersion()) >= 1.33) {
+  if (parseFloat(lumine.application.getVersion()) >= 1.33) {
     describe("when a snippet is copied", () => {
       let pack, card;
       let snippetsTable = null;

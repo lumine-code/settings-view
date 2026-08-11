@@ -6,7 +6,7 @@ describe("KeybindingsPanel", function () {
 
   beforeEach(function () {
     expect(lumine.keymaps).toBeDefined();
-    const keySource = `${lumine.app.getResourcePath()}${path.sep}keymaps`;
+    const keySource = `${lumine.application.getResourcePath()}${path.sep}keymaps`;
     keyBindings = [
       {
         source: keySource,
@@ -160,7 +160,7 @@ describe("KeybindingsPanel", function () {
   describe("when searching key bindings", function () {
     it("find case-insensitive results", function () {
       keyBindings.push({
-        source: `${lumine.app.getResourcePath()}${path.sep}keymaps`,
+        source: `${lumine.application.getResourcePath()}${path.sep}keymaps`,
         keystrokes: "F11",
         command: "window:toggle-full-screen",
         selector: "body",
@@ -231,7 +231,7 @@ describe("KeybindingsPanel", function () {
 
   it("groups identical shortcuts across their context rows", () => {
     keyBindings.push({
-      source: `${lumine.app.getResourcePath()}${path.sep}keymaps`,
+      source: `${lumine.application.getResourcePath()}${path.sep}keymaps`,
       keystrokes: "ctrl-a",
       command: "editor:select-all",
       selector: "lumine-text-editor",

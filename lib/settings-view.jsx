@@ -151,7 +151,7 @@ module.exports = class SettingsView {
     );
 
     const openConfigDirectoryClickHandler = () => {
-      lumine.app.openWindow({ pathsToOpen: [lumine.getConfigDirPath()] });
+      lumine.application.openWindow({ pathsToOpen: [lumine.getConfigDirPath()] });
     };
     this.refs.openConfigDirectory.addEventListener("click", openConfigDirectoryClickHandler);
     this.disposables.add(
@@ -225,7 +225,7 @@ module.exports = class SettingsView {
     this.packages = lumine.packages.getLoadedPackages();
 
     try {
-      const packageMetadata = require(path.join(lumine.app.getResourcePath(), "package.json"));
+      const packageMetadata = require(path.join(lumine.application.getResourcePath(), "package.json"));
       bundledPackageMetadataCache = packageMetadata ? packageMetadata._luminePackages : null;
     } catch {
       /* no bundled package metadata */

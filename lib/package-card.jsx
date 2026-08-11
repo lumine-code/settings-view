@@ -649,7 +649,7 @@ module.exports = class PackageCard {
         this.compatibleVersionNote = null;
         this.refs.versionValue.classList.add("text-error");
         console.error(
-          `No available version compatible with the installed Lumine version: ${lumine.app.getVersion()}`,
+          `No available version compatible with the installed Lumine version: ${lumine.application.getVersion()}`,
         );
       }
 
@@ -759,7 +759,7 @@ module.exports = class PackageCard {
               {
                 text: "Restart now",
                 onDidClick() {
-                  return lumine.app.restart();
+                  return lumine.application.restart();
                 },
               },
               {
@@ -877,7 +877,7 @@ module.exports = class PackageCard {
       let avatarPath = path.join(process.resourcesPath, "lumine.png");
       if (!fs.existsSync(avatarPath)) {
         avatarPath = path.join(
-          lumine.app.getResourcePath(),
+          lumine.application.getResourcePath(),
           "resources",
           "app-icons",
           "lumine.png",
@@ -1279,7 +1279,7 @@ module.exports = class PackageCard {
 
   displayNotInstalledState() {
     this.refs.uninstallButton.style.display = "none";
-    const lumineVersion = this.packageManager.normalizeVersion(lumine.app.getVersion());
+    const lumineVersion = this.packageManager.normalizeVersion(lumine.application.getVersion());
     if (!this.packageManager.satisfiesVersion(lumineVersion, this.pack)) {
       // Incompatible engine: keep the card in the list with a disabled Install.
       // A catalog card can switch to another ref (whose engine may match), so it

@@ -124,7 +124,7 @@ module.exports = class PackageDetailView {
     const openButtonClickHandler = (event) => {
       event.preventDefault();
       if (fs.existsSync(this.pack.path)) {
-        lumine.app.openWindow({ pathsToOpen: [this.pack.path] });
+        lumine.application.openWindow({ pathsToOpen: [this.pack.path] });
       }
     };
     this.refs.openButton.addEventListener("click", openButtonClickHandler);

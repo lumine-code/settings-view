@@ -7,7 +7,7 @@ function isSupported() {
 }
 
 function isDefaultProtocolClient() {
-  return lumine.app.isDefaultProtocolClient("lumine", process.execPath, ["--uri-handler", "--"]);
+  return lumine.application.isDefaultProtocolClient("lumine", process.execPath, ["--uri-handler", "--"]);
 }
 
 function setAsDefaultProtocolClient() {
@@ -15,7 +15,7 @@ function setAsDefaultProtocolClient() {
   // hacks to make it work on Linux; see https://github.com/electron/electron/issues/6440
   return (
     isSupported() &&
-    lumine.app.setAsDefaultProtocolClient("lumine", process.execPath, ["--uri-handler", "--"])
+    lumine.application.setAsDefaultProtocolClient("lumine", process.execPath, ["--uri-handler", "--"])
   );
 }
 
