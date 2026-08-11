@@ -17,6 +17,7 @@
   "license": "MIT",
   "main": "./lib/main",
   "files": [
+    "keymaps",
     "lib",
     "menus",
     "spec",

@@ -38,6 +38,26 @@ describe("SettingsView", function () {
     });
   });
 
+  describe("when the package is disabled", function () {
+    it("offers to enable it again from the warning notification", function () {
+      const notification = { dismiss: jasmine.createSpy("dismiss") };
+      spyOn(lumine.notifications, "addWarning").and.returnValue(notification);
+      spyOn(lumine.packages, "enablePackage");
+
+      main.deactivate();
+
+      const [message, options] = lumine.notifications.addWarning.calls.mostRecent().args;
+      expect(message).toContain("disabled the settings-view package");
+      expect(options.dismissable).toBe(true);
+      expect(options.buttons).toHaveLength(1);
+      expect(options.buttons[0].text).toBe("Enable Settings View");
+
+      options.buttons[0].onDidClick();
+      expect(lumine.packages.enablePackage).toHaveBeenCalledWith("settings-view");
+      expect(notification.dismiss).toHaveBeenCalled();
+    });
+  });
+
   describe("serialization", function () {
     it("remembers which panel was visible", async () => {
       settingsView.showPanel("Themes");
@@ -216,6 +236,16 @@ describe("SettingsView", function () {
       beforeEach(() => (settingsView = null));
 
       describe("settings-view:open", function () {
+        it("owns the automatic Settings keybinding", function () {
+          const keybindings = lumine.keymaps.findKeyBindings({
+            command: "settings-view:open",
+            target: lumine.views.getView(lumine.workspace),
+          });
+
+          const expectedKeystrokes = process.platform === "darwin" ? "cmd-," : "ctrl-,";
+          expect(keybindings.map(({ keystrokes }) => keystrokes)).toContain(expectedKeystrokes);
+        });
+
         it("opens the settings view", async () => {
           await openWithCommand("settings-view:open");
           expect(lumine.workspace.getActivePaneItem().activePanel).toEqual({
