@@ -13,7 +13,7 @@ Edit config settings, install packages, and change themes.
 
 ## Installation
 
-To install `settings-view` search for _settings-view_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/settings-view`.
+To install `settings-view` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/settings-view`.
 
 ## Commands
 
@@ -37,8 +37,8 @@ Commands available in `lumine-workspace`:
 
 ## Services
 
-- **status-bar** (`^1.0.0`): consumed to add a settings icon and a package-updates indicator to the status bar.
-- **snippets** (`^1.0.0`): consumed to read user snippets so they can be displayed alongside settings.
+- `status-bar`: consumed to add a settings icon and a package-updates indicator to the status bar.
+- `snippets`: consumed to read user snippets so they can be displayed alongside settings.
 
 ## Customization
 
