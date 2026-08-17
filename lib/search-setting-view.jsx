@@ -69,7 +69,7 @@ module.exports = class SearchSettingView {
       case "git":
         return "Git";
       default:
-        return _.undasherize(_.uncamelcase(namespace));
+        return _.titleize(_.uncamelcase(namespace));
     }
   }
 

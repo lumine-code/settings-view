@@ -738,7 +738,7 @@ describe("SettingsView", function () {
 
         panel.querySelector(".dark-ui-theme-settings").click();
         const packageDetail = settingsView.element.querySelector(".package-detail li.active");
-        expect(packageDetail.textContent).toBe("Ui Theme With Config");
+        expect(packageDetail.textContent).toBe("UI Theme With Config");
       });
     });
 

@@ -471,7 +471,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
 
   // Create a menu item for the given theme name.
   createThemeMenuItem(themeName) {
-    const title = _.undasherize(
+    const title = _.titleize(
       _.uncamelcase(themeName.replace(/-(ui|syntax)/g, "").replace(/-theme$/g, "")),
     );
     const option = document.createElement("option");

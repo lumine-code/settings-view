@@ -440,7 +440,7 @@ module.exports = class PackageDetailView {
   }
 
   populate() {
-    this.refs.title.textContent = `${_.undasherize(_.uncamelcase(this.pack.name))}`;
+    this.refs.title.textContent = `${_.titleize(_.uncamelcase(this.pack.name))}`;
     this.type = this.pack.metadata.theme ? "theme" : "package";
     this.updateInstalledState();
   }
@@ -669,7 +669,7 @@ module.exports = class PackageDetailView {
     if (pack.name && pack.name !== this.pack.name) {
       this.pack.name = pack.name;
       meta.name = pack.name;
-      this.refs.title.textContent = _.undasherize(_.uncamelcase(pack.name));
+      this.refs.title.textContent = _.titleize(_.uncamelcase(pack.name));
     }
     // Settings, keymaps, grammars, and snippets belong to the installed version.
     // While a different version is selected, only the README is shown, re-fetched

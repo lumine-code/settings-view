@@ -452,6 +452,6 @@ module.exports = class KeybindingsPanel {
 
     const pathParts = filePath.split(path.sep);
     const packageName = pathParts[pathParts.length - 3] || "";
-    return packageName ? _.undasherize(_.uncamelcase(packageName)) : "Unknown";
+    return packageName ? _.titleize(_.uncamelcase(packageName)) : "Unknown";
   }
 };
