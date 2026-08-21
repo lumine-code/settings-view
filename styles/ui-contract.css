@@ -96,10 +96,10 @@
     font-size: 0.75em;
   }
 
-  /* The install button is a `btn btn-info`, and that is the whole of its
-     styling: whatever the active theme paints an info button, the install
-     button is. It used to be repainted here in the accent colour, which made
-     one button in the editor answer to a rule no theme could see. */
+  /* The Install and Update buttons are a `btn btn-primary`, and that is the
+     whole of their styling: `btn-primary` is the variant every theme paints
+     from `--accent-bg-color`, so they carry the accent colour by asking for
+     the accent variant rather than by a rule here that no theme could see. */
 
   input[type="checkbox"] {
     background-color: var(--background-color-selected);

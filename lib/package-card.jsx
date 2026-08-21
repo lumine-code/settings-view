@@ -259,7 +259,7 @@ module.exports = class PackageCard {
               <div ref="updateButtonGroup" className="btn-group">
                 <button
                   type="button"
-                  className="btn btn-info icon icon-cloud-download install-button"
+                  className="btn btn-primary icon icon-cloud-download install-button"
                   ref="updateButton"
                 >
                   Update
@@ -268,7 +268,7 @@ module.exports = class PackageCard {
               <div ref="installButtonGroup" className="btn-group">
                 <button
                   type="button"
-                  className="btn btn-info icon icon-cloud-download install-button"
+                  className="btn btn-primary icon icon-cloud-download install-button"
                   ref="installButton"
                 >
                   Install
