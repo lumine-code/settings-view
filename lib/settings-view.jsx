@@ -347,7 +347,23 @@ module.exports = class SettingsView {
   }
 
   focusActivePanel() {
-    // Pass focus to panel that is currently visible
+    // Delegate to the panel rather than focusing its element: a panel that owns
+    // a search or filter editor puts focus there, and focusing the scroll
+    // container here would take it straight back off again. Every panel defines
+    // `focus()`, and the ones without an input focus their own element.
+    const panel = this.activePanel && this.panelsByName[this.activePanel.name];
+    if (panel && panel.element.offsetWidth > 0) {
+      // This is a focus restore, not a navigation, and the input a panel focuses
+      // sits at its top: without this the browser would scroll it into view and
+      // throw away where the user was reading.
+      const { scrollTop } = panel.element;
+      panel.focus();
+      panel.element.scrollTop = scrollTop;
+      return;
+    }
+
+    // No active panel yet (or it is not on screen): fall back to whichever
+    // panel element is visible, so the view is still keyboard scrollable.
     for (let i = 0; i < this.refs.panels.children.length; i++) {
       const child = this.refs.panels.children[i];
       if (child.offsetWidth > 0) {

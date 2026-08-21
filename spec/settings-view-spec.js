@@ -161,6 +161,21 @@ describe("SettingsView", function () {
       expect(view.activePanel).toEqual({ name: "Core", options: {} });
       view.destroy();
     });
+
+    it("focuses the search editor rather than the panel that contains it", async () => {
+      lumine.config.set("settings-view.enableSettingsSearch", true);
+      const view = main.createSettingsView({ packageManager, snippetsProvider: SnippetsProvider });
+      jasmine.attachToDOM(view.element);
+      view.initializePanels();
+      const searchEditor = view.panelsByName["Search"].refs.searchEditor.element;
+      expect(searchEditor.contains(document.activeElement)).toBe(true);
+
+      // And the view's own focus handler leaves it there instead of taking it
+      // back to the panel element.
+      view.focusActivePanel();
+      expect(searchEditor.contains(document.activeElement)).toBe(true);
+      view.destroy();
+    });
   });
 
   describe(".addCorePanel(name, iconName, view)", () =>
