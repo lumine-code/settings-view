@@ -616,4 +616,49 @@ describe("PackageCatalogClient", function () {
     expect(body).toBe("ready");
     expect(attempts).toBe(2);
   });
+
+  it("parses a JSON manifest as JSON rather than as CoffeeScript", async () => {
+    const template = "{{ start.row }}{% if n > 1 %} #{{ n }}{% endif %}";
+    const fetchImpl = jasmine.createSpy("fetchImpl").and.callFake((url) =>
+      Promise.resolve(
+        url.endsWith("/package.json")
+          ? textResponse(200, {
+              name: "sample-package",
+              version: "1.0.0",
+              repository: "owner/package",
+              engines: { lumine: "*" },
+              configSchema: { custom: { type: "string", default: template } },
+            })
+          : textResponse(404, "not found"),
+      ),
+    );
+    const client = new PackageCatalogClient({ fetchImpl, storage: createStorage() });
+
+    const metadata = await client.fetchManifest(
+      { originKey: "github.com/owner/package", repository: "owner/package" },
+      SHA_1,
+      null,
+    );
+    expect(metadata.configSchema.custom.default).toBe(template);
+  });
+
+  it("parses a CSON manifest through the CSON parser", async () => {
+    const fetchImpl = jasmine
+      .createSpy("fetchImpl")
+      .and.callFake((url) =>
+        Promise.resolve(
+          url.endsWith("/package.cson")
+            ? textResponse(200, 'name: "sample-package"\nversion: "1.0.0"\n')
+            : textResponse(404, "not found"),
+        ),
+      );
+    const client = new PackageCatalogClient({ fetchImpl, storage: createStorage() });
+
+    const metadata = await client.fetchManifest(
+      { originKey: "github.com/owner/package", repository: "owner/package" },
+      SHA_1,
+      null,
+    );
+    expect(metadata).toEqual({ name: "sample-package", version: "1.0.0" });
+  });
 });
