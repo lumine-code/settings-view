@@ -54,8 +54,8 @@
     }
 
     &:focus-within {
-      border-color: var(--text-color-info);
-      box-shadow: 0 0 0 1px var(--text-color-info);
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 1px var(--accent-color);
     }
 
     .search-result-link {

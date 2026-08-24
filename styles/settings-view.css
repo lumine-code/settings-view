@@ -485,11 +485,11 @@
   }
 
   .link {
-    color: var(--text-color-info);
+    color: var(--accent-only-text-color);
 
     &:hover,
     &:focus {
-      color: hsl(from var(--text-color-info) h s calc(l + 4));
+      color: hsl(from var(--accent-only-text-color) h s calc(l + 4));
     }
   }
 

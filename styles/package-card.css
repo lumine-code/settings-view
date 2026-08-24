@@ -80,7 +80,7 @@
       color: var(--text-color-subtle);
       margin-left: var(--component-padding);
       &:hover {
-        color: var(--text-color-info);
+        color: var(--accent-only-text-color);
         text-decoration: underline;
       }
     }
