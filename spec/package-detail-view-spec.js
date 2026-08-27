@@ -412,10 +412,11 @@ describe("PackageDetailView", function () {
     expect(view.refs.licenseButton.style.display).toBe("none");
   });
 
-  it("scrolls to the Settings section when the Settings button opens it", () => {
+  it("scrolls to the Settings section when the Settings button opens it", async () => {
     lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
     const pack = lumine.packages.getLoadedPackage("package-with-config");
     view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
+    jasmine.attachToDOM(view.element);
 
     // Opening via the card's Settings button scrolls straight to that section,
     // beating the scroll position the panel was last left at.
@@ -424,13 +425,15 @@ describe("PackageDetailView", function () {
     view.scrollPosition = 120;
     view.beforeShow({ initialSection: "settings" });
     view.show();
-    expect(scrollIntoView.calls.count()).toBe(1);
+    view.focus();
+    await conditionPromise(() => scrollIntoView.calls.count() === 1);
     expect(view.scrollPosition).toBeUndefined();
 
     // Any other open leaves the list where the reader left it.
     view.scrollPosition = 120;
     view.beforeShow({});
     view.show();
+    view.focus();
     expect(scrollIntoView.calls.count()).toBe(1);
     expect(view.scrollPosition).toBe(120);
   });

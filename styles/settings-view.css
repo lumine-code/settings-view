@@ -1109,6 +1109,11 @@
     width: 100%;
     table-layout: fixed;
 
+    tbody > tr {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 28px;
+    }
+
     col.keystroke {
       width: 12%;
     }
@@ -1212,6 +1217,7 @@
 
     tr {
       display: block;
+      contain-intrinsic-size: auto 150px;
       margin-bottom: var(--component-padding);
       padding: calc(var(--component-padding) / 2) var(--component-padding);
       border: 1px solid var(--base-border-color);

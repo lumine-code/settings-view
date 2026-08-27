@@ -247,6 +247,7 @@ module.exports = class PackageDetailView {
   }
 
   destroy() {
+    cancelAnimationFrame(this.revealSectionFrame);
     this.settingsPanel = this.destroySection(this.settingsPanel);
     this.keymapView = this.destroySection(this.keymapView);
     this.grammarsView = this.destroySection(this.grammarsView);
@@ -346,7 +347,7 @@ module.exports = class PackageDetailView {
       // A requested section wins over the scroll position this panel was left at,
       // which `setActivePanel` restores right after `show()`.
       delete this.scrollPosition;
-      section.scrollIntoView();
+      this.sectionToReveal = section;
     }
 
     this.publishTableOfContents();
@@ -354,6 +355,17 @@ module.exports = class PackageDetailView {
 
   focus() {
     focusWithHiddenContent(this.element, this.element.children);
+    if (this.sectionToReveal) {
+      const section = this.sectionToReveal;
+      this.sectionToReveal = null;
+      cancelAnimationFrame(this.revealSectionFrame);
+      this.revealSectionFrame = requestAnimationFrame(() => {
+        this.revealSectionFrame = null;
+        if (section.isConnected && this.element.style.display !== "none") {
+          section.scrollIntoView();
+        }
+      });
+    }
   }
 
   render() {
