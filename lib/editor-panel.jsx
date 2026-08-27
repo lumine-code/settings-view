@@ -40,11 +40,11 @@ module.exports = class EditorPanel {
 
   render() {
     return (
-      <div tabIndex="0" className="panels-item" onclick={this.didClick}>
+      <div tabIndex="0" className="panels-item">
         <SettingsPanel
           namespace="editor"
           icon="code"
-          note={`<div class="text icon icon-question" id="editor-settings-note" tabindex="-1">These settings apply to every text editor. Settings that can differ per language, such as indentation and soft wrap, live in the <a class="link languages-open">Language panel</a>.</div>`}
+          note={`<div class="text icon icon-question" id="editor-settings-note" tabindex="-1">These settings control text editing and presentation. Choose a scope above to store an override for that selector.</div>`}
         />
       </div>
     );
@@ -56,13 +56,6 @@ module.exports = class EditorPanel {
 
   show() {
     this.element.style.display = "";
-  }
-
-  didClick(event) {
-    const target = event.target.closest(".languages-open");
-    if (target) {
-      lumine.workspace.open("lumine://config/language");
-    }
   }
 
   scrollUp() {

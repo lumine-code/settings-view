@@ -1,4 +1,5 @@
 const EditorPanel = require("../lib/editor-panel");
+const scopeContext = require("../lib/scope-context");
 
 describe("EditorPanel", function () {
   let panel = null;
@@ -31,6 +32,7 @@ describe("EditorPanel", function () {
   };
 
   beforeEach(function () {
+    scopeContext.set(null);
     lumine.config.set("editor.boolean", true);
     lumine.config.set("editor.string", "hey");
     lumine.config.set("editor.object", { boolean: true, int: 3, string: "test" });
@@ -117,7 +119,15 @@ describe("EditorPanel", function () {
   it("shows the package settings notes for core and editor settings", function () {
     expect(panel.element.querySelector("#editor-settings-note")).toExist();
     expect(panel.element.querySelector("#editor-settings-note").textContent).toContain(
-      "Language panel",
+      "Choose a scope",
     );
+  });
+
+  it("shows editor language-mode settings and hides technical metadata", function () {
+    expect(panel.element.querySelector('[id="editor.useTreeSitterParsers"]')).toExist();
+    expect(panel.element.querySelector('[id="editor.largeFileThreshold"]')).toExist();
+    expect(panel.element.querySelector('[id="editor.nonWordCharacters"]')).toExist();
+    expect(panel.element.querySelector('[id="editor.commentStart"]')).not.toExist();
+    expect(panel.element.querySelector('[id="editor.increaseIndentPattern"]')).not.toExist();
   });
 });

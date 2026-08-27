@@ -2,6 +2,7 @@ const path = require("path");
 const main = require("../lib/main");
 const PackageManager = require("../lib/package-manager");
 const recentSettings = require("../lib/recent-settings");
+const scopeContext = require("../lib/scope-context");
 const SnippetsProvider = {
   getSnippets() {
     return {};
@@ -66,6 +67,15 @@ describe("SettingsView", function () {
       jasmine.attachToDOM(newSettingsView.element);
       newSettingsView.initializePanels();
       expect(newSettingsView.activePanel).toEqual({ name: "Themes", options: {} });
+    });
+
+    it("remembers the selected scope", () => {
+      scopeContext.set(".source.python");
+      const state = settingsView.serialize();
+      const newSettingsView = main.createSettingsView(state);
+      expect(scopeContext.get()).toBe(".source.python");
+      expect(newSettingsView.getURI()).toContain("scope=.source.python");
+      newSettingsView.destroy();
     });
 
     it("shows the previously active panel if it is added after deserialization", async () => {
@@ -407,16 +417,6 @@ describe("SettingsView", function () {
         expect(focusIsWithinActivePanel()).toBe(true);
         expectActivePanelToBeKeyboardScrollable();
 
-        settingsView = await lumine.workspace.open("lumine://config/language");
-
-        await timeoutPromise(1);
-        expect(settingsView.activePanel).toEqual({
-          name: "Language",
-          options: { uri: "lumine://config/language" },
-        });
-        expect(focusIsWithinActivePanel()).toBe(true);
-        expectActivePanelToBeKeyboardScrollable();
-
         settingsView = await lumine.workspace.open("lumine://config/keybindings");
 
         await timeoutPromise(1);
@@ -660,9 +660,9 @@ describe("SettingsView", function () {
         uri: "lumine://config/uri-handling",
       });
 
-      settingsView.openSetting("language.tabLength");
-      expect(settingsView.showPanel).toHaveBeenCalledWith("Language", {
-        uri: "lumine://config/language",
+      settingsView.openSetting("editor.tabLength");
+      expect(settingsView.showPanel).toHaveBeenCalledWith("Editor", {
+        uri: "lumine://config/editor",
       });
     });
 

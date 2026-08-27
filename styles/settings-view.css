@@ -1313,3 +1313,87 @@
     width: 100%;
   }
 }
+
+.settings-view .settings-scope-control {
+  margin-bottom: 16px;
+}
+
+.settings-view .predefined-values-editor {
+  position: relative;
+  width: 100%;
+}
+
+.settings-view lumine-text-editor.predefined-values-editor-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding-right: 32px;
+}
+
+.settings-view .predefined-values-editor-button {
+  position: absolute;
+  z-index: 1;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  width: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 0 var(--component-border-radius) var(--component-border-radius) 0;
+  color: var(--text-color);
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+}
+
+.settings-view .predefined-values-editor-button:hover,
+.settings-view .predefined-values-editor-button:focus {
+  color: var(--text-color-highlight);
+  background: transparent;
+  box-shadow: none;
+}
+
+.settings-view .predefined-values-editor .predefined-values-editor-button::before {
+  margin-right: 0;
+  font-size: calc(var(--ui-size) * 1.25);
+  color: var(--text-color);
+  translate: 7px 0;
+}
+
+.settings-view .predefined-values-editor-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.settings-view .settings-scope-error,
+.settings-view .settings-scope-explanation {
+  margin-top: 6px;
+}
+
+.settings-view .scope-has-toggle {
+  position: relative;
+}
+
+.settings-view .scope-has-toggle > .scope-override-toggle {
+  position: absolute;
+  top: 3px;
+  left: calc(-2.25em - var(--scope-indent, 0px));
+  margin: 0;
+}
+
+.settings-view .scope-inherited > .controls {
+  opacity: 0.55;
+}
+
+.settings-view .scope-inherited-control {
+  pointer-events: none;
+}
+
+.settings-view .scope-inherited-editor-container {
+  cursor: not-allowed;
+}

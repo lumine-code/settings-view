@@ -6,7 +6,6 @@ const { CompositeDisposable, Disposable } = require("lumine");
 
 const GeneralPanel = require("./general-panel");
 const EditorPanel = require("./editor-panel");
-const LanguagesPanel = require("./languages-panel");
 const GitSettingsPanel = require("./git-settings-panel");
 const PackageDetailView = require("./package-detail-view");
 const KeybindingsPanel = require("./keybindings-panel");
@@ -18,10 +17,26 @@ const UriHandlerPanel = require("./uri-handler-panel");
 const SearchSettingsPanel = require("./search-settings-panel");
 const notifyPackageError = require("./notify-error");
 const recentSettings = require("./recent-settings");
+const scopeContext = require("./scope-context");
+
+function scopeSelectorFromURI(uri) {
+  if (!uri) return null;
+  const match = /[?&]scope=([^&]+)/.exec(uri);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function uriWithScope(uri, selector) {
+  const base = uri
+    .replace(/([?&])scope=[^&]*&?/, (_match, separator) => (separator === "?" ? "?" : ""))
+    .replace(/[?&]$/, "");
+  if (!selector) return base;
+  return `${base}${base.includes("?") ? "&" : "?"}scope=${encodeURIComponent(selector)}`;
+}
 
 module.exports = class SettingsView {
-  constructor({ uri, packageManager, snippetsProvider, activePanel } = {}) {
+  constructor({ uri, packageManager, snippetsProvider, activePanel, scopeSelector } = {}) {
     this.uri = uri;
+    scopeContext.set(scopeSelector ?? scopeSelectorFromURI(uri) ?? null);
     this.packageManager = packageManager;
     this.snippetsProvider = snippetsProvider;
     this.deferredPanel = activePanel;
@@ -31,6 +46,14 @@ module.exports = class SettingsView {
 
     etch.initialize(this);
     this.disposables = new CompositeDisposable();
+    this.disposables.add(
+      scopeContext.onDidChange((selector) => {
+        this.uri = uriWithScope(this.uri || "lumine://config", selector);
+        if (this.activePanel?.options?.uri) {
+          this.activePanel.options.uri = uriWithScope(this.activePanel.options.uri, selector);
+        }
+      }),
+    );
 
     // Surface every package install/uninstall/update failure as a single editor
     // notification. Centralized here — the PackageManager is shared across all
@@ -166,7 +189,6 @@ module.exports = class SettingsView {
 
     this.addCorePanel("Core", "settings", () => new GeneralPanel());
     this.addCorePanel("Editor", "code", () => new EditorPanel());
-    this.addCorePanel("Language", "globe", () => new LanguagesPanel());
     this.addCorePanel("Git", "git-branch", () => new GitSettingsPanel());
     if (lumine.config.getSchema("core.uriHandlerRegistration").type !== "any") {
       // "feature flag" based on core support for URI handling
@@ -213,6 +235,7 @@ module.exports = class SettingsView {
       version: 2,
       activePanel: this.activePanel != null ? this.activePanel : this.deferredPanel,
       uri: this.uri,
+      scopeSelector: scopeContext.get(),
     };
   }
 
@@ -405,6 +428,8 @@ module.exports = class SettingsView {
   }
 
   showPanelForURI(uri) {
+    const selector = scopeSelectorFromURI(uri);
+    if (selector != null) scopeContext.set(selector);
     const regex = /config\/([a-z]+)\/?([a-zA-Z0-9_-]+)?/i;
     const match = regex.exec(uri);
 
@@ -450,9 +475,6 @@ module.exports = class SettingsView {
     } else if (namespace === "editor") {
       panelName = "Editor";
       options.uri = "lumine://config/editor";
-    } else if (namespace === "language") {
-      panelName = "Language";
-      options.uri = "lumine://config/language";
     } else if (namespace === "git") {
       panelName = "Git";
       options.uri = "lumine://config/git";

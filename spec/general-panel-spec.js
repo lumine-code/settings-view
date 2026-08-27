@@ -1,4 +1,5 @@
 const GeneralPanel = require("../lib/general-panel");
+const scopeContext = require("../lib/scope-context");
 
 describe("GeneralPanel", () => {
   let panel = null;
@@ -29,6 +30,7 @@ describe("GeneralPanel", () => {
   };
 
   beforeEach(() => {
+    scopeContext.set(null);
     lumine.config.set("core.enum", 4);
     lumine.config.set("core.int", 22);
     lumine.config.set("core.float", 0.1);

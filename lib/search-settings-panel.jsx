@@ -5,7 +5,7 @@ const CollapsibleSectionPanel = require("./collapsible-section-panel");
 const SearchSettingView = require("./search-setting-view");
 const recentSettings = require("./recent-settings");
 
-const CORE_NAMESPACES = new Set(["core", "editor", "language", "git"]);
+const CORE_NAMESPACES = new Set(["core", "editor", "git"]);
 const MAX_RESULTS = 100;
 
 module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
@@ -24,7 +24,6 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
       all: this.refs.allFilter,
       core: this.refs.coreFilter,
       editor: this.refs.editorFilter,
-      language: this.refs.languageFilter,
       packages: this.refs.packagesFilter,
     };
     for (const [filter, button] of Object.entries(this.filterButtons)) {
@@ -122,9 +121,6 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
               </button>
               <button ref="editorFilter" type="button" className="btn">
                 Editor
-              </button>
-              <button ref="languageFilter" type="button" className="btn">
-                Language
               </button>
               <button ref="packagesFilter" type="button" className="btn">
                 Packages
@@ -274,7 +270,7 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
   }
 
   parseQuery(text) {
-    const prefix = /^(core|editor|language|packages):\s*/i.exec(text);
+    const prefix = /^(core|editor|packages):\s*/i.exec(text);
     if (prefix) {
       return {
         searchTerm: text.slice(prefix[0].length).trim(),
@@ -297,7 +293,7 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
   collectSchemaProperties(results, namespace, parentSegments, properties) {
     for (const name of Object.keys(properties || {})) {
       const schema = properties[name];
-      if (!schema) continue;
+      if (!schema || schema.hidden) continue;
       const segments = parentSegments.concat(name);
       const path = [namespace].concat(segments).join(".");
 

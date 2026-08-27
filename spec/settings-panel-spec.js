@@ -1,8 +1,12 @@
 const SettingsPanel = require("../lib/settings-panel");
+const scopeContext = require("../lib/scope-context");
 const _ = require("@lumine-code/underscore-plus");
 
 describe("SettingsPanel", () => {
   let settingsPanel = null;
+
+  beforeEach(() => scopeContext.set(null));
+  afterEach(() => scopeContext.set(null));
 
   describe("sorted settings", () => {
     beforeEach(() => {
@@ -307,53 +311,53 @@ describe("SettingsPanel", () => {
           },
         };
 
-        lumine.config.setScopedDefaultsFromSchema("language.tabLength", schema);
-        expect(lumine.config.get("language.tabLength")).toBe(2);
+        lumine.config.setScopedDefaultsFromSchema("editor.tabLength", schema);
+        expect(lumine.config.get("editor.tabLength")).toBe(2);
       });
 
       it("displays the scoped default", () => {
+        scopeContext.set(".source.python");
         settingsPanel = new SettingsPanel({
-          namespace: "language",
+          namespace: "editor",
           includeTitle: false,
-          scopeName: ".source.python",
         });
-        const tabLengthEditor = settingsPanel.element.querySelector('[id="language.tabLength"]');
+        const tabLengthEditor = settingsPanel.element.querySelector('[id="editor.tabLength"]');
         expect(tabLengthEditor.getModel().getText()).toBe("");
         expect(tabLengthEditor.getModel().getPlaceholderText()).toBe("Default: 4");
       });
 
       it("allows the scoped setting to be changed to its normal default if the unscoped value is different", () => {
-        lumine.config.set("language.tabLength", 8);
+        lumine.config.set("editor.tabLength", 8);
+        scopeContext.set(".source.js");
 
         settingsPanel = new SettingsPanel({
-          namespace: "language",
+          namespace: "editor",
           includeTitle: false,
-          scopeName: ".source.js",
         });
-        const tabLengthEditor = settingsPanel.element.querySelector('[id="language.tabLength"]');
+        const tabLengthEditor = settingsPanel.element.querySelector('[id="editor.tabLength"]');
         expect(tabLengthEditor.getModel().getText()).toBe("");
         expect(tabLengthEditor.getModel().getPlaceholderText()).toBe("Default: 8");
 
         // This is the unscoped default, but it differs from the current unscoped value
-        settingsPanel.set("language.tabLength", 2);
+        settingsPanel.set("editor.tabLength", 2);
         expect(tabLengthEditor.getModel().getText()).toBe("2");
-        expect(lumine.config.get("language.tabLength", { scope: ["source.js"] })).toBe(2);
+        expect(lumine.config.get("editor.tabLength", { scope: ["source.js"] })).toBe(2);
       });
 
       it("allows the scoped setting to be changed to the unscoped default if it is different", () => {
+        scopeContext.set(".source.python");
         settingsPanel = new SettingsPanel({
-          namespace: "language",
+          namespace: "editor",
           includeTitle: false,
-          scopeName: ".source.python",
         });
-        const tabLengthEditor = settingsPanel.element.querySelector('[id="language.tabLength"]');
+        const tabLengthEditor = settingsPanel.element.querySelector('[id="editor.tabLength"]');
         expect(tabLengthEditor.getModel().getText()).toBe("");
         expect(tabLengthEditor.getModel().getPlaceholderText()).toBe("Default: 4");
 
         // This is the unscoped default, but it differs from the scoped default
-        settingsPanel.set("language.tabLength", 2);
+        settingsPanel.set("editor.tabLength", 2);
         expect(tabLengthEditor.getModel().getText()).toBe("2");
-        expect(lumine.config.get("language.tabLength", { scope: ["source.python"] })).toBe(2);
+        expect(lumine.config.get("editor.tabLength", { scope: ["source.python"] })).toBe(2);
       });
     });
   });
@@ -558,15 +562,18 @@ describe("SettingsPanel", () => {
     });
 
     it("allows setting a valid scoped value", () => {
+      scopeContext.set(".source.js");
       settingsPanel = new SettingsPanel({
         namespace: "foo",
         includeTitle: false,
-        scopeName: "source.js",
       });
-      const minMaxEditor = settingsPanel.element.querySelector("lumine-text-editor");
-      minMaxEditor.getModel().setText("15");
-      advanceClock(minMaxEditor.getModel().getBuffer().getStoppedChangingDelay());
-      expect(minMaxEditor.getModel().getText()).toBe("15");
+      const toggle = settingsPanel.element.querySelector(
+        '.scope-override-toggle[data-setting-key="foo.minMax"]',
+      );
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event("change"));
+      settingsPanel.set("foo.minMax", 15);
+      expect(lumine.config.get("foo.minMax", { scope: ["source.js"] })).toBe(15);
     });
 
     describe("commaValueArray", () => {
@@ -632,6 +639,52 @@ describe("SettingsPanel", () => {
         advanceClock(editor.getModel().getBuffer().getStoppedChangingDelay());
         expect(lumine.config.get("foo.numberArray")).toEqual([2307, 7016]);
       });
+    });
+  });
+
+  describe("scope overrides", () => {
+    beforeEach(() => {
+      lumine.config.setSchema("scope-test", {
+        type: "object",
+        properties: {
+          enabled: { type: "boolean", default: true },
+        },
+      });
+      scopeContext.set(".source.js");
+      settingsPanel = new SettingsPanel({ namespace: "scope-test", includeTitle: false });
+    });
+
+    afterEach(() => settingsPanel.destroy());
+
+    it("shows inheritance and creates or removes an exact override", () => {
+      let toggle = settingsPanel.element.querySelector(".scope-override-toggle");
+      let value = settingsPanel.element.querySelector('[id="scope-test.enabled"]');
+      const originalToggle = toggle;
+      const originalValue = value;
+      expect(toggle).not.toBeChecked();
+      expect(value.disabled).toBe(true);
+      expect(settingsPanel.element.textContent).not.toContain("Override in");
+      expect(toggle.nextElementSibling).toHaveClass("controls");
+      expect(toggle.parentElement.style.getPropertyValue("--scope-indent")).toBe("0px");
+
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event("change"));
+      expect(lumine.config.inspect("scope-test.enabled", { scopeSelector: ".source.js" })).toEqual(
+        jasmine.objectContaining({ hasOverride: true, overrideValue: true }),
+      );
+
+      toggle = settingsPanel.element.querySelector(".scope-override-toggle");
+      value = settingsPanel.element.querySelector('[id="scope-test.enabled"]');
+      expect(toggle).toBe(originalToggle);
+      expect(value).toBe(originalValue);
+      expect(toggle).toBeChecked();
+      expect(value.disabled).toBe(false);
+
+      toggle.checked = false;
+      toggle.dispatchEvent(new Event("change"));
+      expect(
+        lumine.config.inspect("scope-test.enabled", { scopeSelector: ".source.js" }).hasOverride,
+      ).toBe(false);
     });
   });
 });
