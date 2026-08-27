@@ -42,4 +42,10 @@
   --package-dot-origin: #e93d82; /* pink */
   --package-dot-selector: #a18072; /* brown */
   --package-dot-default: #8b8d98; /* grey */
+
+  /* Scope-resolution checkboxes use the same fixed, cross-theme color
+     language as package-card dots, but describe configuration contracts. */
+  --scope-resolution-base-color: #8b8d98; /* grey */
+  --scope-resolution-grammar-color: #30a46c; /* green */
+  --scope-resolution-syntax-color: #8e4ec6; /* purple */
 }

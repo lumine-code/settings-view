@@ -1315,7 +1315,7 @@
 }
 
 .settings-view .settings-scope-control {
-  margin-bottom: 16px;
+  margin-top: var(--component-padding);
 }
 
 .settings-view .predefined-values-editor {
@@ -1384,6 +1384,34 @@
   top: 3px;
   left: calc(-2.25em - var(--scope-indent, 0px));
   margin: 0;
+}
+
+.settings-view input.scope-override-toggle[type="checkbox"] {
+  --scope-resolution-color: var(--scope-resolution-base-color);
+
+  background-color: color-mix(
+    in srgb,
+    var(--scope-resolution-color) 35%,
+    var(--background-color-selected)
+  );
+
+  &.scope-resolution-base {
+    --scope-resolution-color: var(--scope-resolution-base-color);
+  }
+  &.scope-resolution-grammar {
+    --scope-resolution-color: var(--scope-resolution-grammar-color);
+  }
+  &.scope-resolution-syntax {
+    --scope-resolution-color: var(--scope-resolution-syntax-color);
+  }
+  &:checked,
+  &:active {
+    background-color: var(--scope-resolution-color);
+  }
+  &::before,
+  &::after {
+    background-color: white;
+  }
 }
 
 .settings-view .scope-inherited > .controls {

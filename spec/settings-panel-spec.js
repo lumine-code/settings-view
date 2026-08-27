@@ -647,7 +647,11 @@ describe("SettingsPanel", () => {
       lumine.config.setSchema("scope-test", {
         type: "object",
         properties: {
-          enabled: { type: "boolean", default: true },
+          enabled: {
+            type: "boolean",
+            default: true,
+            scopeResolution: "grammar",
+          },
         },
       });
       scopeContext.set(".source.js");
@@ -662,6 +666,8 @@ describe("SettingsPanel", () => {
       const originalToggle = toggle;
       const originalValue = value;
       expect(toggle).not.toBeChecked();
+      expect(toggle).toHaveClass("scope-resolution-grammar");
+      expect(toggle.dataset.tooltip).toContain("Per grammar");
       expect(value.disabled).toBe(true);
       expect(settingsPanel.element.textContent).not.toContain("Override in");
       expect(toggle.nextElementSibling).toHaveClass("controls");
