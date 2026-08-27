@@ -41,11 +41,7 @@ module.exports = class GitSettingsPanel {
   render() {
     return (
       <div tabIndex="0" className="panels-item">
-        <SettingsPanel
-          namespace="git"
-          icon="git-branch"
-          note={`<div class="text icon icon-question" id="git-settings-note" tabindex="-1">These settings control Lumine's built-in Git integration: the git executable it runs, repository discovery, and related prompts.</div>`}
-        />
+        <SettingsPanel namespace="git" icon="git-branch" />
       </div>
     );
   }

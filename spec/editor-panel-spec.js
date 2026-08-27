@@ -116,13 +116,6 @@ describe("EditorPanel", function () {
     expect(lumine.config.get("editor.complexArray")).toEqual(["a", "b", { c: true }]);
   });
 
-  it("shows the package settings notes for core and editor settings", function () {
-    expect(panel.element.querySelector("#editor-settings-note")).toExist();
-    expect(panel.element.querySelector("#editor-settings-note").textContent).toContain(
-      "Choose a scope",
-    );
-  });
-
   it("shows editor language-mode settings and hides technical metadata", function () {
     expect(panel.element.querySelector('[id="editor.useTreeSitterParsers"]')).toExist();
     expect(panel.element.querySelector('[id="editor.largeFileThreshold"]')).toExist();

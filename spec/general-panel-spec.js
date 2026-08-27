@@ -94,11 +94,4 @@ describe("GeneralPanel", () => {
     expect(lumine.config.get("core.int")).toBe(2);
     expect(getValueForId("core.int")).toBe("2.");
   });
-
-  it("shows the package settings notes for core and editor settings", () => {
-    expect(panel.element.querySelector("#core-settings-note")).toExist();
-    expect(panel.element.querySelector("#core-settings-note").textContent).toContain(
-      "their package card in",
-    );
-  });
 });

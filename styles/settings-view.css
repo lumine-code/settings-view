@@ -1314,8 +1314,24 @@
   }
 }
 
-.settings-view .settings-scope-control {
-  margin-top: var(--component-padding);
+.settings-view .settings-heading-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  column-gap: calc(var(--component-padding) * 2);
+  row-gap: var(--component-padding);
+}
+
+.settings-view .settings-panel .settings-heading-row > .section-heading {
+  flex: 0 1 auto;
+  margin-bottom: 0;
+}
+
+.settings-view .settings-heading-row > .settings-scope-control {
+  flex: 1 1 220px;
+  min-width: 220px;
+  max-width: 520px;
+  margin-left: auto;
 }
 
 .settings-view .predefined-values-editor {
@@ -1370,9 +1386,12 @@
   pointer-events: none;
 }
 
-.settings-view .settings-scope-error,
-.settings-view .settings-scope-explanation {
+.settings-view .settings-scope-error {
   margin-top: 6px;
+}
+
+.settings-view .settings-scope-error:empty {
+  display: none;
 }
 
 .settings-view .scope-has-toggle {

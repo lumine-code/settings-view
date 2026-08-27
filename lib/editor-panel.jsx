@@ -41,11 +41,7 @@ module.exports = class EditorPanel {
   render() {
     return (
       <div tabIndex="0" className="panels-item">
-        <SettingsPanel
-          namespace="editor"
-          icon="code"
-          note={`<div class="text icon icon-question" id="editor-settings-note" tabindex="-1">These settings control text editing and presentation. Choose a scope above to store an override for that selector.</div>`}
-        />
+        <SettingsPanel namespace="editor" icon="code" />
       </div>
     );
   }

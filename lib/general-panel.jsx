@@ -40,13 +40,8 @@ module.exports = class GeneralPanel {
 
   render() {
     return (
-      <div tabIndex="0" className="panels-item" onclick={this.didClick}>
-        <SettingsPanel
-          ref="panel"
-          namespace="core"
-          icon="settings"
-          note={`<div class="text icon icon-question" id="core-settings-note" tabindex="-1">These are Lumine's core settings which affect behavior unrelated to text editing. Individual packages may have their own additional settings found within their package card in the <a class="link packages-open">Packages list</a>.</div>`}
-        />
+      <div tabIndex="0" className="panels-item">
+        <SettingsPanel ref="panel" namespace="core" icon="settings" />
       </div>
     );
   }
@@ -57,13 +52,6 @@ module.exports = class GeneralPanel {
 
   show() {
     this.element.style.display = "";
-  }
-
-  didClick(event) {
-    const target = event.target.closest(".packages-open");
-    if (target) {
-      lumine.workspace.open("lumine://config/packages");
-    }
   }
 
   scrollUp() {
