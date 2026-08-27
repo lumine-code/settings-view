@@ -4,6 +4,7 @@ const _ = require("@lumine-code/underscore-plus");
 const { CompositeDisposable, TextEditor } = require("lumine");
 
 const CollapsibleSectionPanel = require("./collapsible-section-panel");
+const focusWithHiddenContent = require("./focus-with-hidden-content");
 const PackageCard = require("./package-card");
 const notifyPackageError = require("./notify-error");
 
@@ -104,7 +105,11 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
   update() {}
 
   focus() {
-    this.refs.filterEditor.element.focus();
+    focusWithHiddenContent(this.refs.filterEditor.element, [
+      this.refs.installedPackages.closest(".sub-section"),
+      this.refs.corePackages.closest(".sub-section"),
+      this.refs.devPackages.closest(".sub-section"),
+    ]);
   }
 
   show() {

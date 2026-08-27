@@ -68,6 +68,53 @@ describe("KeybindingsPanel", function () {
     expect(copyButton.getAttribute("aria-label")).toContain("ctrl-a");
   });
 
+  it("focuses search without laying out the result table", () => {
+    Object.defineProperty(panel.element, "scrollTop", {
+      configurable: true,
+      value: 42,
+      writable: true,
+    });
+    const focus = spyOn(panel.refs.searchEditor.element, "focus").and.callFake(() => {
+      expect(panel.refs.keybindingsTable.style.display).toBe("none");
+      panel.element.scrollTop = 0;
+    });
+
+    panel.focus();
+
+    expect(focus).toHaveBeenCalled();
+    expect(panel.refs.keybindingsTable.style.display).toBe("");
+    expect(panel.element.scrollTop).toBe(42);
+  });
+
+  it("resolves keybinding source paths once per reload", () => {
+    const getUserKeymapPath = spyOn(lumine.keymaps, "getUserKeymapPath").and.callThrough();
+
+    panel.loadKeyBindings();
+    panel.filterKeyBindings();
+
+    expect(getUserKeymapPath).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders large keybinding lists in animation-frame batches", async () => {
+    const bindings = Array.from({ length: 101 }, (_, index) => ({
+      source: keyBindings[0].source,
+      keystrokes: `ctrl-${index}`,
+      command: `test:command-${index}`,
+      selector: ".editor",
+    }));
+    lumine.keymaps.getKeyBindings.and.returnValue(bindings);
+    panel.destroy();
+
+    panel = new KeybindingsPanel();
+    panel.element.style.display = "none";
+
+    expect(panel.refs.keybindingRows.children.length).toBe(0);
+    await conditionPromise(() => panel.resumeKeyBindingRender != null);
+    expect(panel.refs.keybindingRows.children.length).toBe(0);
+    panel.show();
+    await conditionPromise(() => panel.refs.keybindingRows.children.length === bindings.length);
+  });
+
   it("opens the user keymap and keybinding resolver from the header", () => {
     spyOn(lumine.commands, "dispatch");
     const workspaceElement = lumine.views.getView(lumine.workspace);

@@ -264,7 +264,7 @@ describe("InstallPanel", function () {
     expect(panel.catalogPackages.map(({ name }) => name)).toEqual(["new-1", "new-2"]);
   });
 
-  it("reuses cards across a filter switch instead of rebuilding them", function () {
+  it("reuses cards across a filter switch instead of rebuilding them", async function () {
     panel.catalogPackages = [
       { name: "pkg-a", repository: "owner/pkg-a", installSource: "owner/pkg-a" },
       {
@@ -277,7 +277,7 @@ describe("InstallPanel", function () {
     ];
 
     panel.filterType = "all";
-    panel.renderBrowseList();
+    await panel.renderBrowseList();
     const cardByName = {};
     for (const card of panel.browsePackageCards) cardByName[card.pack.name] = card;
     expect(Object.keys(cardByName).sort()).toEqual(["pkg-a", "pkg-c", "theme-b"]);
@@ -285,7 +285,7 @@ describe("InstallPanel", function () {
     // Switching to Packages drops the theme card but reuses the exact same card
     // instances for the packages that remain.
     panel.filterType = "packages";
-    panel.renderBrowseList();
+    await panel.renderBrowseList();
     expect(panel.browsePackageCards.map((card) => card.pack.name).sort()).toEqual([
       "pkg-a",
       "pkg-c",
@@ -298,20 +298,22 @@ describe("InstallPanel", function () {
     );
   });
 
-  it("searches all hydrated records but renders at most 50 cards per page", function () {
+  it("searches all hydrated records but renders at most 50 cards per page", async function () {
     panel.catalogPackages = Array.from({ length: 1000 }, (_value, index) => ({
       name: `package-${String(index).padStart(4, "0")}`,
       repository: `owner/package-${index}`,
       installSource: `owner/package-${index}`,
       engines: { lumine: "*" },
     }));
-    panel.renderBrowseList();
+    const rendering = panel.renderBrowseList();
+    expect(panel.browsePackageCards.length).toBe(0);
+    await rendering;
 
     expect(panel.browsePackageCards.length).toBe(50);
     expect(panel.refs.browseContainer.querySelectorAll(".package-card").length).toBe(50);
     expect(panel.refs.pageStatus.textContent).toContain("1000 result(s)");
 
-    panel.nextPage();
+    await panel.nextPage();
     expect(panel.page).toBe(2);
     expect(panel.browsePackageCards.length).toBe(50);
   });
@@ -391,6 +393,21 @@ describe("InstallPanel", function () {
     expect(results.length).toBe(1);
     expect(results[0].installSource).toBe("owner/sample-package@2.1.0");
     expect(panel.refs.resultsContainer.querySelectorAll(".package-card").length).toBe(1);
+  });
+
+  it("waits for every batched search result card before resolving", async () => {
+    panel.catalogPackages = Array.from({ length: 6 }, (_value, index) => ({
+      name: `sample-package-${index}`,
+      repository: `owner/sample-package-${index}`,
+      installSource: `owner/sample-package-${index}`,
+    }));
+    panel.catalogPromise = Promise.resolve({ schemaVersion: 1, packages: panel.catalogPackages });
+
+    const results = await panel.search("sample");
+
+    expect(results).toHaveLength(6);
+    expect(panel.refs.resultsContainer.querySelectorAll(".package-card").length).toBe(6);
+    expect(panel.pendingCardLists.has(panel.catalogPackageCards)).toBe(false);
   });
 
   it("matches by name and keywords but not by description text", async () => {

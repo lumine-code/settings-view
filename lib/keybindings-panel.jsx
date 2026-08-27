@@ -3,8 +3,17 @@ const { CompositeDisposable, Disposable, TextEditor } = require("lumine");
 const etch = require("@lumine-code/etch");
 const _ = require("@lumine-code/underscore-plus");
 const path = require("path");
+const focusWithHiddenContent = require("./focus-with-hidden-content");
 
 module.exports = class KeybindingsPanel {
+  static synchronousRenderLimit() {
+    return 100;
+  }
+
+  static renderBatchSize() {
+    return 50;
+  }
+
   constructor() {
     this.activeSourceFilter = "all";
     this.copyFeedbackTimeouts = new Set();
@@ -55,6 +64,7 @@ module.exports = class KeybindingsPanel {
   }
 
   destroy() {
+    this.cancelPendingKeyBindingRender();
     for (const timeout of this.copyFeedbackTimeouts) clearTimeout(timeout);
     this.copyFeedbackTimeouts.clear();
     this.disposables.dispose();
@@ -214,16 +224,31 @@ module.exports = class KeybindingsPanel {
   }
 
   loadKeyBindings() {
-    this.keyBindings = lumine.keymaps.getKeyBindings().slice().sort(this.compareKeyBindings);
+    this.coreKeymapsPath = path.join(lumine.application.getResourcePath(), "keymaps");
+    this.userKeymapPath = lumine.keymaps.getUserKeymapPath();
+    this.sourceLabelsByPath = new Map();
+    this.keyBindings = lumine.keymaps.getKeyBindings();
     this.filterKeyBindings();
   }
 
+  sourceFor(filePath) {
+    if (this.sourceLabelsByPath.has(filePath)) return this.sourceLabelsByPath.get(filePath);
+    const source = determineSource(filePath, this.coreKeymapsPath, this.userKeymapPath);
+    this.sourceLabelsByPath.set(filePath, source);
+    return source;
+  }
+
   focus() {
-    this.refs.searchEditor.element.focus();
+    focusWithHiddenContent(this.refs.searchEditor.element, [this.refs.keybindingsTable]);
   }
 
   show() {
     this.element.style.display = "";
+    if (this.resumeKeyBindingRender && this.pendingKeyBindingRender == null) {
+      const resume = this.resumeKeyBindingRender;
+      this.resumeKeyBindingRender = null;
+      this.pendingKeyBindingRender = requestAnimationFrame(resume);
+    }
   }
 
   clearSearch() {
@@ -255,8 +280,12 @@ module.exports = class KeybindingsPanel {
       .filter((binding) => {
         if (!this.showSelector(binding.selector)) return false;
 
-        const source = KeybindingsPanel.determineSource(binding.source);
-        if (!this.matchesSourceFilter(source)) return false;
+        let source;
+        if (this.activeSourceFilter !== "all" || keywords.length > 0) {
+          source = this.sourceFor(binding.source);
+          if (!this.matchesSourceFilter(source)) return false;
+        }
+        if (keywords.length === 0) return true;
 
         const fields = [binding.selector, binding.keystrokes, binding.command, source]
           .filter(Boolean)
@@ -267,26 +296,62 @@ module.exports = class KeybindingsPanel {
       })
       .sort(this.compareKeyBindings);
 
-    this.refs.keybindingRows.innerHTML = "";
-    const groupCounts = visibleBindings.reduce((counts, binding) => {
+    this.renderKeyBindings(visibleBindings, filterString);
+    return visibleBindings;
+  }
+
+  renderKeyBindings(bindings, filterString) {
+    this.cancelPendingKeyBindingRender();
+    this.refs.keybindingRows.replaceChildren();
+    const groupCounts = bindings.reduce((counts, binding) => {
       counts.set(binding.keystrokes, (counts.get(binding.keystrokes) || 0) + 1);
       return counts;
     }, new Map());
     const renderedShortcuts = new Set();
-    const fragment = document.createDocumentFragment();
-    for (const binding of visibleBindings) {
-      const renderShortcut = !renderedShortcuts.has(binding.keystrokes);
-      renderedShortcuts.add(binding.keystrokes);
-      fragment.appendChild(
-        this.elementForKeyBinding(binding, {
-          renderShortcut,
-          shortcutRowSpan: groupCounts.get(binding.keystrokes),
-        }),
-      );
+    let index = 0;
+    const appendBatch = () => {
+      const fragment = document.createDocumentFragment();
+      const end = Math.min(index + KeybindingsPanel.renderBatchSize(), bindings.length);
+      while (index < end) {
+        const binding = bindings[index++];
+        const renderShortcut = !renderedShortcuts.has(binding.keystrokes);
+        renderedShortcuts.add(binding.keystrokes);
+        fragment.appendChild(
+          this.elementForKeyBinding(binding, {
+            renderShortcut,
+            shortcutRowSpan: groupCounts.get(binding.keystrokes),
+          }),
+        );
+      }
+      this.refs.keybindingRows.appendChild(fragment);
+    };
+
+    this.updateResultState(bindings.length, filterString);
+    if (bindings.length <= KeybindingsPanel.synchronousRenderLimit()) {
+      while (index < bindings.length) appendBatch();
+    } else {
+      const renderNextBatch = () => {
+        this.pendingKeyBindingRender = null;
+        if (this.element.style.display === "none") {
+          this.resumeKeyBindingRender = renderNextBatch;
+          return;
+        }
+        this.resumeKeyBindingRender = null;
+        appendBatch();
+        if (index < bindings.length) {
+          this.pendingKeyBindingRender = requestAnimationFrame(renderNextBatch);
+        }
+      };
+      this.pendingKeyBindingRender = requestAnimationFrame(renderNextBatch);
     }
-    this.refs.keybindingRows.appendChild(fragment);
-    this.updateResultState(visibleBindings.length, filterString);
-    return visibleBindings;
+  }
+
+  cancelPendingKeyBindingRender() {
+    if (this.pendingKeyBindingRender != null) {
+      cancelAnimationFrame(this.pendingKeyBindingRender);
+      this.pendingKeyBindingRender = null;
+    }
+    this.resumeKeyBindingRender = null;
   }
 
   fieldMatches(field, keyword) {
@@ -333,7 +398,7 @@ module.exports = class KeybindingsPanel {
 
   elementForKeyBinding(keyBinding, { renderShortcut = true, shortcutRowSpan = 1 } = {}) {
     const { selector, keystrokes, command } = keyBinding;
-    const source = KeybindingsPanel.determineSource(keyBinding.source);
+    const source = this.sourceFor(keyBinding.source);
     const tr = document.createElement("tr");
     tr.dataset.selector = selector;
     tr.dataset.keystrokes = keystrokes;
@@ -444,14 +509,20 @@ module.exports = class KeybindingsPanel {
   }
 
   static determineSource(filePath) {
-    if (!filePath || typeof filePath !== "string") return "Unknown";
-    if (filePath.indexOf(path.join(lumine.application.getResourcePath(), "keymaps")) === 0) {
-      return "Core";
-    }
-    if (filePath === lumine.keymaps.getUserKeymapPath()) return "User";
-
-    const pathParts = filePath.split(path.sep);
-    const packageName = pathParts[pathParts.length - 3] || "";
-    return packageName ? _.titleize(_.uncamelcase(packageName)) : "Unknown";
+    return determineSource(
+      filePath,
+      path.join(lumine.application.getResourcePath(), "keymaps"),
+      lumine.keymaps.getUserKeymapPath(),
+    );
   }
 };
+
+function determineSource(filePath, coreKeymapsPath, userKeymapPath) {
+  if (!filePath || typeof filePath !== "string") return "Unknown";
+  if (filePath.indexOf(coreKeymapsPath) === 0) return "Core";
+  if (filePath === userKeymapPath) return "User";
+
+  const pathParts = filePath.split(path.sep);
+  const packageName = pathParts[pathParts.length - 3] || "";
+  return packageName ? _.titleize(_.uncamelcase(packageName)) : "Unknown";
+}

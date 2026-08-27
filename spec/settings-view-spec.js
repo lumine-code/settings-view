@@ -154,6 +154,24 @@ describe("SettingsView", function () {
   });
 
   describe("the default panel", function () {
+    it("connects a new panel hidden before showing it", () => {
+      const element = document.createElement("div");
+      const panel = {
+        element,
+        show: jasmine.createSpy("show").and.callFake(() => {
+          expect(element.style.display).toBe("none");
+          element.style.display = "";
+        }),
+        focus: jasmine.createSpy("focus"),
+      };
+
+      settingsView.appendPanel(panel);
+
+      expect(panel.show).toHaveBeenCalled();
+      expect(panel.focus).toHaveBeenCalled();
+      expect(element.style.display).toBe("");
+    });
+
     it("defaults to the Search panel when settings search is enabled", async () => {
       lumine.config.set("settings-view.enableSettingsSearch", true);
       const view = main.createSettingsView({ packageManager, snippetsProvider: SnippetsProvider });

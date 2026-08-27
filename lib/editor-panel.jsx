@@ -1,6 +1,7 @@
 /** @jsx etch.dom */
 const { CompositeDisposable } = require("lumine");
 const etch = require("@lumine-code/etch");
+const focusWithHiddenContent = require("./focus-with-hidden-content");
 const SettingsPanel = require("./settings-panel");
 
 module.exports = class EditorPanel {
@@ -47,7 +48,7 @@ module.exports = class EditorPanel {
   }
 
   focus() {
-    this.element.focus();
+    focusWithHiddenContent(this.element, [this.element.querySelector(".settings-panel")]);
   }
 
   show() {

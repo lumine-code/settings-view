@@ -1,4 +1,5 @@
 const SettingsPanel = require("../lib/settings-panel");
+const PredefinedValuesEditor = require("../lib/predefined-values-editor");
 const scopeContext = require("../lib/scope-context");
 const _ = require("@lumine-code/underscore-plus");
 
@@ -268,7 +269,7 @@ describe("SettingsPanel", () => {
       const tooltips = lumine.tooltips.findTooltips(hazEditor);
       expect(tooltips).toHaveLength(1);
       const { title } = tooltips[0].options;
-      expect(title).toBe("Default: haz");
+      expect(title()).toBe("Default: haz");
     });
 
     it("has a tooltip showing the description of the default value", () => {
@@ -276,7 +277,7 @@ describe("SettingsPanel", () => {
       const tooltips = lumine.tooltips.findTooltips(quxEditor);
       expect(tooltips).toHaveLength(1);
       const { title } = tooltips[0].options;
-      expect(title).toBe("Default: Alice");
+      expect(title()).toBe("Default: Alice");
     });
 
     // Regression test for #783
@@ -639,6 +640,111 @@ describe("SettingsPanel", () => {
         advanceClock(editor.getModel().getBuffer().getStoppedChangingDelay());
         expect(lumine.config.get("foo.numberArray")).toEqual([2307, 7016]);
       });
+    });
+  });
+
+  describe("scope context transitions", () => {
+    beforeEach(() => {
+      lumine.config.setSchema("scope-transition", {
+        type: "object",
+        properties: {
+          enabled: {
+            type: "boolean",
+            default: true,
+            scopeResolution: "grammar",
+          },
+          tabLength: {
+            type: "integer",
+            default: 2,
+            scopeResolution: "grammar",
+          },
+        },
+      });
+      lumine.config.setScopedDefaultsFromSchema("scope-transition.enabled", {
+        scopes: {
+          ".source.js": { default: false },
+        },
+      });
+      lumine.config.setScopedDefaultsFromSchema("scope-transition.tabLength", {
+        scopes: {
+          ".source.js": { default: 4 },
+        },
+      });
+      settingsPanel = new SettingsPanel({
+        namespace: "scope-transition",
+        includeTitle: false,
+      });
+    });
+
+    afterEach(() => settingsPanel.destroy());
+
+    it("switches between Default and a scope without rebuilding the panel", () => {
+      const container = settingsPanel.element.querySelector(".section-container");
+      const group = settingsPanel.element.querySelector(
+        '.control-group[data-setting-key="scope-transition.enabled"]',
+      );
+      const value = settingsPanel.element.querySelector('[id="scope-transition.enabled"]');
+      const toggle = group.querySelector(".scope-override-toggle");
+      const tabLengthElement = settingsPanel.element.querySelector(
+        '[id="scope-transition.tabLength"]',
+      );
+      const tabLengthEditor = tabLengthElement.getModel();
+      const tabLengthTooltip = lumine.tooltips.findTooltips(tabLengthElement)[0];
+      const pickerElement = settingsPanel.element.querySelector(".settings-scope-editor");
+      const picker = PredefinedValuesEditor.forElement(pickerElement);
+      const pickerModel = picker.editor;
+
+      expect(toggle.hidden).toBe(true);
+      expect(value).toBeChecked();
+      expect(value.disabled).toBe(false);
+      expect(tabLengthEditor.getPlaceholderText()).toBe("Default: 2");
+      expect(tabLengthEditor.isReadOnly()).toBe(false);
+      expect(tabLengthTooltip.options.title()).toBe("Default: 2");
+
+      picker.setText(".source.js");
+      lumine.commands.dispatch(picker.editor.element, "core:confirm");
+
+      expect(scopeContext.get()).toBe(".source.js");
+      expect(settingsPanel.element.querySelector(".section-container")).toBe(container);
+      expect(settingsPanel.element.querySelector(".settings-scope-editor")).toBe(pickerElement);
+      expect(picker.editor).toBe(pickerModel);
+      expect(pickerModel.isDestroyed()).toBe(false);
+      expect(
+        settingsPanel.element.querySelector(
+          '.control-group[data-setting-key="scope-transition.enabled"]',
+        ),
+      ).toBe(group);
+      expect(settingsPanel.element.querySelector('[id="scope-transition.enabled"]')).toBe(value);
+      expect(settingsPanel.element.querySelector('[id="scope-transition.tabLength"]')).toBe(
+        tabLengthElement,
+      );
+      expect(toggle.hidden).toBe(false);
+      expect(toggle).not.toBeChecked();
+      expect(group).toHaveClass("scope-inherited");
+      expect(value).not.toBeChecked();
+      expect(value.disabled).toBe(true);
+      expect(tabLengthEditor.getPlaceholderText()).toBe("Default: 4");
+      expect(tabLengthEditor.isReadOnly()).toBe(true);
+      expect(tabLengthTooltip.options.title()).toBe("Default: 4");
+
+      picker.setText("*");
+      lumine.commands.dispatch(picker.editor.element, "core:confirm");
+
+      expect(scopeContext.get()).toBeNull();
+      expect(picker.getText()).toBe("");
+      expect(settingsPanel.element.querySelector(".section-container")).toBe(container);
+      expect(settingsPanel.element.querySelector(".settings-scope-editor")).toBe(pickerElement);
+      expect(settingsPanel.element.querySelector('[id="scope-transition.enabled"]')).toBe(value);
+      expect(toggle.hidden).toBe(true);
+      expect(group).not.toHaveClass("scope-inherited");
+      expect(value).toBeChecked();
+      expect(value.disabled).toBe(false);
+      expect(settingsPanel.element.querySelector('[id="scope-transition.tabLength"]')).toBe(
+        tabLengthElement,
+      );
+      expect(tabLengthEditor.getPlaceholderText()).toBe("Default: 2");
+      expect(tabLengthEditor.isReadOnly()).toBe(false);
+      expect(tabLengthTooltip.options.title()).toBe("Default: 2");
     });
   });
 

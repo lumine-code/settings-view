@@ -64,6 +64,16 @@ describe("PackageDetailView", function () {
     expect(view.refs.title.textContent).toBe("Package With Config");
   });
 
+  it("renders the initial README once", () => {
+    const renderReadme = spyOn(PackageDetailView.prototype, "renderReadme").and.callThrough();
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const pack = lumine.packages.getLoadedPackage("package-with-config");
+
+    view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
+
+    expect(renderReadme).toHaveBeenCalledTimes(1);
+  });
+
   it("shows every section at once and lists them in the table of contents", () => {
     lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
     const pack = lumine.packages.getLoadedPackage("package-with-config");

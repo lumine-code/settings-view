@@ -1,3 +1,6 @@
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
 const PackageCatalogClient = require("../lib/package-catalog-client");
 const { normalizeCatalogSource, TaskQueue } = PackageCatalogClient;
 
@@ -66,6 +69,33 @@ function createFetch(catalogs = {}) {
 }
 
 describe("PackageCatalogClient", function () {
+  it("does not let an older async filesystem write overwrite a newer sync write", async () => {
+    const cachePath = fs.mkdtempSync(path.join(os.tmpdir(), "lumine-catalog-cache-"));
+    const client = new PackageCatalogClient({ cachePath });
+    const originalWriteFile = fs.promises.writeFile.bind(fs.promises);
+    let releaseWrite;
+    const heldWrite = new Promise((resolve) => {
+      releaseWrite = resolve;
+    });
+    const writeFile = spyOn(fs.promises, "writeFile").and.callFake(async (...args) => {
+      await originalWriteFile(...args);
+      await heldWrite;
+    });
+
+    try {
+      const pendingWrite = client.writeCacheAsync({ schemaVersion: 2, marker: "old" });
+      await conditionPromise(() => writeFile.calls.count() === 1);
+      client.writeCache({ schemaVersion: 2, marker: "new" });
+      releaseWrite();
+      await pendingWrite;
+
+      expect(client.readCache().marker).toBe("new");
+    } finally {
+      releaseWrite();
+      fs.rmSync(cachePath, { recursive: true, force: true });
+    }
+  });
+
   it("normalizes index.json catalog locations", function () {
     expect(normalizeCatalogSource("owner/catalog")).toBe(
       "https://raw.githubusercontent.com/owner/catalog/HEAD/index.json",
@@ -587,14 +617,20 @@ describe("PackageCatalogClient", function () {
     const queue = new TaskQueue(3, 2);
     let active = 0;
     let maximum = 0;
+    let releaseTasks;
+    const tasksMayFinish = new Promise((resolve) => {
+      releaseTasks = resolve;
+    });
     const tasks = Array.from({ length: 8 }, () =>
       queue.add(async () => {
         active++;
         maximum = Math.max(maximum, active);
-        await Promise.resolve();
+        await tasksMayFinish;
         active--;
       }, "same-host"),
     );
+    await conditionPromise(() => active === 2);
+    releaseTasks();
     await Promise.all(tasks);
     expect(maximum).toBe(2);
   });

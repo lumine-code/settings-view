@@ -329,6 +329,13 @@
     }
   }
 
+  /* Long package lists should not lay out and paint every off-screen card when
+     their panel is shown. The detail view's single card is outside this shape. */
+  .package-container > .row > .package-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 160px;
+  }
+
   section .section-heading,
   .section .section-heading {
     margin-bottom: calc(var(--component-padding) * 2);
@@ -1403,6 +1410,10 @@
   top: 3px;
   left: calc(-2.25em - var(--scope-indent, 0px));
   margin: 0;
+}
+
+.settings-view .scope-override-toggle[hidden] {
+  display: none;
 }
 
 .settings-view input.scope-override-toggle[type="checkbox"] {

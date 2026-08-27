@@ -7,6 +7,7 @@ const PackageCard = require("./package-card");
 
 const List = require("./list");
 const ListView = require("./list-view");
+const focusWithHiddenContent = require("./focus-with-hidden-content");
 const { ownerFromRepository, packageComparatorAscending } = require("./utils");
 
 // One directory is one entry, so entries are told apart by where they live —
@@ -24,9 +25,14 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
     return 300;
   }
 
+  static packageCardBatchSize() {
+    return 20;
+  }
+
   constructor(settingsView, packageManager) {
     super();
     etch.initialize(this);
+    this.destroyed = false;
     this.settingsView = settingsView;
     this.packageManager = packageManager;
     this.items = {
@@ -54,13 +60,12 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
         this.matchPackages();
       }),
     );
-    let loadPackagesTimeout;
     const reloadSoon = () => {
-      clearTimeout(loadPackagesTimeout);
-      loadPackagesTimeout = setTimeout(
-        this.loadPackages.bind(this),
-        InstalledPackagesPanel.loadPackagesDelay(),
-      );
+      clearTimeout(this.loadPackagesTimeout);
+      this.loadPackagesTimeout = setTimeout(() => {
+        this.loadPackagesTimeout = null;
+        this.loadPackages();
+      }, InstalledPackagesPanel.loadPackagesDelay());
     };
     // Rebuild the list when a package is installed or updated.
     this.subscriptions.add(this.packageManager.on("package-updated package-installed", reloadSoon));
@@ -107,7 +112,12 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
   }
 
   focus() {
-    this.refs.filterEditor.element.focus();
+    const sections = [
+      this.refs.installedPackagesHeader.parentElement,
+      this.refs.corePackagesHeader.parentElement,
+      this.refs.devPackagesHeader.parentElement,
+    ];
+    focusWithHiddenContent(this.refs.filterEditor.element, sections);
   }
 
   show() {
@@ -115,6 +125,11 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
   }
 
   destroy() {
+    this.destroyed = true;
+    clearTimeout(this.loadPackagesTimeout);
+    this.loadPackagesTimeout = null;
+    this.packageLoadRequestGeneration = (this.packageLoadRequestGeneration || 0) + 1;
+    this.packageLoadGeneration = (this.packageLoadGeneration || 0) + 1;
     this.subscriptions.dispose();
     return etch.destroy(this);
   }
@@ -234,8 +249,12 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
   }
 
   loadPackages() {
+    if (this.destroyed) return;
+    const requestGeneration = (this.packageLoadRequestGeneration || 0) + 1;
+    this.packageLoadRequestGeneration = requestGeneration;
     const packagesWithUpdates = {};
     this.packageManager.getOutdated().then((packages) => {
+      if (this.destroyed || requestGeneration !== this.packageLoadRequestGeneration) return;
       for (let { name, latestVersion } of packages) {
         packagesWithUpdates[name] = latestVersion;
       }
@@ -244,16 +263,37 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
 
     this.packageManager
       .getInstalled()
-      .then((packages) => {
+      .then(async (packages) => {
+        if (this.destroyed || requestGeneration !== this.packageLoadRequestGeneration) return;
+        if (this.packageRenderPromise) await this.packageRenderPromise;
+        if (this.destroyed || requestGeneration !== this.packageLoadRequestGeneration) return;
+        const loadGeneration = (this.packageLoadGeneration || 0) + 1;
+        this.packageLoadGeneration = loadGeneration;
         this.packages = this.sortPackages(this.filterPackages(packages));
-        this.refs.devLoadingArea.remove();
-        this.items.dev.setItems(this.packages.dev);
-
-        this.refs.coreLoadingArea.remove();
-        this.items.core.setItems(this.packages.core);
-
-        this.refs.installedLoadingArea.remove();
-        this.items.installed.setItems(this.packages.installed);
+        const renderPromise = (async () => {
+          for (const [packageType, loadingArea] of [
+            ["installed", this.refs.installedLoadingArea],
+            ["core", this.refs.coreLoadingArea],
+            ["dev", this.refs.devLoadingArea],
+          ]) {
+            loadingArea.remove();
+            const completed = await this.setPackageItems(
+              packageType,
+              this.packages[packageType],
+              loadGeneration,
+            );
+            if (!completed) return false;
+          }
+          return true;
+        })();
+        this.packageRenderPromise = renderPromise;
+        let completed;
+        try {
+          completed = await renderPromise;
+        } finally {
+          if (this.packageRenderPromise === renderPromise) this.packageRenderPromise = null;
+        }
+        if (!completed) return;
 
         // TODO show empty mesage per section
 
@@ -265,6 +305,25 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
       .catch((error) => {
         console.error(error.message, error.stack);
       });
+  }
+
+  async setPackageItems(packageType, packages, loadGeneration) {
+    const list = this.items[packageType];
+    const batchSize = InstalledPackagesPanel.packageCardBatchSize();
+    if (list.getItems().length > 0 || packages.length <= batchSize) {
+      if (loadGeneration !== this.packageLoadGeneration) return false;
+      list.setItems(packages);
+      return true;
+    }
+
+    for (let end = batchSize; end < packages.length; end += batchSize) {
+      if (loadGeneration !== this.packageLoadGeneration) return false;
+      list.setItems(packages.slice(0, end));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+    if (loadGeneration !== this.packageLoadGeneration) return false;
+    list.setItems(packages);
+    return true;
   }
 
   displayPackageUpdates(packagesWithUpdates) {

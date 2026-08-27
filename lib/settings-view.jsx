@@ -579,6 +579,10 @@ module.exports = class SettingsView {
     }
 
     if (!this.refs.panels.contains(panel.element)) {
+      // Connect a newly built subtree while it is hidden. Custom elements can
+      // otherwise force layout as each one connects, all inside the sidebar's
+      // click handler. `show()` restores the panel before the next paint.
+      panel.element.style.display = "none";
       this.refs.panels.appendChild(panel.element);
     }
 

@@ -80,6 +80,40 @@ describe("InstalledPackagesPanel", function () {
       ).toBe(1);
     });
 
+    it("focuses the filter without laying out every package card", function () {
+      const sections = [
+        this.panel.refs.installedPackagesHeader.parentElement,
+        this.panel.refs.corePackagesHeader.parentElement,
+        this.panel.refs.devPackagesHeader.parentElement,
+      ];
+      const focus = spyOn(this.panel.refs.filterEditor.element, "focus").and.callFake(() => {
+        expect(sections.every((section) => section.style.display === "none")).toBe(true);
+      });
+
+      this.panel.focus();
+
+      expect(focus).toHaveBeenCalled();
+      expect(sections.every((section) => section.style.display === "")).toBe(true);
+    });
+
+    it("adds a large initial package list in animation-frame batches", async function () {
+      const list = jasmine.createSpyObj("list", ["getItems", "setItems"]);
+      list.getItems.and.returnValue([]);
+      this.panel.items.test = list;
+      spyOn(InstalledPackagesPanel, "packageCardBatchSize").and.returnValue(2);
+      const packages = [{ name: "one" }, { name: "two" }, { name: "three" }];
+
+      const completion = this.panel.setPackageItems(
+        "test",
+        packages,
+        this.panel.packageLoadGeneration,
+      );
+
+      expect(list.setItems.calls.mostRecent().args[0]).toEqual(packages.slice(0, 2));
+      await completion;
+      expect(list.setItems.calls.mostRecent().args[0]).toEqual(packages);
+    });
+
     it("shows repository installs as installed packages", function () {
       const packages = this.panel.filterPackages({
         user: [{ name: "manual-package" }],
@@ -130,6 +164,17 @@ describe("InstalledPackagesPanel", function () {
       expect(
         this.panel.refs.installedPackages.querySelectorAll(".package-card:not(.hidden)").length,
       ).toBe(2);
+    });
+
+    it("cancels a scheduled reload when destroyed", function () {
+      this.packageManager.emitter.emit("package-installed", {
+        pack: { name: "another-user-package" },
+      });
+
+      this.panel.destroy();
+      advanceClock(InstalledPackagesPanel.loadPackagesDelay());
+
+      expect(this.packageManager.getInstalled).toHaveBeenCalledTimes(1);
     });
 
     it("keeps uninstalled packages visible without rebuilding the list", async function () {

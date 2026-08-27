@@ -2,6 +2,7 @@
 const { TextEditor, CompositeDisposable, Disposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 const CollapsibleSectionPanel = require("./collapsible-section-panel");
+const focusWithHiddenContent = require("./focus-with-hidden-content");
 const SearchSettingView = require("./search-setting-view");
 const recentSettings = require("./recent-settings");
 
@@ -66,7 +67,10 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
   }
 
   focus() {
-    this.refs.searchEditor.element.focus();
+    focusWithHiddenContent(this.refs.searchEditor.element, [
+      this.refs.recentSection,
+      this.refs.resultsSection,
+    ]);
   }
 
   show() {

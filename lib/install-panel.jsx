@@ -3,6 +3,7 @@
 const path = require("path");
 const etch = require("@lumine-code/etch");
 const gitHubUrlInfo = require("./github-url-info");
+const focusWithHiddenContent = require("./focus-with-hidden-content");
 
 const requireCore = require("./require-core");
 const { cloneUrlForRepository, parsePackageSource } = requireCore("package-source");
@@ -17,6 +18,10 @@ const { normalizeCatalogSource } = require("./package-catalog-client");
 const PackageNameRegex = /config\/install\/(?:package|theme):([a-z0-9-_]+)/i;
 
 module.exports = class InstallPanel {
+  static packageCardBatchSize() {
+    return 2;
+  }
+
   constructor(settingsView, packageManager) {
     this.settingsView = settingsView;
     this.packageManager = packageManager;
@@ -26,6 +31,9 @@ module.exports = class InstallPanel {
     this.catalogPackages = [];
     this.catalogPackageCards = [];
     this.browsePackageCards = [];
+    this.cardListGenerations = new WeakMap();
+    this.pendingCardLists = new Set();
+    this.destroyed = false;
     this.catalogFetched = false;
     this.sourceEditors = [];
     this.filterType = "all";
@@ -124,6 +132,7 @@ module.exports = class InstallPanel {
   }
 
   destroy() {
+    this.destroyed = true;
     this.clearSourceEditors();
     this.sourceDisposables.dispose();
     this.clearPackageCards(this.catalogPackageCards);
@@ -137,7 +146,11 @@ module.exports = class InstallPanel {
   update() {}
 
   focus() {
-    this.refs.searchEditor.element.focus();
+    focusWithHiddenContent(this.refs.searchEditor.element, [
+      this.refs.resultsContainer,
+      this.refs.browseArea,
+      this.refs.pagination,
+    ]);
   }
 
   show() {
@@ -613,6 +626,27 @@ module.exports = class InstallPanel {
       const key = packageOrigin(card.pack) || card.pack.name;
       if (!pool.has(key)) pool.set(key, card);
     }
+    const reusable = new Set();
+    let newCardCount = 0;
+    for (const pack of packs) {
+      const key = packageOrigin(pack) || pack.name;
+      const pooled = pool.get(key);
+      if (pooled && pooled.pack === pack && !reusable.has(pooled)) {
+        reusable.add(pooled);
+      } else {
+        newCardCount++;
+      }
+    }
+
+    if (newCardCount > InstallPanel.packageCardBatchSize()) {
+      this.clearPackageCards(cards);
+      container.replaceChildren();
+      const generation = this.cardListGenerations.get(cards);
+      this.pendingCardLists.add(cards);
+      return this.renderNewCardsInBatches(container, cards, packs, generation);
+    }
+
+    this.cancelCardListRender(cards);
     const next = [];
     const reused = new Set();
     for (const pack of packs) {
@@ -634,6 +668,40 @@ module.exports = class InstallPanel {
     }
     cards.length = 0;
     cards.push(...next);
+    return Promise.resolve();
+  }
+
+  async renderNewCardsInBatches(container, cards, packs, generation) {
+    const batchSize = InstallPanel.packageCardBatchSize();
+    for (let start = 0; start < packs.length; start += batchSize) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      if (
+        this.destroyed ||
+        generation !== this.cardListGenerations.get(cards) ||
+        !this.pendingCardLists.has(cards)
+      ) {
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      for (const pack of packs.slice(start, start + batchSize)) {
+        const card = this.getPackageCardView(pack);
+        cards.push(card);
+        const row = document.createElement("div");
+        row.classList.add("row");
+        row.appendChild(card.element);
+        fragment.appendChild(row);
+      }
+      container.appendChild(fragment);
+    }
+    if (generation === this.cardListGenerations.get(cards)) {
+      this.pendingCardLists.delete(cards);
+    }
+  }
+
+  cancelCardListRender(cards) {
+    this.cardListGenerations.set(cards, (this.cardListGenerations.get(cards) || 0) + 1);
+    this.pendingCardLists.delete(cards);
   }
 
   renderBrowseList() {
@@ -652,12 +720,13 @@ module.exports = class InstallPanel {
           packageOrigin(left).localeCompare(packageOrigin(right)),
       );
     const start = (this.page - 1) * this.pageSize;
-    this.renderCardList(
+    const rendering = this.renderCardList(
       this.refs.browseContainer,
       this.browsePackageCards,
       packages.slice(start, start + this.pageSize),
     );
     this.updatePagination(packages.length);
+    return rendering;
   }
 
   updatePagination(total) {
@@ -672,17 +741,19 @@ module.exports = class InstallPanel {
   previousPage() {
     if (this.page <= 1) return;
     this.page--;
-    this.renderActivePage();
+    return this.renderActivePage();
   }
 
   nextPage() {
     this.page++;
-    this.renderActivePage();
+    return this.renderActivePage();
   }
 
   renderActivePage() {
-    if (this.refs.searchEditor.getText().trim()) this.renderSearchList(this.searchPackages);
-    else this.renderBrowseList();
+    if (this.refs.searchEditor.getText().trim()) {
+      return this.renderSearchList(this.searchPackages);
+    }
+    return this.renderBrowseList();
   }
 
   // Scores a package against the query by name and keywords only. Descriptions
@@ -748,12 +819,13 @@ module.exports = class InstallPanel {
 
   renderSearchList(packages) {
     const start = (this.page - 1) * this.pageSize;
-    this.renderCardList(
+    const rendering = this.renderCardList(
       this.refs.resultsContainer,
       this.catalogPackageCards,
       packages.slice(start, start + this.pageSize),
     );
     this.updatePagination(packages.length);
+    return rendering;
   }
 
   renderIncompleteSearch(query) {
@@ -799,11 +871,12 @@ module.exports = class InstallPanel {
       return [];
     }
     this.searchPackages = results;
-    this.renderSearchList(results);
+    await this.renderSearchList(results);
     return results;
   }
 
   clearPackageCards(cards) {
+    this.cancelCardListRender(cards);
     while (cards.length) cards.pop().destroy();
   }
 

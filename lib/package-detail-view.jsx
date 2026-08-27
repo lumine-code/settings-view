@@ -12,6 +12,7 @@ const PackageGrammarsView = require("./package-grammars-view");
 const PackageKeymapView = require("./package-keymap-view");
 const PackageReadmeView = require("./package-readme-view");
 const PackageSnippetsView = require("./package-snippets-view");
+const focusWithHiddenContent = require("./focus-with-hidden-content");
 const SettingsPanel = require("./settings-panel");
 const { packageOrigin } = require("./utils");
 
@@ -181,11 +182,8 @@ module.exports = class PackageDetailView {
 
     this.refs.startupTime.classList.remove("hidden");
     this.refs.buttons.classList.remove("hidden");
-    this.activateConfig();
     this.populate();
-    this.updateFileButtons();
     this.subscribeToPackageManager();
-    this.renderReadme();
   }
 
   loadPackage() {
@@ -355,7 +353,7 @@ module.exports = class PackageDetailView {
   }
 
   focus() {
-    this.element.focus();
+    focusWithHiddenContent(this.element, this.element.children);
   }
 
   render() {
