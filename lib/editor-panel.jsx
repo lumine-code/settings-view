@@ -47,8 +47,9 @@ module.exports = class EditorPanel {
     );
   }
 
-  focus() {
-    focusWithHiddenContent(this.element, [this.element.querySelector(".settings-panel")]);
+  focus({ preserveLayout = false } = {}) {
+    if (preserveLayout) this.element.focus({ preventScroll: true });
+    else focusWithHiddenContent(this.element, [this.element.querySelector(".settings-panel")]);
   }
 
   show() {

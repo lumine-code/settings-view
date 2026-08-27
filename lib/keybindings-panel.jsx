@@ -238,8 +238,9 @@ module.exports = class KeybindingsPanel {
     return source;
   }
 
-  focus() {
-    focusWithHiddenContent(this.refs.searchEditor.element, [this.refs.keybindingsTable]);
+  focus({ preserveLayout = false } = {}) {
+    if (preserveLayout) this.refs.searchEditor.element.focus({ preventScroll: true });
+    else focusWithHiddenContent(this.refs.searchEditor.element, [this.refs.keybindingsTable]);
   }
 
   show() {
@@ -332,7 +333,10 @@ module.exports = class KeybindingsPanel {
     } else {
       const renderNextBatch = () => {
         this.pendingKeyBindingRender = null;
-        if (this.element.style.display === "none") {
+        if (
+          this.element.style.display === "none" ||
+          this.element.classList.contains("settings-panel-inactive")
+        ) {
           this.resumeKeyBindingRender = renderNextBatch;
           return;
         }

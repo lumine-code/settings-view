@@ -145,7 +145,11 @@ module.exports = class InstallPanel {
 
   update() {}
 
-  focus() {
+  focus({ preserveLayout = false } = {}) {
+    if (preserveLayout) {
+      this.refs.searchEditor.element.focus({ preventScroll: true });
+      return;
+    }
     focusWithHiddenContent(this.refs.searchEditor.element, [
       this.refs.resultsContainer,
       this.refs.browseArea,

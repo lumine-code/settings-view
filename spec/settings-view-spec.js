@@ -172,6 +172,85 @@ describe("SettingsView", function () {
       expect(element.style.display).toBe("");
     });
 
+    it("keeps a cached panel rendered while making it inactive", async () => {
+      const createPanel = () => {
+        const element = document.createElement("div");
+        element.classList.add("panels-item");
+        const row = document.createElement("div");
+        row.classList.add("row");
+        element.appendChild(row);
+        return {
+          element,
+          focus: jasmine.createSpy("focus"),
+          row,
+          show() {
+            element.style.display = "";
+          },
+        };
+      };
+      const first = createPanel();
+      const second = createPanel();
+      settingsView.panelsByName.First = first;
+      settingsView.panelsByName.Second = second;
+
+      settingsView.showPanel("First");
+      settingsView.showPanel("Second");
+
+      expect(first.element.style.display).toBe("");
+      expect(first.element).toHaveClass("settings-panel-inactive");
+      expect(first.element.inert).toBe(true);
+      expect(first.element.getAttribute("aria-hidden")).toBe("true");
+      expect(first.row.parentElement).toBe(first.element);
+
+      settingsView.showPanel("First");
+
+      expect(first.element).not.toHaveClass("settings-panel-inactive");
+      expect(first.element.inert).toBe(false);
+      expect(first.element.hasAttribute("aria-hidden")).toBe(false);
+      expect(first.element.firstElementChild).toBe(first.row);
+      expect(first.focus).toHaveBeenCalledTimes(1);
+      await conditionPromise(() => first.focus.calls.count() === 2);
+      expect(first.focus.calls.mostRecent().args[0]).toEqual({ preserveLayout: true });
+    });
+
+    it("does not read or rewrite cached scroll positions during navigation", () => {
+      const createPanel = () => {
+        const element = document.createElement("div");
+        element.classList.add("panels-item");
+        return {
+          element,
+          focus() {},
+          show() {
+            element.style.display = "";
+          },
+        };
+      };
+      const first = createPanel();
+      const second = createPanel();
+      let reads = 0;
+      let writes = 0;
+      Object.defineProperty(first.element, "scrollTop", {
+        configurable: true,
+        get() {
+          reads++;
+          return 120;
+        },
+        set() {
+          writes++;
+        },
+      });
+      settingsView.panelsByName.First = first;
+      settingsView.panelsByName.Second = second;
+      settingsView.refs.panels.appendChild(first.element);
+      settingsView.activePanel = { name: "First", options: {} };
+
+      settingsView.showPanel("Second");
+      settingsView.showPanel("First");
+
+      expect(reads).toBe(0);
+      expect(writes).toBe(0);
+    });
+
     it("defaults to the Search panel when settings search is enabled", async () => {
       lumine.config.set("settings-view.enableSettingsSearch", true);
       const view = main.createSettingsView({ packageManager, snippetsProvider: SnippetsProvider });
@@ -254,7 +333,12 @@ describe("SettingsView", function () {
       settingsView.refs.panelMenu.querySelector('li[name="Panel 2"] a').click();
       expect(settingsView.refs.panelMenu.querySelectorAll(".active").length).toBe(1);
       expect(settingsView.refs.panelMenu.querySelector('li[name="Panel 2"]')).toHaveClass("active");
-      expect(settingsView.refs.panels.querySelector("#panel-1")).toBeHidden();
+      expect(settingsView.refs.panels.querySelector("#panel-1")).toHaveClass(
+        "settings-panel-inactive",
+      );
+      expect(settingsView.refs.panels.querySelector("#panel-1").getAttribute("aria-hidden")).toBe(
+        "true",
+      );
       expect(settingsView.refs.panels.querySelector("#panel-2")).toBeVisible();
     }));
 

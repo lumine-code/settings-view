@@ -111,7 +111,11 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
     this.loadPackages();
   }
 
-  focus() {
+  focus({ preserveLayout = false } = {}) {
+    if (preserveLayout) {
+      this.refs.filterEditor.element.focus({ preventScroll: true });
+      return;
+    }
     const sections = [
       this.refs.installedPackagesHeader.parentElement,
       this.refs.corePackagesHeader.parentElement,

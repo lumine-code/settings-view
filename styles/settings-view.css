@@ -661,10 +661,24 @@
 
   .panels {
     flex: 8.4;
-    flex-flow: column;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     position: relative;
     min-width: 0;
+    isolation: isolate;
+
+    > * {
+      grid-area: 1 / 1;
+      position: relative;
+      z-index: 1;
+      background-color: var(--level-2-color);
+    }
+
+    > .settings-panel-inactive {
+      z-index: 0;
+      pointer-events: none;
+    }
 
     .panels-item {
       flex: 1;
