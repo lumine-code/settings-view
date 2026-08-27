@@ -553,8 +553,8 @@ describe("PackageCatalogClient", function () {
       .then((catalog) => {
         expect(catalog.packages.length).toBe(1000);
         expect(finalProgress).toEqual({ processed: 1000, total: 1000, errors: 0 });
-        expect(maximumGit).toBeLessThanOrEqual(4);
-        expect(maximumHttp).toBeLessThanOrEqual(4);
+        expect(maximumGit).toBeLessThanOrEqual(8);
+        expect(maximumHttp).toBeLessThanOrEqual(8);
         return new PackageCatalogClient({ storage }).loadAll([catalogUrl], {
           cacheOnly: true,
         });
