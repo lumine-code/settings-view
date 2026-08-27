@@ -1432,18 +1432,33 @@
   margin: 0;
 }
 
-.settings-view .scope-override-toggle[hidden] {
+.settings-view .scope-has-toggle > .scope-resolution-indicator {
+  position: absolute;
+  top: 3px;
+  left: calc(-2.25em - var(--scope-indent, 0px));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+
+  &::before {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--scope-resolution-color);
+    content: "";
+  }
+}
+
+.settings-view .scope-override-toggle[hidden],
+.settings-view .scope-resolution-indicator[hidden] {
   display: none;
 }
 
-.settings-view input.scope-override-toggle[type="checkbox"] {
+.settings-view input.scope-override-toggle[type="checkbox"],
+.settings-view .scope-resolution-indicator {
   --scope-resolution-color: var(--scope-resolution-base-color);
-
-  background-color: color-mix(
-    in srgb,
-    var(--scope-resolution-color) 35%,
-    var(--background-color-selected)
-  );
 
   &.scope-resolution-base {
     --scope-resolution-color: var(--scope-resolution-base-color);
@@ -1454,6 +1469,15 @@
   &.scope-resolution-syntax {
     --scope-resolution-color: var(--scope-resolution-syntax-color);
   }
+}
+
+.settings-view input.scope-override-toggle[type="checkbox"] {
+  background-color: color-mix(
+    in srgb,
+    var(--scope-resolution-color) 35%,
+    var(--background-color-selected)
+  );
+
   &:checked,
   &:active {
     background-color: var(--scope-resolution-color);

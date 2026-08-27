@@ -36,9 +36,6 @@ describeOnWindows("SystemWindowsPanel", () => {
 
     panel.show();
     expect(fileHandler).not.toHaveBeenCalled();
-    expect(panel.registrationCheckTimer).toBeDefined();
-    clearTimeout(panel.registrationCheckTimer);
-    panel.registrationCheckTimer = null;
     cancelAnimationFrame(panel.registrationCheckFrame);
     panel.registrationCheckFrame = null;
     panel.runNextRegistrationCheck();

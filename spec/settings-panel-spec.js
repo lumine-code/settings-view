@@ -685,16 +685,22 @@ describe("SettingsPanel", () => {
       );
       const value = settingsPanel.element.querySelector('[id="scope-transition.enabled"]');
       const toggle = group.querySelector(".scope-override-toggle");
+      const indicator = group.querySelector(".scope-resolution-indicator");
       const tabLengthElement = settingsPanel.element.querySelector(
         '[id="scope-transition.tabLength"]',
       );
       const tabLengthEditor = tabLengthElement.getModel();
       const tabLengthTooltip = lumine.tooltips.findTooltips(tabLengthElement)[0];
+      const indicatorTooltip = lumine.tooltips.findTooltips(indicator)[0];
       const pickerElement = settingsPanel.element.querySelector(".settings-scope-editor");
       const picker = PredefinedValuesEditor.forElement(pickerElement);
       const pickerModel = picker.editor;
 
       expect(toggle.hidden).toBe(true);
+      expect(indicator.hidden).toBe(false);
+      expect(indicator).toHaveClass("scope-resolution-grammar");
+      expect(indicator.dataset.tooltip).toContain("Per grammar");
+      expect(indicatorTooltip.options.title).toBe(indicator.dataset.tooltip);
       expect(value).toBeChecked();
       expect(value.disabled).toBe(false);
       expect(tabLengthEditor.getPlaceholderText()).toBe("Default: 2");
@@ -719,6 +725,7 @@ describe("SettingsPanel", () => {
         tabLengthElement,
       );
       expect(toggle.hidden).toBe(false);
+      expect(indicator.hidden).toBe(true);
       expect(toggle).not.toBeChecked();
       expect(group).toHaveClass("scope-inherited");
       expect(value).not.toBeChecked();
@@ -736,6 +743,7 @@ describe("SettingsPanel", () => {
       expect(settingsPanel.element.querySelector(".settings-scope-editor")).toBe(pickerElement);
       expect(settingsPanel.element.querySelector('[id="scope-transition.enabled"]')).toBe(value);
       expect(toggle.hidden).toBe(true);
+      expect(indicator.hidden).toBe(false);
       expect(group).not.toHaveClass("scope-inherited");
       expect(value).toBeChecked();
       expect(value.disabled).toBe(false);
@@ -773,6 +781,7 @@ describe("SettingsPanel", () => {
       const originalValue = value;
       expect(toggle).not.toBeChecked();
       expect(toggle).toHaveClass("scope-resolution-grammar");
+      expect(settingsPanel.element.querySelector(".scope-resolution-indicator").hidden).toBe(true);
       expect(toggle.dataset.tooltip).toContain("Per grammar");
       expect(value.disabled).toBe(true);
       expect(settingsPanel.element.textContent).not.toContain("Override in");

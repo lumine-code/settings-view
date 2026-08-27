@@ -158,15 +158,10 @@ module.exports = class SystemPanel {
   scheduleRegistrationChecks() {
     if (this.registrationChecksStarted) return;
     this.registrationChecksStarted = true;
-    // Yield a full event-loop tick before entering the first frame so the
-    // disabled/loading state is committed before any registry process starts.
-    this.registrationCheckTimer = setTimeout(() => {
-      this.registrationCheckTimer = null;
-      this.registrationCheckFrame = requestAnimationFrame(() => {
-        this.registrationCheckFrame = null;
-        this.registrationCheckTimer = setTimeout(() => this.runNextRegistrationCheck(), 0);
-      });
-    }, 0);
+    this.registrationCheckFrame = requestAnimationFrame(() => {
+      this.registrationCheckFrame = null;
+      this.registrationCheckTimer = setTimeout(() => this.runNextRegistrationCheck(), 0);
+    });
   }
 
   runNextRegistrationCheck() {
