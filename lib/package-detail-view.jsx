@@ -247,7 +247,6 @@ module.exports = class PackageDetailView {
   }
 
   destroy() {
-    cancelAnimationFrame(this.revealSectionFrame);
     this.settingsPanel = this.destroySection(this.settingsPanel);
     this.keymapView = this.destroySection(this.keymapView);
     this.grammarsView = this.destroySection(this.grammarsView);
@@ -344,37 +343,17 @@ module.exports = class PackageDetailView {
     const section = this.initialSection && this.sectionElements().get(this.initialSection);
     this.initialSection = null;
     if (section && section.style.display !== "none") {
-      // A requested section wins over the scroll position retained by this
-      // cached panel.
+      // A requested section wins over the scroll position this panel was left at,
+      // which `setActivePanel` restores right after `show()`.
       delete this.scrollPosition;
-      this.sectionToReveal = section;
+      section.scrollIntoView();
     }
 
     this.publishTableOfContents();
-    this.revealRequestedSection();
   }
 
-  focus({ preserveLayout = false } = {}) {
-    if (preserveLayout) this.element.focus({ preventScroll: true });
-    else focusWithHiddenContent(this.element, this.element.children);
-  }
-
-  revealRequestedSection() {
-    if (this.sectionToReveal) {
-      const section = this.sectionToReveal;
-      this.sectionToReveal = null;
-      cancelAnimationFrame(this.revealSectionFrame);
-      this.revealSectionFrame = requestAnimationFrame(() => {
-        this.revealSectionFrame = null;
-        if (
-          section.isConnected &&
-          this.element.style.display !== "none" &&
-          !this.element.classList.contains("settings-panel-inactive")
-        ) {
-          section.scrollIntoView();
-        }
-      });
-    }
+  focus() {
+    focusWithHiddenContent(this.element, this.element.children);
   }
 
   render() {
@@ -791,12 +770,7 @@ module.exports = class PackageDetailView {
   // sidebar.
   publishTableOfContents() {
     if (!this.settingsView || typeof this.settingsView.showTableOfContents !== "function") return;
-    if (
-      this.element.style.display === "none" ||
-      this.element.classList.contains("settings-panel-inactive")
-    ) {
-      return;
-    }
+    if (this.element.style.display === "none") return;
 
     const entries = [];
     for (const [key, element] of this.sectionElements()) {

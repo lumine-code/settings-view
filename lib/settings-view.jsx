@@ -104,7 +104,6 @@ module.exports = class SettingsView {
 
   destroy() {
     this.destroyed = true;
-    this.cancelPendingPanelFocus();
     clearTimeout(this.revealSettingTimeout);
     this.disposables.dispose();
     for (let name in this.panelsByName) {
@@ -371,14 +370,18 @@ module.exports = class SettingsView {
   }
 
   focusActivePanel() {
-    if (this.pendingPanelFocusFrame != null) return;
     // Delegate to the panel rather than focusing its element: a panel that owns
     // a search or filter editor puts focus there, and focusing the scroll
     // container here would take it straight back off again. Every panel defines
     // `focus()`, and the ones without an input focus their own element.
     const panel = this.activePanel && this.panelsByName[this.activePanel.name];
     if (panel && panel.element.offsetWidth > 0) {
-      panel.focus({ preserveLayout: true });
+      // This is a focus restore, not a navigation, and the input a panel focuses
+      // sits at its top: without this the browser would scroll it into view and
+      // throw away where the user was reading.
+      const { scrollTop } = panel.element;
+      panel.focus();
+      panel.element.scrollTop = scrollTop;
       return;
     }
 
@@ -386,7 +389,7 @@ module.exports = class SettingsView {
     // panel element is visible, so the view is still keyboard scrollable.
     for (let i = 0; i < this.refs.panels.children.length; i++) {
       const child = this.refs.panels.children[i];
-      if (!child.classList.contains("settings-panel-inactive") && child.offsetWidth > 0) {
+      if (child.offsetWidth > 0) {
         child.focus();
       }
     }
@@ -406,6 +409,13 @@ module.exports = class SettingsView {
   //   the panel. Options may include (but are not limited to):
   //   * `uri` the URI the panel was launched from
   showPanel(name, options) {
+    if (this.activePanel) {
+      const prev = this.panelsByName[this.activePanel.name];
+      if (prev) {
+        prev.scrollPosition = prev.element.scrollTop;
+      }
+    }
+
     const panel = this.getOrCreatePanel(name, options);
     if (panel) {
       this.appendPanel(panel, options);
@@ -564,74 +574,38 @@ module.exports = class SettingsView {
   appendPanel(panel, options) {
     // A new panel owns the sidebar TOC; the detail view republishes on show().
     this.clearTableOfContents();
-    this.cancelPendingPanelFocus();
     for (let i = 0; i < this.refs.panels.children.length; i++) {
-      this.deactivatePanelElement(this.refs.panels.children[i]);
+      this.refs.panels.children[i].style.display = "none";
     }
 
-    const isNewPanel = !this.refs.panels.contains(panel.element);
-    if (isNewPanel) {
+    if (!this.refs.panels.contains(panel.element)) {
       // Connect a newly built subtree while it is hidden. Custom elements can
       // otherwise force layout as each one connects, all inside the sidebar's
       // click handler. `show()` restores the panel before the next paint.
       panel.element.style.display = "none";
-      this.deactivatePanelElement(panel.element);
       this.refs.panels.appendChild(panel.element);
     }
 
     if (panel.beforeShow) {
       panel.beforeShow(options);
     }
-    this.activatePanelElement(panel.element);
     panel.show();
-    if (isNewPanel) panel.focus();
-    else this.schedulePanelFocus(panel);
-  }
-
-  schedulePanelFocus(panel) {
-    this.pendingPanelFocusFrame = requestAnimationFrame(() => {
-      this.pendingPanelFocusFrame = requestAnimationFrame(() => {
-        this.pendingPanelFocusFrame = null;
-        const activePanel = this.activePanel && this.panelsByName[this.activePanel.name];
-        if (
-          !this.destroyed &&
-          activePanel === panel &&
-          !panel.element.classList.contains("settings-panel-inactive")
-        ) {
-          panel.focus({ preserveLayout: true });
-        }
-      });
-    });
-  }
-
-  cancelPendingPanelFocus() {
-    cancelAnimationFrame(this.pendingPanelFocusFrame);
-    this.pendingPanelFocusFrame = null;
-  }
-
-  deactivatePanelElement(element) {
-    // Keep cached panels laid out in the same grid cell. `display: none` makes
-    // Chromium discard their rendering state, so returning to a large table or
-    // package list materializes the whole subtree again in one task.
-    element.classList.add("settings-panel-inactive");
-    element.inert = true;
-    element.setAttribute("aria-hidden", "true");
-  }
-
-  activatePanelElement(element) {
-    element.classList.remove("settings-panel-inactive");
-    element.inert = false;
-    element.removeAttribute("aria-hidden");
+    panel.focus();
   }
 
   setActivePanel(name, options = {}) {
     this.activePanel = { name, options };
+
+    const panel = this.panelsByName[name];
+    if (panel && panel.scrollPosition) {
+      panel.element.scrollTop = panel.scrollPosition;
+      delete panel.scrollPosition;
+    }
   }
 
   removePanel(name) {
     const panel = this.panelsByName[name];
     if (panel) {
-      this.cancelPendingPanelFocus();
       panel.destroy();
       delete this.panelsByName[name];
     }

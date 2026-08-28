@@ -643,6 +643,41 @@ describe("SettingsPanel", () => {
     });
   });
 
+  describe("schema-less grouped settings", () => {
+    beforeEach(() => {
+      lumine.config.setSchema("schema-less-groups", { type: "object" });
+      lumine.config.setDefaults("schema-less-groups", {
+        codeLens: { enabled: false },
+        semanticTokens: {},
+      });
+      settingsPanel = new SettingsPanel({
+        namespace: "schema-less-groups",
+        includeTitle: false,
+      });
+    });
+
+    afterEach(() => settingsPanel.destroy());
+
+    it("marks only the rendered leaves as scope-aware", () => {
+      const objectGroup = settingsPanel.element.querySelector(
+        '.control-group[data-setting-key="schema-less-groups.codeLens"]',
+      );
+      const leafGroup = settingsPanel.element.querySelector(
+        '.control-group[data-setting-key="schema-less-groups.codeLens.enabled"]',
+      );
+
+      expect(objectGroup).not.toHaveClass("scope-has-toggle");
+      expect(objectGroup.querySelector(":scope > .scope-resolution-indicator")).toBeNull();
+      expect(leafGroup).toHaveClass("scope-has-toggle");
+      expect(leafGroup.querySelector(":scope > .scope-resolution-indicator")).not.toBeNull();
+      expect(
+        settingsPanel.element.querySelector(
+          '.control-group[data-setting-key="schema-less-groups.semanticTokens"]',
+        ),
+      ).toBeNull();
+    });
+  });
+
   describe("scope context transitions", () => {
     beforeEach(() => {
       lumine.config.setSchema("scope-transition", {

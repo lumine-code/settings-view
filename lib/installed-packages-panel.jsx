@@ -25,10 +25,6 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
     return 300;
   }
 
-  static packageCardBatchSize() {
-    return 20;
-  }
-
   constructor(settingsView, packageManager) {
     super();
     etch.initialize(this);
@@ -118,11 +114,7 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
     this.loadPackages();
   }
 
-  focus({ preserveLayout = false } = {}) {
-    if (preserveLayout) {
-      this.refs.filterEditor.element.focus({ preventScroll: true });
-      return;
-    }
+  focus() {
     const sections = [
       this.refs.installedPackagesHeader.parentElement,
       this.refs.corePackagesHeader.parentElement,
@@ -140,7 +132,6 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
     clearTimeout(this.loadPackagesTimeout);
     this.loadPackagesTimeout = null;
     this.packageLoadRequestGeneration = (this.packageLoadRequestGeneration || 0) + 1;
-    this.packageLoadGeneration = (this.packageLoadGeneration || 0) + 1;
     this.subscriptions.dispose();
     return etch.destroy(this);
   }
@@ -271,37 +262,16 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
 
     this.packageManager
       .getInstalled()
-      .then(async (packages) => {
+      .then((packages) => {
         if (this.destroyed || requestGeneration !== this.packageLoadRequestGeneration) return;
-        if (this.packageRenderPromise) await this.packageRenderPromise;
-        if (this.destroyed || requestGeneration !== this.packageLoadRequestGeneration) return;
-        const loadGeneration = (this.packageLoadGeneration || 0) + 1;
-        this.packageLoadGeneration = loadGeneration;
         this.packages = this.sortPackages(this.filterPackages(packages));
-        const renderPromise = (async () => {
-          for (const [packageType, loadingArea] of [
-            ["installed", this.refs.installedLoadingArea],
-            ["core", this.refs.coreLoadingArea],
-            ["dev", this.refs.devLoadingArea],
-          ]) {
-            loadingArea.remove();
-            const completed = await this.setPackageItems(
-              packageType,
-              this.packages[packageType],
-              loadGeneration,
-            );
-            if (!completed) return false;
-          }
-          return true;
-        })();
-        this.packageRenderPromise = renderPromise;
-        let completed;
-        try {
-          completed = await renderPromise;
-        } finally {
-          if (this.packageRenderPromise === renderPromise) this.packageRenderPromise = null;
-        }
-        if (!completed) return;
+
+        this.refs.installedLoadingArea.remove();
+        this.refs.coreLoadingArea.remove();
+        this.refs.devLoadingArea.remove();
+        this.items.installed.setItems(this.packages.installed);
+        this.items.core.setItems(this.packages.core);
+        this.items.dev.setItems(this.packages.dev);
 
         // TODO show empty mesage per section
 
@@ -313,25 +283,6 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
       .catch((error) => {
         console.error(error.message, error.stack);
       });
-  }
-
-  async setPackageItems(packageType, packages, loadGeneration) {
-    const list = this.items[packageType];
-    const batchSize = InstalledPackagesPanel.packageCardBatchSize();
-    if (list.getItems().length > 0 || packages.length <= batchSize) {
-      if (loadGeneration !== this.packageLoadGeneration) return false;
-      list.setItems(packages);
-      return true;
-    }
-
-    for (let end = batchSize; end < packages.length; end += batchSize) {
-      if (loadGeneration !== this.packageLoadGeneration) return false;
-      list.setItems(packages.slice(0, end));
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-    }
-    if (loadGeneration !== this.packageLoadGeneration) return false;
-    list.setItems(packages);
-    return true;
   }
 
   displayPackageUpdates(updates) {

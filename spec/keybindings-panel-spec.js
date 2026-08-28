@@ -69,14 +69,21 @@ describe("KeybindingsPanel", function () {
   });
 
   it("focuses search without laying out the result table", () => {
+    Object.defineProperty(panel.element, "scrollTop", {
+      configurable: true,
+      value: 42,
+      writable: true,
+    });
     const focus = spyOn(panel.refs.searchEditor.element, "focus").and.callFake(() => {
       expect(panel.refs.keybindingsTable.style.display).toBe("none");
+      panel.element.scrollTop = 0;
     });
 
     panel.focus();
 
     expect(focus).toHaveBeenCalled();
     expect(panel.refs.keybindingsTable.style.display).toBe("");
+    expect(panel.element.scrollTop).toBe(42);
   });
 
   it("resolves keybinding source paths once per reload", () => {

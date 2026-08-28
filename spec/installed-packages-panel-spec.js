@@ -96,22 +96,26 @@ describe("InstalledPackagesPanel", function () {
       expect(sections.every((section) => section.style.display === "")).toBe(true);
     });
 
-    it("adds a large initial package list in animation-frame batches", async function () {
-      const list = jasmine.createSpyObj("list", ["getItems", "setItems"]);
-      list.getItems.and.returnValue([]);
-      this.panel.items.test = list;
-      spyOn(InstalledPackagesPanel, "packageCardBatchSize").and.returnValue(2);
-      const packages = [{ name: "one" }, { name: "two" }, { name: "three" }];
+    it("publishes a complete package list with one update", async function () {
+      const packages = {
+        core: [],
+        dev: [],
+        git: [],
+        user: Array.from({ length: 21 }, (_value, index) => ({
+          name: `user-package-${index}`,
+          version: "1.0.0",
+        })),
+      };
+      this.packageManager.getInstalled.and.returnValue(Promise.resolve(packages));
+      const setItems = spyOn(this.panel.items.installed, "setItems").and.callThrough();
 
-      const completion = this.panel.setPackageItems(
-        "test",
-        packages,
-        this.panel.packageLoadGeneration,
+      this.panel.loadPackages();
+      await conditionPromise(
+        () => this.panel.refs.installedCount.textContent.trim() === "21",
       );
 
-      expect(list.setItems.calls.mostRecent().args[0]).toEqual(packages.slice(0, 2));
-      await completion;
-      expect(list.setItems.calls.mostRecent().args[0]).toEqual(packages);
+      expect(setItems).toHaveBeenCalledTimes(1);
+      expect(setItems.calls.mostRecent().args[0]).toHaveLength(21);
     });
 
     it("shows repository installs as installed packages", function () {

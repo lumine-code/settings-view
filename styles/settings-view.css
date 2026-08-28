@@ -329,13 +329,6 @@
     }
   }
 
-  /* Long package lists should not lay out and paint every off-screen card when
-     their panel is shown. The detail view's single card is outside this shape. */
-  .package-container > .row > .package-card {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 160px;
-  }
-
   section .section-heading,
   .section .section-heading {
     margin-bottom: calc(var(--component-padding) * 2);
@@ -661,24 +654,10 @@
 
   .panels {
     flex: 8.4;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
+    flex-flow: column;
+    display: flex;
     position: relative;
     min-width: 0;
-    isolation: isolate;
-
-    > * {
-      grid-area: 1 / 1;
-      position: relative;
-      z-index: 1;
-      background-color: var(--level-2-color);
-    }
-
-    > .settings-panel-inactive {
-      z-index: 0;
-      pointer-events: none;
-    }
 
     .panels-item {
       flex: 1;
@@ -1123,11 +1102,6 @@
     width: 100%;
     table-layout: fixed;
 
-    tbody > tr {
-      content-visibility: auto;
-      contain-intrinsic-size: auto 28px;
-    }
-
     col.keystroke {
       width: 12%;
     }
@@ -1231,7 +1205,6 @@
 
     tr {
       display: block;
-      contain-intrinsic-size: auto 150px;
       margin-bottom: var(--component-padding);
       padding: calc(var(--component-padding) / 2) var(--component-padding);
       border: 1px solid var(--base-border-color);

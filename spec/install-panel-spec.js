@@ -332,7 +332,7 @@ describe("InstallPanel", function () {
       engines: { lumine: "*" },
     }));
     const rendering = panel.renderBrowseList();
-    expect(panel.browsePackageCards.length).toBe(0);
+    expect(panel.browsePackageCards.length).toBe(50);
     await rendering;
 
     expect(panel.browsePackageCards.length).toBe(50);
@@ -421,7 +421,7 @@ describe("InstallPanel", function () {
     expect(panel.refs.resultsContainer.querySelectorAll(".package-card").length).toBe(1);
   });
 
-  it("waits for every batched search result card before resolving", async () => {
+  it("renders every search result card together", async () => {
     panel.catalogPackages = Array.from({ length: 6 }, (_value, index) => ({
       name: `sample-package-${index}`,
       repository: `owner/sample-package-${index}`,
@@ -433,7 +433,6 @@ describe("InstallPanel", function () {
 
     expect(results).toHaveLength(6);
     expect(panel.refs.resultsContainer.querySelectorAll(".package-card").length).toBe(6);
-    expect(panel.pendingCardLists.has(panel.catalogPackageCards)).toBe(false);
   });
 
   it("matches by name and keywords but not by description text", async () => {

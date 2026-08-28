@@ -5,12 +5,6 @@ const etch = require("@lumine-code/etch");
 module.exports = class SystemPanel {
   constructor() {
     etch.initialize(this);
-    this.element.setAttribute("aria-busy", "true");
-    this.registrationChecks = [
-      [WinShell.fileHandler, this.refs.fileHandlerCheckbox],
-      [WinShell.fileContextMenu, this.refs.fileContextMenuCheckbox],
-      [WinShell.folderContextMenu, this.refs.folderContextMenuCheckbox],
-    ];
     this.subscriptions = new CompositeDisposable();
     this.subscriptions.add(
       lumine.commands.add(this.element, {
@@ -34,12 +28,19 @@ module.exports = class SystemPanel {
         },
       }),
     );
+
+    WinShell.fileHandler.isRegistered((isRegistered) => {
+      this.refs.fileHandlerCheckbox.checked = isRegistered;
+    });
+    WinShell.fileContextMenu.isRegistered((isRegistered) => {
+      this.refs.fileContextMenuCheckbox.checked = isRegistered;
+    });
+    WinShell.folderContextMenu.isRegistered((isRegistered) => {
+      this.refs.folderContextMenuCheckbox.checked = isRegistered;
+    });
   }
 
   destroy() {
-    this.destroyed = true;
-    cancelAnimationFrame(this.registrationCheckFrame);
-    clearTimeout(this.registrationCheckTimer);
     this.subscriptions.dispose();
     return etch.destroy(this);
   }
@@ -66,7 +67,6 @@ module.exports = class SystemPanel {
                           id="system.windows.file-handler"
                           className="input-checkbox"
                           type="checkbox"
-                          disabled
                           onclick={(e) => {
                             this.setRegistration(WinShell.fileHandler, e.target.checked);
                           }}
@@ -89,7 +89,6 @@ module.exports = class SystemPanel {
                           id="system.windows.shell-menu-files"
                           className="input-checkbox"
                           type="checkbox"
-                          disabled
                           onclick={(e) => {
                             this.setRegistration(WinShell.fileContextMenu, e.target.checked);
                           }}
@@ -112,7 +111,6 @@ module.exports = class SystemPanel {
                           id="system.windows.shell-menu-folders"
                           className="input-checkbox"
                           type="checkbox"
-                          disabled
                           onclick={(e) => {
                             this.setRegistration(WinShell.folderContextMenu, e.target.checked);
                             this.setRegistration(
@@ -152,33 +150,6 @@ module.exports = class SystemPanel {
 
   show() {
     this.element.style.display = "";
-    this.scheduleRegistrationChecks();
-  }
-
-  scheduleRegistrationChecks() {
-    if (this.registrationChecksStarted) return;
-    this.registrationChecksStarted = true;
-    this.registrationCheckFrame = requestAnimationFrame(() => {
-      this.registrationCheckFrame = null;
-      this.registrationCheckTimer = setTimeout(() => this.runNextRegistrationCheck(), 0);
-    });
-  }
-
-  runNextRegistrationCheck() {
-    this.registrationCheckTimer = null;
-    if (this.destroyed) return;
-    const check = this.registrationChecks.shift();
-    if (!check) {
-      this.element.removeAttribute("aria-busy");
-      return;
-    }
-    const [option, checkbox] = check;
-    option.isRegistered((isRegistered) => {
-      if (this.destroyed) return;
-      checkbox.checked = isRegistered;
-      checkbox.disabled = false;
-      this.registrationCheckTimer = setTimeout(() => this.runNextRegistrationCheck(), 0);
-    });
   }
 
   scrollUp() {

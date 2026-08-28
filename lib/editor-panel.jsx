@@ -1,7 +1,6 @@
 /** @jsx etch.dom */
 const { CompositeDisposable } = require("lumine");
 const etch = require("@lumine-code/etch");
-const focusWithHiddenContent = require("./focus-with-hidden-content");
 const SettingsPanel = require("./settings-panel");
 
 module.exports = class EditorPanel {
@@ -47,9 +46,8 @@ module.exports = class EditorPanel {
     );
   }
 
-  focus({ preserveLayout = false } = {}) {
-    if (preserveLayout) this.element.focus({ preventScroll: true });
-    else focusWithHiddenContent(this.element, [this.element.querySelector(".settings-panel")]);
+  focus() {
+    this.element.focus();
   }
 
   show() {

@@ -18,10 +18,6 @@ const { normalizeCatalogSource } = require("./package-catalog-client");
 const PackageNameRegex = /config\/install\/(?:package|theme):([a-z0-9-_]+)/i;
 
 module.exports = class InstallPanel {
-  static packageCardBatchSize() {
-    return 2;
-  }
-
   constructor(settingsView, packageManager) {
     this.settingsView = settingsView;
     this.packageManager = packageManager;
@@ -31,9 +27,6 @@ module.exports = class InstallPanel {
     this.catalogPackages = [];
     this.catalogPackageCards = [];
     this.browsePackageCards = [];
-    this.cardListGenerations = new WeakMap();
-    this.pendingCardLists = new Set();
-    this.destroyed = false;
     this.catalogFetched = false;
     this.sourceEditors = [];
     this.filterType = "all";
@@ -132,7 +125,6 @@ module.exports = class InstallPanel {
   }
 
   destroy() {
-    this.destroyed = true;
     this.clearSourceEditors();
     this.sourceDisposables.dispose();
     this.clearPackageCards(this.catalogPackageCards);
@@ -145,11 +137,7 @@ module.exports = class InstallPanel {
 
   update() {}
 
-  focus({ preserveLayout = false } = {}) {
-    if (preserveLayout) {
-      this.refs.searchEditor.element.focus({ preventScroll: true });
-      return;
-    }
+  focus() {
     focusWithHiddenContent(this.refs.searchEditor.element, [
       this.refs.resultsContainer,
       this.refs.browseArea,
@@ -638,27 +626,6 @@ module.exports = class InstallPanel {
       const key = packageOrigin(card.pack) || card.pack.name;
       if (!pool.has(key)) pool.set(key, card);
     }
-    const reusable = new Set();
-    let newCardCount = 0;
-    for (const pack of packs) {
-      const key = packageOrigin(pack) || pack.name;
-      const pooled = pool.get(key);
-      if (pooled && pooled.pack === pack && !reusable.has(pooled)) {
-        reusable.add(pooled);
-      } else {
-        newCardCount++;
-      }
-    }
-
-    if (newCardCount > InstallPanel.packageCardBatchSize()) {
-      this.clearPackageCards(cards);
-      container.replaceChildren();
-      const generation = this.cardListGenerations.get(cards);
-      this.pendingCardLists.add(cards);
-      return this.renderNewCardsInBatches(container, cards, packs, generation);
-    }
-
-    this.cancelCardListRender(cards);
     const next = [];
     const reused = new Set();
     for (const pack of packs) {
@@ -674,46 +641,14 @@ module.exports = class InstallPanel {
     for (const card of cards) {
       if (!reused.has(card)) card.destroy();
     }
-    container.innerHTML = "";
+    const fragment = document.createDocumentFragment();
     for (const card of next) {
-      this.addPackageCardView(container, card);
+      this.addPackageCardView(fragment, card);
     }
+    container.replaceChildren(fragment);
     cards.length = 0;
     cards.push(...next);
     return Promise.resolve();
-  }
-
-  async renderNewCardsInBatches(container, cards, packs, generation) {
-    const batchSize = InstallPanel.packageCardBatchSize();
-    for (let start = 0; start < packs.length; start += batchSize) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      if (
-        this.destroyed ||
-        generation !== this.cardListGenerations.get(cards) ||
-        !this.pendingCardLists.has(cards)
-      ) {
-        return;
-      }
-
-      const fragment = document.createDocumentFragment();
-      for (const pack of packs.slice(start, start + batchSize)) {
-        const card = this.getPackageCardView(pack);
-        cards.push(card);
-        const row = document.createElement("div");
-        row.classList.add("row");
-        row.appendChild(card.element);
-        fragment.appendChild(row);
-      }
-      container.appendChild(fragment);
-    }
-    if (generation === this.cardListGenerations.get(cards)) {
-      this.pendingCardLists.delete(cards);
-    }
-  }
-
-  cancelCardListRender(cards) {
-    this.cardListGenerations.set(cards, (this.cardListGenerations.get(cards) || 0) + 1);
-    this.pendingCardLists.delete(cards);
   }
 
   renderBrowseList() {
@@ -889,7 +824,6 @@ module.exports = class InstallPanel {
   }
 
   clearPackageCards(cards) {
-    this.cancelCardListRender(cards);
     while (cards.length) cards.pop().destroy();
   }
 

@@ -66,11 +66,7 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
     this.updateSearchState("initial");
   }
 
-  focus({ preserveLayout = false } = {}) {
-    if (preserveLayout) {
-      this.refs.searchEditor.element.focus({ preventScroll: true });
-      return;
-    }
+  focus() {
     focusWithHiddenContent(this.refs.searchEditor.element, [
       this.refs.recentSection,
       this.refs.resultsSection,

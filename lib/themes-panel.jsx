@@ -104,11 +104,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
 
   update() {}
 
-  focus({ preserveLayout = false } = {}) {
-    if (preserveLayout) {
-      this.refs.filterEditor.element.focus({ preventScroll: true });
-      return;
-    }
+  focus() {
     focusWithHiddenContent(this.refs.filterEditor.element, [
       this.refs.installedPackages.closest(".sub-section"),
       this.refs.corePackages.closest(".sub-section"),
