@@ -683,6 +683,7 @@
       margin: 0;
     }
 
+    .grammar-parser,
     .grammar-filetypes {
       margin-top: var(--component-padding);
     }

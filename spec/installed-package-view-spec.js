@@ -45,6 +45,7 @@ describe("InstalledPackageView", function () {
     );
 
     expect(settingsPanels[0].querySelector(".grammar-scope").textContent).toBe("Scope: source.a");
+    expect(settingsPanels[0].querySelector(".grammar-parser").textContent).toBe("Parser: TextMate");
     expect(settingsPanels[0].querySelector(".grammar-filetypes").textContent).toBe(
       "File Types: .a, .aa, a",
     );
@@ -53,6 +54,37 @@ describe("InstalledPackageView", function () {
     expect(settingsPanels[1].querySelector(".grammar-filetypes").textContent).toBe("File Types: ");
 
     expect(settingsPanels[2]).toBeUndefined();
+  });
+
+  it("displays both parser variants when a package registers the same grammar twice", async () => {
+    await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
+
+    const pack = lumine.packages.getActivePackage("language-test");
+    const getGrammars = lumine.grammars.getGrammars.bind(lumine.grammars);
+    const treeSitterGrammar = {
+      name: "A Grammar",
+      scopeName: "source.a",
+      type: "tree-sitter",
+      packageName: pack.name,
+      grammarFilePath: path.join(pack.path, "grammars", "tree-sitter-a.json"),
+      fileTypes: ["tsa"],
+    };
+    spyOn(lumine.grammars, "getGrammars").and.callFake((options) => {
+      const grammars = getGrammars(options);
+      return options?.includeTreeSitter ? grammars.concat(treeSitterGrammar) : grammars;
+    });
+
+    const view = new PackageDetailView(
+      pack,
+      new SettingsView(),
+      new PackageManager(),
+      SnippetsProvider,
+    );
+    const parsers = Array.from(
+      view.element.querySelectorAll(".package-grammars .grammar-parser"),
+    ).map((element) => element.textContent);
+
+    expect(parsers).toEqual(["Parser: TextMate", "Parser: Tree-sitter", "Parser: TextMate"]);
   });
 
   it("displays the snippets registered by the package", async () => {

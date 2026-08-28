@@ -666,6 +666,49 @@ describe("PackageManager", function () {
 
       expect(packageManager.packageHasSettings(packageName)).toBe(true);
     });
+
+    it("returns true when the package only defines a Tree-sitter grammar", () => {
+      const packageName = "language-tree-sitter-test";
+      const grammar = {
+        name: "Tree-sitter Test",
+        scopeName: "source.tree-sitter-test",
+        type: "tree-sitter",
+        packageName,
+        grammarFilePath: path.join(
+          __dirname,
+          "fixtures",
+          packageName,
+          "grammars",
+          "tree-sitter-test.json",
+        ),
+        fileTypes: ["tst"],
+      };
+      spyOn(lumine.grammars, "getGrammars").and.callFake((options) =>
+        options?.includeTreeSitter ? [grammar] : [],
+      );
+
+      expect(packageManager.packageHasSettings(packageName)).toBe(true);
+    });
+
+    it("does not expose settings for a package with only an unnamed injection grammar", () => {
+      const packageName = "language-injection-test";
+      spyOn(lumine.grammars, "getGrammars").and.returnValue([
+        {
+          scopeName: "text.injection-test",
+          type: "tree-sitter",
+          packageName,
+          grammarFilePath: path.join(
+            __dirname,
+            "fixtures",
+            packageName,
+            "grammars",
+            "tree-sitter-test.json",
+          ),
+        },
+      ]);
+
+      expect(packageManager.packageHasSettings(packageName)).toBe(false);
+    });
   });
 
   describe("::loadOutdated", function () {

@@ -509,7 +509,7 @@ module.exports = class PackageDetailView {
       this.appendSection(this.keymapView.element, "keymap");
 
       if (this.pack.path) {
-        this.grammarsView = new PackageGrammarsView(this.pack.path);
+        this.grammarsView = new PackageGrammarsView(this.pack.name);
         this.snippetsView = new PackageSnippetsView(this.pack, this.snippetsProvider);
         this.appendSection(this.grammarsView.element, "grammars");
         this.appendSection(this.snippetsView.element, "snippets");

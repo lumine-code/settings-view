@@ -99,6 +99,45 @@ describe("PackageDetailView", function () {
     expect(scrollIntoView).toHaveBeenCalled();
   });
 
+  it("shows a Tree-sitter-only grammar in the detail sections and table of contents", () => {
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const pack = lumine.packages.getLoadedPackage("package-with-config");
+    const grammar = {
+      name: "Tree-sitter Test",
+      scopeName: "source.tree-sitter-test",
+      type: "tree-sitter",
+      packageName: pack.name,
+      grammarFilePath: path.join(pack.path, "grammars", "tree-sitter-test.json"),
+      fileTypes: ["tst"],
+    };
+    spyOn(lumine.grammars, "getGrammars").and.callFake((options) =>
+      options?.includeTreeSitter ? [grammar] : [],
+    );
+    const settingsView = new SettingsView();
+    const showToc = spyOn(settingsView, "showTableOfContents").and.callThrough();
+
+    view = new PackageDetailView(pack, settingsView, packageManager, SnippetsProvider);
+
+    const grammarSection = view.refs.sections.querySelector('[data-section="grammars"]');
+    const grammarPanels = grammarSection.querySelectorAll(".settings-panel");
+    expect(grammarPanels.length).toBe(1);
+    expect(grammarPanels[0].querySelector(".grammar-scope").textContent).toBe(
+      "Scope: source.tree-sitter-test",
+    );
+    expect(grammarPanels[0].querySelector(".grammar-parser").textContent).toBe(
+      "Parser: Tree-sitter",
+    );
+    expect(grammarPanels[0].querySelector(".grammar-filetypes").textContent).toBe(
+      "File Types: tst",
+    );
+    expect(grammarSection.style.display).toBe("");
+    const labels = showToc.calls
+      .mostRecent()
+      .args[0].filter((entry) => entry.level === 1)
+      .map((entry) => entry.label);
+    expect(labels).toContain("Grammars");
+  });
+
   it("keeps every section listed when the sections refresh", () => {
     lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
     const pack = lumine.packages.getLoadedPackage("package-with-config");
