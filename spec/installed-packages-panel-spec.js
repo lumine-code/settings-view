@@ -110,9 +110,7 @@ describe("InstalledPackagesPanel", function () {
       const setItems = spyOn(this.panel.items.installed, "setItems").and.callThrough();
 
       this.panel.loadPackages();
-      await conditionPromise(
-        () => this.panel.refs.installedCount.textContent.trim() === "21",
-      );
+      await conditionPromise(() => this.panel.refs.installedCount.textContent.trim() === "21");
 
       expect(setItems).toHaveBeenCalledTimes(1);
       expect(setItems.calls.mostRecent().args[0]).toHaveLength(21);
