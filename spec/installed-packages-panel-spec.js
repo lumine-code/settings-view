@@ -166,6 +166,31 @@ describe("InstalledPackagesPanel", function () {
       ).toBe(2);
     });
 
+    it("observes additions to and removals from the shared update state", function () {
+      const card = this.panel.itemViews.installed
+        .getViews()
+        .find((view) => view.pack.name === "user-package");
+      card.pack.repository = "owner/user-package";
+      card.pack.apmInstallSource = {
+        type: "git",
+        origin: "github.com/owner/user-package",
+      };
+      const display = spyOn(card, "displayAvailableUpdate");
+      const clear = spyOn(card, "clearAvailableUpdate");
+      const update = {
+        name: "user-package",
+        repository: "owner/user-package",
+        latestVersion: "2.0.0",
+        latestSha: "a".repeat(40),
+      };
+
+      this.packageManager.replaceAvailableUpdates([update]);
+      expect(display).toHaveBeenCalledWith(update);
+
+      this.packageManager.replaceAvailableUpdates([]);
+      expect(clear).toHaveBeenCalled();
+    });
+
     it("cancels a scheduled reload when destroyed", function () {
       this.packageManager.emitter.emit("package-installed", {
         pack: { name: "another-user-package" },

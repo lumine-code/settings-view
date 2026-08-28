@@ -40,4 +40,24 @@ describe("UpdatesPanel", () => {
     expect(panel.refs.updateCount.textContent).toBe("0");
     expect(panel.refs.statusMessage.textContent).toContain("up to date");
   });
+
+  it("observes the shared update state after its initial direct check", async () => {
+    spyOn(packageManager, "getGitPackageUpdates").and.returnValue(Promise.resolve([]));
+    panel = new UpdatesPanel(new SettingsView(), packageManager);
+    await panel.loadPromise;
+
+    packageManager.replaceAvailableUpdates([
+      {
+        name: "new-update",
+        repository: "owner/new-update",
+        latestSha: "b".repeat(40),
+      },
+    ]);
+    expect(panel.packageCards.map((card) => card.pack.name)).toEqual(["new-update"]);
+    expect(panel.refs.updateCount.textContent).toBe("1");
+
+    packageManager.replaceAvailableUpdates([]);
+    expect(panel.packageCards).toEqual([]);
+    expect(panel.refs.updateCount.textContent).toBe("0");
+  });
 });

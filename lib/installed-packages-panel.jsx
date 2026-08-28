@@ -8,7 +8,7 @@ const PackageCard = require("./package-card");
 const List = require("./list");
 const ListView = require("./list-view");
 const focusWithHiddenContent = require("./focus-with-hidden-content");
-const { ownerFromRepository, packageComparatorAscending } = require("./utils");
+const { ownerFromRepository, packageComparatorAscending, packageOrigin } = require("./utils");
 
 // One directory is one entry, so entries are told apart by where they live —
 // two directories may provide the same package name.
@@ -69,6 +69,13 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
     };
     // Rebuild the list when a package is installed or updated.
     this.subscriptions.add(this.packageManager.on("package-updated package-installed", reloadSoon));
+    this.availableUpdates = this.packageManager.getAvailableUpdates();
+    this.subscriptions.add(
+      this.packageManager.onDidChangeAvailableUpdates((updates) => {
+        this.availableUpdates = updates;
+        this.displayPackageUpdates(updates);
+      }),
+    );
 
     // An uninstall usually leaves its card in place, flipped to the
     // not-installed state, which reads better than the whole list flickering —
@@ -256,13 +263,10 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
     if (this.destroyed) return;
     const requestGeneration = (this.packageLoadRequestGeneration || 0) + 1;
     this.packageLoadRequestGeneration = requestGeneration;
-    const packagesWithUpdates = {};
     this.packageManager.getOutdated().then((packages) => {
       if (this.destroyed || requestGeneration !== this.packageLoadRequestGeneration) return;
-      for (let { name, latestVersion } of packages) {
-        packagesWithUpdates[name] = latestVersion;
-      }
-      this.displayPackageUpdates(packagesWithUpdates);
+      this.availableUpdates = packages;
+      this.displayPackageUpdates(packages);
     });
 
     this.packageManager
@@ -302,7 +306,7 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
         // TODO show empty mesage per section
 
         this.updateSectionCounts();
-        this.displayPackageUpdates(packagesWithUpdates);
+        this.displayPackageUpdates(this.availableUpdates);
 
         this.matchPackages();
       })
@@ -330,16 +334,21 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
     return true;
   }
 
-  displayPackageUpdates(packagesWithUpdates) {
+  displayPackageUpdates(updates) {
+    if (!this.packages) return;
+    const updatesByOrigin = new Map();
+    for (const update of updates || []) {
+      const originKey = packageOrigin(update);
+      if (originKey && !updatesByOrigin.has(originKey)) updatesByOrigin.set(originKey, update);
+    }
     for (const packageType of ["dev", "core", "installed"]) {
       for (const packageCard of this.itemViews[packageType].getViews()) {
         // A shadowed copy does not own its name, so an update found for that
         // name belongs to the copy that loads, not to this one.
         if (packageCard.pack.isShadowed) continue;
-        const newVersion = packagesWithUpdates[packageCard.pack.name];
-        if (newVersion) {
-          packageCard.displayAvailableUpdate(newVersion);
-        }
+        const update = updatesByOrigin.get(packageOrigin(packageCard.pack));
+        if (update) packageCard.displayAvailableUpdate(update);
+        else packageCard.clearAvailableUpdate();
       }
     }
   }

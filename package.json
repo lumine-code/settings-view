@@ -42,7 +42,7 @@
   "configSchema": {
     "packageCatalogs": {
       "title": "Package Catalogs",
-      "description": "Ordered repositories or index.json URLs containing untrusted lists of Git repositories. Package metadata is fetched directly by Lumine.",
+      "description": "Ordered repositories or index.json URLs containing Git sources or pre-resolved package snapshots. Source-only entries are fetched directly by Lumine.",
       "type": "array",
       "items": {
         "type": "string"

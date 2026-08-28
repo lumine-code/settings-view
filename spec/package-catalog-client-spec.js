@@ -7,6 +7,37 @@ const { normalizeCatalogSource, TaskQueue } = PackageCatalogClient;
 const SHA_1 = "1111111111111111111111111111111111111111";
 const SHA_2 = "2222222222222222222222222222222222222222";
 
+function createSnapshot({
+  repository = "owner/package",
+  source = repository,
+  name = "sample-package",
+  sha = SHA_1,
+  version = "1.0.0",
+  description = "From its catalog snapshot",
+  featured,
+} = {}) {
+  const tag = { name: `v${version}`, version, sha };
+  return {
+    source,
+    ...(featured === undefined ? {} : { featured }),
+    resolvedSha: sha,
+    selectedRef: { type: "latest", value: tag.name },
+    refs: {
+      defaultBranch: "main",
+      headSha: SHA_2,
+      latestStable: tag,
+      tags: [tag],
+    },
+    metadata: {
+      name,
+      version,
+      description,
+      repository,
+      engines: { lumine: "*" },
+    },
+  };
+}
+
 function createStorage() {
   const values = new Map();
   return {
@@ -111,17 +142,227 @@ describe("PackageCatalogClient", function () {
     );
   });
 
-  it("accepts only source strings and rejects the old metadata schema", function () {
+  it("accepts source strings and pre-resolved snapshots, and rejects the old metadata schema", function () {
     const client = new PackageCatalogClient({ storage: createStorage() });
-    expect(client.validate(["owner/package@1.0.0"])[0]).toEqual(
+    const entries = client.validate(["owner/package@1.0.0", createSnapshot()]);
+    expect(entries[0]).toEqual(
       jasmine.objectContaining({
         originKey: "github.com/owner/package",
         repository: "owner/package",
         selector: { type: "tag", value: "1.0.0" },
       }),
     );
+    expect(entries[1].catalogSnapshot).toEqual(
+      jasmine.objectContaining({
+        featured: false,
+        resolvedSha: SHA_1,
+        selectedRef: { type: "latest", value: "v1.0.0" },
+      }),
+    );
     expect(() => client.validate({ schemaVersion: 1, packages: [] })).toThrow();
     expect(() => client.validate(["owner/package#abcdef1"])).toThrow();
+  });
+
+  it("uses a valid catalog snapshot without repository or manifest requests", async () => {
+    const catalogUrl = "https://catalog.test/index.json";
+    const packageManager = createPackageManager();
+    const fetchImpl = createFetch({ [catalogUrl]: [createSnapshot({ featured: true })] });
+    const client = new PackageCatalogClient({
+      fetchImpl,
+      packageManager,
+      storage: createStorage(),
+      lumineVersion: () => "1.132.1",
+    });
+
+    const catalog = await client.loadAll([catalogUrl], { refresh: true });
+
+    expect(catalog.packages[0]).toEqual(
+      jasmine.objectContaining({
+        name: "sample-package",
+        version: "1.0.0",
+        featured: true,
+        resolvedSha: SHA_1,
+        selectedRef: { type: "latest", value: "v1.0.0" },
+        updatePolicy: "latest-tag",
+        status: "ready",
+      }),
+    );
+    expect(catalog.packages[0].metadata).toBeUndefined();
+    expect(packageManager.runProcess).not.toHaveBeenCalled();
+    expect(fetchImpl.calls.count()).toBe(1);
+    expect(fetchImpl.calls.mostRecent().args[0]).toBe(catalogUrl);
+  });
+
+  it("hydrates source-only and snapshot entries together in one mixed catalog", async () => {
+    const catalogUrl = "https://catalog.test/index.json";
+    const packageManager = createPackageManager();
+    const fetchImpl = createFetch({
+      [catalogUrl]: [
+        "owner/package",
+        createSnapshot({
+          repository: "owner/snapshot-package",
+          name: "snapshot-package",
+        }),
+      ],
+    });
+    const client = new PackageCatalogClient({
+      fetchImpl,
+      packageManager,
+      storage: createStorage(),
+    });
+
+    const catalog = await client.loadAll([catalogUrl], { refresh: true });
+
+    expect(catalog.packages.map(({ name }) => name).sort()).toEqual([
+      "sample-package",
+      "snapshot-package",
+    ]);
+    expect(packageManager.runProcess.calls.count()).toBe(1);
+    expect(fetchImpl.calls.count()).toBe(2);
+  });
+
+  it("accepts pre-resolved default-branch, branch, tag, and commit selections", async () => {
+    const catalogUrl = "https://catalog.test/index.json";
+    const defaultBranch = createSnapshot({
+      repository: "owner/default-package",
+      name: "default-package",
+      sha: SHA_1,
+    });
+    defaultBranch.selectedRef = { type: "default", value: "main" };
+    defaultBranch.refs = {
+      defaultBranch: "main",
+      headSha: SHA_1,
+      latestStable: null,
+      tags: [{ name: "v2.0.0-beta.1", version: "2.0.0-beta.1", sha: SHA_2 }],
+    };
+    const branch = createSnapshot({
+      repository: "owner/branch-package",
+      source: "owner/branch-package~next",
+      name: "branch-package",
+    });
+    branch.selectedRef = { type: "branch", value: "next" };
+    const tag = createSnapshot({
+      repository: "owner/tag-package",
+      source: "owner/tag-package@1.0.0",
+      name: "tag-package",
+    });
+    tag.selectedRef = { type: "tag", value: "v1.0.0" };
+    const commit = createSnapshot({
+      repository: "owner/commit-package",
+      source: `owner/commit-package#${SHA_1}`,
+      name: "commit-package",
+    });
+    commit.selectedRef = { type: "commit", value: SHA_1 };
+
+    const packageManager = createPackageManager();
+    const client = new PackageCatalogClient({
+      fetchImpl: createFetch({ [catalogUrl]: [defaultBranch, branch, tag, commit] }),
+      packageManager,
+      storage: createStorage(),
+    });
+
+    const catalog = await client.loadAll([catalogUrl], { refresh: true });
+    const policies = Object.fromEntries(
+      catalog.packages.map((pack) => [pack.name, pack.updatePolicy]),
+    );
+
+    expect(policies).toEqual({
+      "default-package": "default-branch",
+      "branch-package": "branch",
+      "tag-package": "pinned",
+      "commit-package": "pinned",
+    });
+    expect(packageManager.runProcess).not.toHaveBeenCalled();
+  });
+
+  it("falls back to live hydration when a safe snapshot is invalid", async () => {
+    const catalogUrl = "https://catalog.test/index.json";
+    const invalidSnapshot = { ...createSnapshot({ featured: true }), unexpected: true };
+    const packageManager = createPackageManager();
+    const fetchImpl = createFetch({ [catalogUrl]: [invalidSnapshot] });
+    const client = new PackageCatalogClient({
+      fetchImpl,
+      packageManager,
+      storage: createStorage(),
+    });
+
+    const catalog = await client.loadAll([catalogUrl], { refresh: true });
+
+    expect(catalog.packages[0]).toEqual(
+      jasmine.objectContaining({
+        name: "sample-package",
+        featured: false,
+        resolvedSha: SHA_1,
+        status: "ready",
+      }),
+    );
+    expect(packageManager.runProcess).toHaveBeenCalled();
+    expect(fetchImpl.calls.allArgs().some(([url]) => url.includes(`/${SHA_1}/package.json`))).toBe(
+      true,
+    );
+  });
+
+  it("does not accept featured promotion from a source-only package manifest", async () => {
+    const catalogUrl = "https://catalog.test/index.json";
+    const fetchImpl = jasmine.createSpy("fetchImpl").and.callFake((url) => {
+      if (url === catalogUrl) return Promise.resolve(textResponse(200, ["owner/package"]));
+      if (url.endsWith("/package.json")) {
+        return Promise.resolve(
+          textResponse(200, {
+            name: "sample-package",
+            version: "1.0.0",
+            repository: "owner/package",
+            engines: { lumine: "*" },
+            featured: true,
+          }),
+        );
+      }
+      return Promise.resolve(textResponse(404, "not found"));
+    });
+    const client = new PackageCatalogClient({
+      fetchImpl,
+      packageManager: createPackageManager(),
+      storage: createStorage(),
+    });
+
+    const catalog = await client.loadAll([catalogUrl], { refresh: true });
+
+    expect(catalog.packages[0].featured).toBe(false);
+  });
+
+  it("keeps the first snapshot and reports a conflict when a later catalog has another SHA", async () => {
+    const first = "https://one.test/index.json";
+    const second = "https://two.test/index.json";
+    const packageManager = createPackageManager();
+    const client = new PackageCatalogClient({
+      fetchImpl: createFetch({
+        [first]: [createSnapshot({ description: "First catalog" })],
+        [second]: [
+          createSnapshot({
+            sha: SHA_2,
+            version: "2.0.0",
+            description: "Second catalog",
+            featured: true,
+          }),
+        ],
+      }),
+      packageManager,
+      storage: createStorage(),
+    });
+
+    const catalog = await client.loadAll([first, second], { refresh: true });
+
+    expect(catalog.packages).toHaveLength(1);
+    expect(catalog.packages[0]).toEqual(
+      jasmine.objectContaining({
+        description: "First catalog",
+        featured: false,
+        resolvedSha: SHA_1,
+        selectorConflict: true,
+      }),
+    );
+    expect(catalog.packages[0].catalogSources).toEqual([first, second]);
+    expect(packageManager.runProcess).not.toHaveBeenCalled();
   });
 
   it("merges installed-package update results into the cached entries", function () {
@@ -446,6 +687,24 @@ describe("PackageCatalogClient", function () {
     });
     expect(pack.refs.branches.map(({ name }) => name)).toEqual(["main", "Next"]);
     expect(packageManager.runProcess.calls.mostRecent().args[1]).toContain("refs/heads/*");
+  });
+
+  it("preserves featured policy when a catalog source falls back to its cached entries", function () {
+    const catalogUrl = "https://catalog.test/sources.json";
+    const client = new PackageCatalogClient({ storage: createStorage() });
+    const [record] = client.mergeCatalogs([{ url: catalogUrl, error: new Error("offline") }], {
+      packages: {
+        "github.com/owner/package": {
+          originKey: "github.com/owner/package",
+          repository: "owner/package",
+          installSource: "owner/package",
+          catalogSources: [catalogUrl],
+          featured: true,
+        },
+      },
+    });
+
+    expect(record.featured).toBe(true);
   });
 
   it("keeps the previous hydrated record as stale when a repository refresh fails", async () => {

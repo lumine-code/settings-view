@@ -164,6 +164,32 @@ describe("InstallPanel", function () {
     expect(catalogClient.loadAll.calls.mostRecent().args[1].refresh).toBe(true);
   });
 
+  it("feeds only completed network catalog loads into the shared update state", async function () {
+    packageManager.mergeCatalogUpdates = jasmine.createSpy("mergeCatalogUpdates");
+    const packages = [
+      { name: "sample-package", repository: "owner/package", installSource: "owner/package" },
+    ];
+    catalogClient.loadAll.and.returnValue(
+      Promise.resolve({ schemaVersion: 2, packages, errors: [], cached: false }),
+    );
+
+    await panel.loadCatalog({ refresh: true });
+    expect(packageManager.mergeCatalogUpdates).toHaveBeenCalledWith(packages);
+
+    packageManager.mergeCatalogUpdates.calls.reset();
+    catalogClient.loadAll.and.returnValue(
+      Promise.resolve({ schemaVersion: 2, packages, errors: [], cached: true }),
+    );
+    await panel.loadCatalog({ cacheOnly: true });
+    expect(packageManager.mergeCatalogUpdates).not.toHaveBeenCalled();
+
+    catalogClient.loadAll.and.returnValue(
+      Promise.resolve({ schemaVersion: 2, packages, errors: [], cancelled: true }),
+    );
+    await panel.loadCatalog({ refresh: true });
+    expect(packageManager.mergeCatalogUpdates).not.toHaveBeenCalled();
+  });
+
   it("auto-downloads the catalogs on the first search if never fetched", function () {
     expect(panel.catalogFetched).toBe(false);
     catalogClient.loadAll.calls.reset();
@@ -486,6 +512,35 @@ describe("InstallPanel", function () {
     expect(panel.refs.filterAllButton).not.toHaveClass("selected");
     expect(panel.browsePackageCards.length).toBe(1);
     expect(panel.browsePackageCards[0].pack.name).toBe("browse-theme");
+  });
+
+  it("puts featured packages first only in the empty browse list and before pagination", async function () {
+    panel.pageSize = 2;
+    panel.catalogPackages = [
+      { name: "alpha", repository: "owner/alpha", installSource: "owner/alpha" },
+      {
+        name: "zulu",
+        repository: "owner/zulu",
+        installSource: "owner/zulu",
+        featured: true,
+      },
+      {
+        name: "bravo",
+        repository: "owner/bravo",
+        installSource: "owner/bravo",
+        featured: true,
+      },
+    ];
+
+    await panel.renderBrowseList();
+    expect(panel.browsePackageCards.map(({ pack }) => pack.name)).toEqual(["bravo", "zulu"]);
+
+    await panel.nextPage();
+    expect(panel.browsePackageCards.map(({ pack }) => pack.name)).toEqual(["alpha"]);
+
+    panel.catalogPackages[0].keywords = ["match"];
+    panel.catalogPackages[1].keywords = ["match"];
+    expect(panel.scoreCatalog("match").map(({ name }) => name)).toEqual(["alpha", "zulu"]);
   });
 
   it("hides the browse area while a search query is active", function () {

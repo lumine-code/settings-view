@@ -1387,9 +1387,28 @@ module.exports = class PackageCard {
     this.refs.updateButton.classList.add("icon-git-commit");
   }
 
-  displayAvailableUpdate(newVersion) {
+  displayAvailableUpdate(update) {
     if (this.isShadowed) return;
-    this.newVersion = newVersion;
+    if (update && typeof update === "object") {
+      this.pack.latestVersion = update.latestVersion;
+      this.pack.latestSha = update.latestSha;
+      this.pack.resolvedRef = update.resolvedRef;
+      this.pack.updatePolicy = update.updatePolicy;
+      this.newVersion = update.latestVersion || null;
+      const installedSha = this.pack.apmInstallSource && this.pack.apmInstallSource.sha;
+      this.newSha = update.latestSha && update.latestSha !== installedSha ? update.latestSha : null;
+    } else {
+      this.newVersion = update || null;
+    }
+    this.updateInterfaceState();
+  }
+
+  clearAvailableUpdate() {
+    this.newVersion = null;
+    this.newSha = null;
+    this.pack.latestVersion = null;
+    this.pack.latestSha = null;
+    this.pack.resolvedRef = null;
     this.updateInterfaceState();
   }
 

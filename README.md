@@ -15,6 +15,10 @@ Edit config settings, install packages, and change themes.
 
 To install `settings-view` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/settings-view`.
 
+## Package catalogs
+
+The `settings-view.packageCatalogs` setting accepts ordered catalog repositories or `index.json` URLs. Each index is a JSON array containing Git source strings, pre-resolved package snapshots, or both; source-only entries are resolved and fetched by Lumine, while valid snapshots provide the same metadata and ref information without per-repository requests.
+
 ## Commands
 
 Commands available in `lumine-workspace`:

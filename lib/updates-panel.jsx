@@ -15,12 +15,10 @@ module.exports = class UpdatesPanel {
     this.packageCards = [];
 
     this.subscriptions = new CompositeDisposable();
-    // A finished install/update/uninstall changes what is outdated, so re-check.
     this.subscriptions.add(
-      this.packageManager.on(
-        "package-installed theme-installed package-updated theme-updated package-uninstalled theme-uninstalled",
-        () => this.loadUpdates(),
-      ),
+      this.packageManager.onDidChangeAvailableUpdates((packs) => {
+        if (!this.loading) this.displayUpdates(packs);
+      }),
     );
 
     this.subscriptions.add(
@@ -76,25 +74,29 @@ module.exports = class UpdatesPanel {
     try {
       const packs = await this.packageManager.getGitPackageUpdates();
       if (generation !== this.generation) return;
-      this.clearCards();
-      for (const pack of packs) {
-        const card = new PackageCard(pack, this.settingsView, this.packageManager, {
-          back: "Update",
-        });
-        this.packageCards.push(card);
-        const row = document.createElement("div");
-        row.classList.add("row");
-        row.appendChild(card.element);
-        this.refs.updatesContainer.appendChild(row);
-      }
-      this.refs.updateCount.textContent = String(packs.length);
-      this.refs.statusMessage.textContent = packs.length
-        ? ""
-        : "All installed packages are up to date.";
-      this.refs.statusMessage.style.display = packs.length ? "none" : "";
+      this.displayUpdates(packs);
     } finally {
       this.loading = false;
     }
+  }
+
+  displayUpdates(packs) {
+    this.clearCards();
+    for (const pack of packs) {
+      const card = new PackageCard(pack, this.settingsView, this.packageManager, {
+        back: "Update",
+      });
+      this.packageCards.push(card);
+      const row = document.createElement("div");
+      row.classList.add("row");
+      row.appendChild(card.element);
+      this.refs.updatesContainer.appendChild(row);
+    }
+    this.refs.updateCount.textContent = String(packs.length);
+    this.refs.statusMessage.textContent = packs.length
+      ? ""
+      : "All installed packages are up to date.";
+    this.refs.statusMessage.style.display = packs.length ? "none" : "";
   }
 
   clearCards() {

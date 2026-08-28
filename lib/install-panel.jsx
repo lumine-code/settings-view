@@ -551,6 +551,14 @@ module.exports = class InstallPanel {
         renderTimer = null;
       }
       this.catalogPackages = result.packages;
+      if (
+        !cacheOnly &&
+        !result.cached &&
+        !result.cancelled &&
+        typeof this.packageManager.mergeCatalogUpdates === "function"
+      ) {
+        this.packageManager.mergeCatalogUpdates(result.packages);
+      }
       this.updateCatalogProgressTooltip(result.packages);
       this.page = Math.min(
         this.page,
@@ -720,6 +728,7 @@ module.exports = class InstallPanel {
       })
       .sort(
         (left, right) =>
+          Number(right.featured === true) - Number(left.featured === true) ||
           left.name.localeCompare(right.name) ||
           packageOrigin(left).localeCompare(packageOrigin(right)),
       );

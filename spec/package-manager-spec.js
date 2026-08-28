@@ -306,6 +306,9 @@ describe("PackageManager", function () {
 
     it("updates GitHub packages through the built-in installer", async () => {
       const updateCallback = jasmine.createSpy("updateCallback");
+      packageManager.replaceAvailableUpdates([
+        { name: "foo", repository: "user/foo", latestSha: "d".repeat(40) },
+      ]);
       spyOn(packageManager, "installGitHubPackage").and.returnValue(
         Promise.resolve({
           name: "foo",
@@ -333,6 +336,7 @@ describe("PackageManager", function () {
       await conditionPromise(() => updateCallback.calls.count() === 1);
 
       expect(updateCallback.calls.argsFor(0).length).toBe(0);
+      expect(packageManager.getAvailableUpdates()).toEqual([]);
       expect(packageManager.installGitHubPackage).toHaveBeenCalledWith({
         name: "user/foo#branch:main",
         latestSha: "d".repeat(40),
@@ -727,6 +731,7 @@ describe("PackageManager", function () {
       expect(updates[0].latestSha).toBe("2222222222222222222222222222222222222222");
       expect(updates[0].latestVersion).toBe("2.0.0");
       expect(updates[0].resolvedRef).toEqual({ type: "latest", value: "v2.0.0" });
+      expect(packageManager.getAvailableUpdates()).toEqual(updates);
     });
 
     it("does not offer an update when the new commit changes the package name", async () => {
@@ -812,6 +817,109 @@ describe("PackageManager", function () {
         "2222222222222222222222222222222222222222",
       );
       expect(updates[0].latestSha).toBeUndefined();
+    });
+  });
+
+  describe("catalog-discovered updates", function () {
+    const installedPackage = (updatePolicy = "latest-tag") => ({
+      name: "sample",
+      version: "1.0.0",
+      repository: "owner/sample",
+      apmInstallSource: {
+        type: "git",
+        source: "owner/sample",
+        origin: "github.com/owner/sample",
+        updatePolicy,
+        sha: "1".repeat(40),
+      },
+    });
+
+    const catalogPackage = (version = "2.0.0") => ({
+      name: "sample",
+      version,
+      repository: "owner/sample",
+      originKey: "github.com/owner/sample",
+      status: "ready",
+      engines: { lumine: "*" },
+      resolvedSha: "2".repeat(40),
+      refs: {
+        latestStable: { name: `v${version}`, version, sha: "2".repeat(40) },
+      },
+    });
+
+    it("publishes a newer latest-tag snapshot without resolving or inspecting its ref", function () {
+      spyOn(packageManager, "getLocalPackages").and.returnValue({
+        git: [installedPackage()],
+      });
+      const resolve = spyOn(packageManager, "resolvePackageSource");
+      const inspect = spyOn(packageManager, "inspectPackageUpdate");
+      const changed = jasmine.createSpy("changed");
+      packageManager.onDidChangeAvailableUpdates(changed);
+
+      const updates = packageManager.mergeCatalogUpdates([catalogPackage()]);
+
+      expect(resolve).not.toHaveBeenCalled();
+      expect(inspect).not.toHaveBeenCalled();
+      expect(updates.length).toBe(1);
+      expect(updates[0].latestSha).toBe("2".repeat(40));
+      expect(updates[0].latestVersion).toBe("2.0.0");
+      expect(updates[0].resolvedRef).toEqual({ type: "latest", value: "v2.0.0" });
+      expect(changed).toHaveBeenCalledWith(updates);
+    });
+
+    it("ignores equal releases, branches, and snapshots not matching their manifest", function () {
+      const branch = installedPackage("default-branch");
+      const latest = installedPackage();
+      spyOn(packageManager, "getLocalPackages").and.returnValue({ git: [branch, latest] });
+      const mismatched = catalogPackage("2.0.0");
+      mismatched.resolvedSha = "3".repeat(40);
+
+      expect(packageManager.mergeCatalogUpdates([mismatched])).toEqual([]);
+
+      const equal = catalogPackage("1.0.0");
+      expect(packageManager.mergeCatalogUpdates([equal])).toEqual([]);
+
+      const older = catalogPackage("0.9.0");
+      expect(packageManager.mergeCatalogUpdates([older])).toEqual([]);
+    });
+
+    it("removes a prior catalog result when the next snapshot no longer offers it", function () {
+      spyOn(packageManager, "getLocalPackages").and.returnValue({
+        git: [installedPackage()],
+      });
+      packageManager.mergeCatalogUpdates([catalogPackage()]);
+      expect(packageManager.getAvailableUpdates().length).toBe(1);
+
+      packageManager.mergeCatalogUpdates([]);
+
+      expect(packageManager.getAvailableUpdates()).toEqual([]);
+    });
+
+    it("rejects renamed and engine-incompatible catalog manifests", function () {
+      spyOn(packageManager, "getLocalPackages").and.returnValue({
+        git: [installedPackage()],
+      });
+      const renamed = catalogPackage();
+      renamed.name = "renamed-sample";
+      expect(packageManager.mergeCatalogUpdates([renamed])).toEqual([]);
+
+      const incompatible = catalogPackage();
+      incompatible.engines = { lumine: ">=999.0.0" };
+      expect(packageManager.mergeCatalogUpdates([incompatible])).toEqual([]);
+    });
+
+    it("lets a full direct check replace catalog-discovered state", async function () {
+      spyOn(packageManager, "getLocalPackages").and.returnValues(
+        { git: [installedPackage()] },
+        { git: [] },
+      );
+      packageManager.mergeCatalogUpdates([catalogPackage()]);
+      expect(packageManager.getAvailableUpdates().length).toBe(1);
+
+      const updates = await packageManager.getGitPackageUpdates();
+
+      expect(updates).toEqual([]);
+      expect(packageManager.getAvailableUpdates()).toEqual([]);
     });
   });
 });
