@@ -624,11 +624,11 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
   }
 
   scrollUp() {
-    this.element.scrollTop -= this.element.ownerDocument.body.offsetHeight / 20;
+    this.element.scrollTop -= document.body.offsetHeight / 20;
   }
 
   scrollDown() {
-    this.element.scrollTop += this.element.ownerDocument.body.offsetHeight / 20;
+    this.element.scrollTop += document.body.offsetHeight / 20;
   }
 
   pageUp() {

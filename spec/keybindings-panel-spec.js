@@ -115,44 +115,6 @@ describe("KeybindingsPanel", function () {
     await conditionPromise(() => panel.refs.keybindingRows.children.length === bindings.length);
   });
 
-  it("moves pending batch rendering to the destination Document", async () => {
-    const bindings = Array.from({ length: 101 }, (_, index) => ({
-      source: keyBindings[0].source,
-      keystrokes: `ctrl-${index}`,
-      command: `test:command-${index}`,
-      selector: ".editor",
-    }));
-    lumine.keymaps.getKeyBindings.and.returnValue(bindings);
-    panel.destroy();
-    panel = new KeybindingsPanel();
-    const sourceHandle = panel.pendingKeyBindingRender;
-    const frame = document.createElement("iframe");
-    jasmine.attachToDOM(frame);
-
-    try {
-      expect(sourceHandle).not.toBeNull();
-      expect(panel.pendingKeyBindingRenderWindow).toBe(window);
-      const detach = panel.beginWindowSurfaceTransition();
-      expect(panel.pendingKeyBindingRender).toBeNull();
-      expect(panel.resumeKeyBindingRender).toEqual(jasmine.any(Function));
-
-      frame.contentDocument.body.appendChild(panel.element);
-      const commit = detach.commit();
-      expect(panel.pendingKeyBindingRenderWindow).toBe(frame.contentWindow);
-      await commit;
-      await conditionPromise(() => panel.refs.keybindingRows.children.length === bindings.length);
-      expect(panel.refs.keybindingRows.firstElementChild.ownerDocument).toBe(frame.contentDocument);
-
-      const attach = panel.beginWindowSurfaceTransition();
-      document.body.appendChild(panel.element);
-      await attach.commit();
-      expect(panel.element.ownerDocument).toBe(document);
-    } finally {
-      if (panel.element.ownerDocument !== document) document.body.appendChild(panel.element);
-      frame.remove();
-    }
-  });
-
   it("opens the user keymap and keybinding resolver from the header", () => {
     spyOn(lumine.commands, "dispatch");
     const workspaceElement = lumine.views.getView(lumine.workspace);

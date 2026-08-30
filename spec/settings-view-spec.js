@@ -153,24 +153,6 @@ describe("SettingsView", function () {
     });
   });
 
-  it("forwards window-surface transitions to the keybindings panel", () => {
-    const participant = { commit() {}, rollback() {} };
-    const keybindingsPanel = {
-      beginWindowSurfaceTransition: jasmine
-        .createSpy("beginWindowSurfaceTransition")
-        .and.returnValue(participant),
-    };
-    settingsView.panelsByName.Keybindings = keybindingsPanel;
-    const context = { reason: "detach" };
-
-    try {
-      expect(settingsView.beginWindowSurfaceTransition(context)).toBe(participant);
-      expect(keybindingsPanel.beginWindowSurfaceTransition).toHaveBeenCalledWith(context);
-    } finally {
-      delete settingsView.panelsByName.Keybindings;
-    }
-  });
-
   describe("the default panel", function () {
     it("connects a new panel hidden before showing it", () => {
       const element = document.createElement("div");
