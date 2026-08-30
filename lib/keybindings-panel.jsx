@@ -17,6 +17,10 @@ module.exports = class KeybindingsPanel {
   constructor() {
     this.activeSourceFilter = "all";
     this.copyFeedbackTimeouts = new Set();
+    this.pendingKeyBindingRender = null;
+    this.pendingKeyBindingRenderCallback = null;
+    this.pendingKeyBindingRenderWindow = null;
+    this.resumeKeyBindingRender = null;
     etch.initialize(this);
 
     this.refs.searchEditor.element.setAttribute("aria-label", "Search keybindings");
@@ -244,11 +248,7 @@ module.exports = class KeybindingsPanel {
 
   show() {
     this.element.style.display = "";
-    if (this.resumeKeyBindingRender && this.pendingKeyBindingRender == null) {
-      const resume = this.resumeKeyBindingRender;
-      this.resumeKeyBindingRender = null;
-      this.pendingKeyBindingRender = requestAnimationFrame(resume);
-    }
+    this.resumePendingKeyBindingRender();
   }
 
   clearSearch() {
@@ -310,6 +310,7 @@ module.exports = class KeybindingsPanel {
     const renderedShortcuts = new Set();
     let index = 0;
     const appendBatch = () => {
+      const document = this.element.ownerDocument;
       const fragment = document.createDocumentFragment();
       const end = Math.min(index + KeybindingsPanel.renderBatchSize(), bindings.length);
       while (index < end) {
@@ -331,7 +332,6 @@ module.exports = class KeybindingsPanel {
       while (index < bindings.length) appendBatch();
     } else {
       const renderNextBatch = () => {
-        this.pendingKeyBindingRender = null;
         if (this.element.style.display === "none") {
           this.resumeKeyBindingRender = renderNextBatch;
           return;
@@ -339,19 +339,61 @@ module.exports = class KeybindingsPanel {
         this.resumeKeyBindingRender = null;
         appendBatch();
         if (index < bindings.length) {
-          this.pendingKeyBindingRender = requestAnimationFrame(renderNextBatch);
+          this.requestKeyBindingRender(renderNextBatch);
         }
       };
-      this.pendingKeyBindingRender = requestAnimationFrame(renderNextBatch);
+      this.requestKeyBindingRender(renderNextBatch);
     }
+  }
+
+  requestKeyBindingRender(callback) {
+    const domWindow = this.element.ownerDocument.defaultView;
+    if (!domWindow) throw new Error("Keybinding rendering requires a live owner Window");
+    const handle = domWindow.requestAnimationFrame(() => {
+      if (
+        this.pendingKeyBindingRender !== handle ||
+        this.pendingKeyBindingRenderWindow !== domWindow
+      ) {
+        return;
+      }
+      this.pendingKeyBindingRender = null;
+      this.pendingKeyBindingRenderCallback = null;
+      this.pendingKeyBindingRenderWindow = null;
+      callback();
+    });
+    this.pendingKeyBindingRender = handle;
+    this.pendingKeyBindingRenderCallback = callback;
+    this.pendingKeyBindingRenderWindow = domWindow;
+  }
+
+  resumePendingKeyBindingRender() {
+    if (!this.resumeKeyBindingRender || this.pendingKeyBindingRender != null) return;
+    if (this.element.style.display === "none") return;
+    const resume = this.resumeKeyBindingRender;
+    this.resumeKeyBindingRender = null;
+    this.requestKeyBindingRender(resume);
   }
 
   cancelPendingKeyBindingRender() {
     if (this.pendingKeyBindingRender != null) {
-      cancelAnimationFrame(this.pendingKeyBindingRender);
-      this.pendingKeyBindingRender = null;
+      try {
+        this.pendingKeyBindingRenderWindow?.cancelAnimationFrame(this.pendingKeyBindingRender);
+      } catch {
+        // Recovery can begin after the owning native Window has closed.
+      }
     }
+    this.pendingKeyBindingRender = null;
+    this.pendingKeyBindingRenderCallback = null;
+    this.pendingKeyBindingRenderWindow = null;
     this.resumeKeyBindingRender = null;
+  }
+
+  beginWindowSurfaceTransition() {
+    const resume = this.pendingKeyBindingRenderCallback || this.resumeKeyBindingRender;
+    this.cancelPendingKeyBindingRender();
+    this.resumeKeyBindingRender = resume;
+    const finish = () => this.resumePendingKeyBindingRender();
+    return { commit: finish, rollback: finish };
   }
 
   fieldMatches(field, keyword) {
@@ -397,6 +439,7 @@ module.exports = class KeybindingsPanel {
   }
 
   elementForKeyBinding(keyBinding, { renderShortcut = true, shortcutRowSpan = 1 } = {}) {
+    const document = this.element.ownerDocument;
     const { selector, keystrokes, command } = keyBinding;
     const source = this.sourceFor(keyBinding.source);
     const tr = document.createElement("tr");
@@ -447,6 +490,7 @@ module.exports = class KeybindingsPanel {
   }
 
   createCell(className, label) {
+    const document = this.element.ownerDocument;
     const cell = document.createElement("td");
     cell.classList.add(className);
     cell.dataset.label = label;
@@ -454,6 +498,7 @@ module.exports = class KeybindingsPanel {
   }
 
   createShortcutCell(keystrokes) {
+    const document = this.element.ownerDocument;
     const cell = this.createCell("keystroke", "Shortcut");
     const key = document.createElement("kbd");
     key.textContent = keystrokes;
@@ -485,11 +530,11 @@ module.exports = class KeybindingsPanel {
   }
 
   scrollUp() {
-    this.element.scrollTop -= document.body.offsetHeight / 20;
+    this.element.scrollTop -= this.element.ownerDocument.body.offsetHeight / 20;
   }
 
   scrollDown() {
-    this.element.scrollTop += document.body.offsetHeight / 20;
+    this.element.scrollTop += this.element.ownerDocument.body.offsetHeight / 20;
   }
 
   pageUp() {

@@ -94,4 +94,39 @@ describe("GeneralPanel", () => {
     expect(lumine.config.get("core.int")).toBe(2);
     expect(getValueForId("core.int")).toBe("2.");
   });
+
+  it("uses the owner Document height for keyboard scrolling", () => {
+    const frame = document.createElement("iframe");
+    jasmine.attachToDOM(frame);
+    const primaryHeight = Object.getOwnPropertyDescriptor(document.body, "offsetHeight");
+    const childHeight = Object.getOwnPropertyDescriptor(frame.contentDocument.body, "offsetHeight");
+    Object.defineProperty(document.body, "offsetHeight", { configurable: true, value: 200 });
+    Object.defineProperty(frame.contentDocument.body, "offsetHeight", {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(panel.element, "scrollTop", {
+      configurable: true,
+      value: 100,
+      writable: true,
+    });
+    frame.contentDocument.body.appendChild(panel.element);
+
+    try {
+      panel.scrollDown();
+      expect(panel.element.scrollTop).toBe(140);
+      panel.scrollUp();
+      expect(panel.element.scrollTop).toBe(100);
+    } finally {
+      document.adoptNode(panel.element);
+      if (primaryHeight) Object.defineProperty(document.body, "offsetHeight", primaryHeight);
+      else delete document.body.offsetHeight;
+      if (childHeight) {
+        Object.defineProperty(frame.contentDocument.body, "offsetHeight", childHeight);
+      } else {
+        delete frame.contentDocument.body.offsetHeight;
+      }
+      frame.remove();
+    }
+  });
 });

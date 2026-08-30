@@ -102,6 +102,10 @@ module.exports = class SettingsView {
 
   update() {}
 
+  beginWindowSurfaceTransition(context) {
+    return this.panelsByName.Keybindings?.beginWindowSurfaceTransition?.(context) ?? null;
+  }
+
   destroy() {
     this.destroyed = true;
     clearTimeout(this.revealSettingTimeout);
@@ -628,11 +632,11 @@ module.exports = class SettingsView {
   }
 
   scrollUp() {
-    this.element.scrollTop -= document.body.offsetHeight / 20;
+    this.element.scrollTop -= this.element.ownerDocument.body.offsetHeight / 20;
   }
 
   scrollDown() {
-    this.element.scrollTop += document.body.offsetHeight / 20;
+    this.element.scrollTop += this.element.ownerDocument.body.offsetHeight / 20;
   }
 
   pageUp() {

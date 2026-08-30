@@ -408,11 +408,11 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
   }
 
   scrollUp() {
-    this.element.scrollTop -= document.body.offsetHeight / 20;
+    this.element.scrollTop -= this.element.ownerDocument.body.offsetHeight / 20;
   }
 
   scrollDown() {
-    this.element.scrollTop += document.body.offsetHeight / 20;
+    this.element.scrollTop += this.element.ownerDocument.body.offsetHeight / 20;
   }
 
   pageUp() {
