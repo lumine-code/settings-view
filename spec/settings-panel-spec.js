@@ -109,6 +109,43 @@ describe("SettingsPanel", () => {
     });
   });
 
+  describe("hidden settings", () => {
+    beforeEach(() => {
+      lumine.config.setSchema("hidden-settings", {
+        type: "object",
+        properties: {
+          visible: {
+            title: "Visible",
+            type: "boolean",
+            default: true,
+          },
+          private: {
+            title: "Private",
+            type: "boolean",
+            default: true,
+            hidden: true,
+          },
+        },
+      });
+      settingsPanel = new SettingsPanel({ namespace: "hidden-settings", includeTitle: false });
+    });
+
+    afterEach(() => settingsPanel.destroy());
+
+    it("keeps hidden values configurable without rendering their controls", () => {
+      const visibleControl = settingsPanel.element.querySelector(
+        '[data-setting-key="hidden-settings.visible"]',
+      );
+      const privateControl = settingsPanel.element.querySelector(
+        '[data-setting-key="hidden-settings.private"]',
+      );
+
+      expect(lumine.config.get("hidden-settings.private")).toBe(true);
+      expect(visibleControl).not.toBeNull();
+      expect(privateControl).toBeNull();
+    });
+  });
+
   describe("copying a setting key", () => {
     beforeEach(() => {
       lumine.config.setSchema("kopy", {
