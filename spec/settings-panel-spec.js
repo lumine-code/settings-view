@@ -615,6 +615,15 @@ describe("SettingsPanel", () => {
     });
 
     describe("commaValueArray", () => {
+      it("shows an empty array default in the placeholder and tooltip", () => {
+        const editor = settingsPanel.element.querySelector('[id="foo.commaValueArray"]');
+        expect(editor.getModel().getPlaceholderText()).toBe("Default: ");
+
+        const tooltips = lumine.tooltips.findTooltips(editor);
+        expect(tooltips).toHaveLength(1);
+        expect(tooltips[0].options.title()).toBe("Default: ");
+      });
+
       it("comma in value is escaped", () => {
         const commaValueArrayEditor = settingsPanel.element.querySelector(
           '[id="foo.commaValueArray"]',
