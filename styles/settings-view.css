@@ -390,7 +390,7 @@
       -webkit-user-select: none;
 
       &.has-items {
-        cursor: pointer;
+        cursor: default;
 
         /* Spelled out rather than inherited: a collapsible heading need not
            carry an `icon-*` class — the config sub-sections do not — so this
@@ -454,7 +454,7 @@
     font-size: 0.85em;
     color: var(--text-color-subtle);
     -webkit-user-select: text;
-    cursor: pointer;
+    cursor: default;
     opacity: 0;
     transition: opacity 0.1s ease-in-out;
 
@@ -798,13 +798,6 @@
       margin: 0 15px var(--component-padding) 15px;
     }
 
-    .update-link {
-      &:hover {
-        cursor: pointer;
-        text-decoration: underline;
-      }
-    }
-
     .startup-time {
       margin: var(--component-padding) 0 0 0;
     }
@@ -937,7 +930,7 @@
   }
 
   .copy-icon {
-    cursor: pointer;
+    cursor: default;
     padding-right: 2px;
 
     &:hover {

@@ -10,7 +10,7 @@
     border: 1px solid var(--base-border-color);
     background-color: var(--package-card-background-color);
     overflow: hidden;
-    cursor: pointer;
+    cursor: default;
     -webkit-user-select: none;
 
     &:hover {
