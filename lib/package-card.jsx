@@ -3,6 +3,7 @@
 const { CompositeDisposable, Disposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 const BadgeView = require("./badge-view");
+const { SelectBox } = require("./select-box");
 const fs = require("fs");
 const path = require("path");
 const semver = require("semver");
@@ -187,18 +188,17 @@ module.exports = class PackageCard {
             <span className="package-version">
               {this.canSelectVersion() ? (
                 <span className="package-version-control">
-                  <select
+                  <SelectBox
                     ref="versionValue"
                     className="btn btn-xs value package-version-select"
+                    ariaLabel="Package version"
                     value={this.selectedVersionValue()}
                     disabled={this.pack.status === "validating"}
-                    onclick={(event) => event.stopPropagation()}
-                    onmousedown={this.onVersionOpen.bind(this)}
-                    onkeydown={this.onVersionKeyDown.bind(this)}
-                    onchange={this.didChangeRef.bind(this)}
-                  >
-                    {this.versionOptions()}
-                  </select>
+                    onClick={(event) => event.stopPropagation()}
+                    onWillOpen={this.loadVersionRefs.bind(this)}
+                    onDidChange={this.didChangeRef.bind(this)}
+                    items={this.versionOptions()}
+                  />
                   <span
                     ref="versionSpinner"
                     className="package-version-spinner hidden"
@@ -446,45 +446,11 @@ module.exports = class PackageCard {
   }
 
   versionOptions() {
-    return this.versionOptionEntries().map(([value, label]) => (
-      <option value={value}>{label}</option>
-    ));
+    return this.versionOptionEntries().map(([value, label]) => ({ value, label }));
   }
 
-  // Installed cards start without a ref list. Rather than open the native
-  // dropdown onto the current-only list and mutate it underneath the user, block
-  // the open, show a spinner while the origin's tags and default branch are
-  // listed via ls-remote, then open the completed list.
-  async onVersionOpen(event) {
-    if (this.pack.refs) return; // refs already loaded → let it open natively
-    if (event) event.preventDefault(); // don't open the stale (current-only) list
-    await this.loadVersionRefs();
-    const select = this.refs.versionValue;
-    if (!select || select.tagName !== "SELECT") return;
-    select.focus();
-    try {
-      // Open the now-complete list if the user gesture is still valid.
-      select.showPicker();
-    } catch {
-      // The gesture expired during a slow fetch; the list is ready and the next
-      // click opens it.
-    }
-  }
-
-  onVersionKeyDown(event) {
-    if (this.pack.refs) return;
-    const opensList =
-      event.key === "ArrowDown" ||
-      event.key === "ArrowUp" ||
-      event.key === "Enter" ||
-      event.key === " " ||
-      event.key === "Spacebar";
-    if (opensList) this.onVersionOpen(event);
-  }
-
-  // Lists the origin's tags and default branch and rebuilds the <option>s in
-  // place — a full re-render would undo the card's imperative button/state
-  // adjustments. Deduped so concurrent opens share one fetch.
+  // Lists the origin's tags and default branch before the picker opens. Deduped
+  // so concurrent opens share one fetch.
   loadVersionRefs() {
     if (this.pack.refs) return Promise.resolve();
     if (this.refsLoadingPromise) return this.refsLoadingPromise;
@@ -510,20 +476,11 @@ module.exports = class PackageCard {
 
   refreshVersionOptions() {
     const select = this.refs.versionValue;
-    if (!select || select.tagName !== "SELECT") return;
-    select.innerHTML = "";
-    for (const [value, label] of this.versionOptionEntries()) {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = label;
-      select.appendChild(option);
-    }
-    select.value = this.selectedVersionValue();
+    if (!select?.setItems) return;
+    select.setItems(this.versionOptions(), { value: this.selectedVersionValue() });
   }
 
-  async didChangeRef(event) {
-    event.stopPropagation();
-    const raw = event.target.value;
+  async didChangeRef({ value: raw }) {
     const separator = raw.indexOf(":");
     if (separator === -1) return;
     const type = raw.slice(0, separator);
@@ -632,7 +589,7 @@ module.exports = class PackageCard {
       // set this.installablePack so that the install action installs the
       // compatible version of the package.
       if (packageVersion) {
-        if (this.refs.versionValue.tagName !== "SELECT") {
+        if (!this.refs.versionValue?.setValue) {
           this.refs.versionValue.textContent = packageVersion;
         }
         if (packageVersion !== this.pack.version) {
@@ -909,12 +866,12 @@ module.exports = class PackageCard {
   }
 
   // Keeps the version indicator current whether it is a plain label or the
-  // tags/branch <select>.
+  // tags/branch picker.
   applyVersionDisplay() {
     const el = this.refs.versionValue;
     if (!el) return;
-    if (el.tagName === "SELECT") {
-      el.value = this.selectedVersionValue();
+    if (el.setValue) {
+      el.setValue(this.selectedVersionValue());
     } else {
       el.textContent =
         (this.installablePack ? this.installablePack.version : null) || this.pack.version || "";

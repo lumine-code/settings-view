@@ -1,6 +1,7 @@
 const SettingsPanel = require("../lib/settings-panel");
 const PredefinedValuesEditor = require("../lib/predefined-values-editor");
 const scopeContext = require("../lib/scope-context");
+const { forElement: selectBoxForElement } = require("../lib/select-box");
 const _ = require("@lumine-code/underscore-plus");
 
 describe("SettingsPanel", () => {
@@ -85,7 +86,7 @@ describe("SettingsPanel", () => {
 
     it("presents enum options with their descriptions", () => {
       const select = settingsPanel.element.querySelector("#foo\\.enum");
-      const pairs = Array.from(select.children).map((opt) => [opt.value, opt.innerText]);
+      const pairs = selectBoxForElement(select).items.map((item) => [item.value, item.label]);
       expect(pairs).toEqual([
         ["one", "One"],
         ["Two", "Two"],

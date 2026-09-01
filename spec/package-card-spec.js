@@ -273,12 +273,12 @@ describe("PackageCard", function () {
         new SettingsView(),
         packageManager,
       );
-      const labels = Array.from(card.refs.versionValue.options, ({ textContent }) => textContent);
+      const labels = card.refs.versionValue.items.map(({ label }) => label);
       expect(labels).toEqual(["@v2.0.0", "@nightly", "~main"]);
       expect(card.refs.versionValue.value).toBe("tag:v2.0.0");
     });
 
-    it("blocks the native list, shows a spinner, and lists tags on open", async function () {
+    it("loads refs before the shared picker opens", async function () {
       setPackageStatusSpies({ installed: true, disabled: false, hasSettings: false });
       spyOn(PackageCard.prototype, "getInstalledMetadata").and.returnValue({
         name: "lazy-refs",
@@ -321,16 +321,13 @@ describe("PackageCard", function () {
       );
       jasmine.attachToDOM(card.element);
       // Installed cards have no ref index until the dropdown is opened.
-      expect(card.refs.versionValue.tagName).toBe("SELECT");
+      expect(card.refs.versionValue.controller.element.getAttribute("role")).toBe("combobox");
       expect(card.pack.refs).toBeUndefined();
 
-      const preventDefault = jasmine.createSpy("preventDefault");
-      await card.onVersionOpen({ preventDefault });
+      await card.refs.versionValue.open();
 
-      // The stale (current-only) list was blocked and the full tag list fetched.
-      expect(preventDefault).toHaveBeenCalled();
       expect(loadRefs).toHaveBeenCalled();
-      const labels = Array.from(card.refs.versionValue.options, ({ textContent }) => textContent);
+      const labels = card.refs.versionValue.items.map(({ label }) => label);
       expect(labels).toContain("@v1.0.0");
       expect(labels).toContain("~main");
       // The spinner is hidden again once loading finishes.
@@ -562,7 +559,7 @@ describe("PackageCard", function () {
     expect(card.refs.installButton).toHaveClass("disabled");
     expect(card.installBlocked).toBe(true);
     // The version selector still works, and the legacy registry is not queried.
-    expect(card.refs.versionValue.tagName).toBe("SELECT");
+    expect(card.refs.versionValue.controller.element.getAttribute("role")).toBe("combobox");
     expect(packageManager.loadCompatiblePackageVersion).not.toHaveBeenCalled();
   });
 

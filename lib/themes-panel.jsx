@@ -7,6 +7,7 @@ const CollapsibleSectionPanel = require("./collapsible-section-panel");
 const focusWithHiddenContent = require("./focus-with-hidden-content");
 const PackageCard = require("./package-card");
 const notifyPackageError = require("./notify-error");
+const { SelectBox } = require("./select-box");
 
 const List = require("./list");
 const ListView = require("./list-view");
@@ -145,15 +146,17 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
                     </div>
                   </label>
                   <div className="select-container">
-                    <select
+                    <SelectBox
                       ref="modeMenu"
                       className="form-control"
-                      onchange={this.didChangeModeMenu.bind(this)}
-                    >
-                      <option value="system">Follow System</option>
-                      <option value="light">Light</option>
-                      <option value="dark">Dark</option>
-                    </select>
+                      ariaLabel="Theme mode"
+                      onDidChange={this.didChangeModeMenu.bind(this)}
+                      items={[
+                        { value: "system", label: "Follow System" },
+                        { value: "light", label: "Light" },
+                        { value: "dark", label: "Dark" },
+                      ]}
+                    />
                   </div>
                 </div>
               </div>
@@ -177,10 +180,12 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
                   <div className="theme-pair-select">
                     <div className="setting-description text theme-description">UI Theme</div>
                     <div className="select-container">
-                      <select
+                      <SelectBox
                         ref="lightUiMenu"
                         className="form-control"
-                        onchange={this.didChangeThemeMenu.bind(this)}
+                        ariaLabel="Light UI theme"
+                        onDidChange={this.didChangeThemeMenu.bind(this)}
+                        items={[]}
                       />
                       <button
                         ref="lightUiThemeSettings"
@@ -192,10 +197,12 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
                   <div className="theme-pair-select">
                     <div className="setting-description text theme-description">Syntax Theme</div>
                     <div className="select-container">
-                      <select
+                      <SelectBox
                         ref="lightSyntaxMenu"
                         className="form-control"
-                        onchange={this.didChangeThemeMenu.bind(this)}
+                        ariaLabel="Light syntax theme"
+                        onDidChange={this.didChangeThemeMenu.bind(this)}
+                        items={[]}
                       />
                       <button
                         ref="lightSyntaxThemeSettings"
@@ -226,10 +233,12 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
                   <div className="theme-pair-select">
                     <div className="setting-description text theme-description">UI Theme</div>
                     <div className="select-container">
-                      <select
+                      <SelectBox
                         ref="darkUiMenu"
                         className="form-control"
-                        onchange={this.didChangeThemeMenu.bind(this)}
+                        ariaLabel="Dark UI theme"
+                        onDidChange={this.didChangeThemeMenu.bind(this)}
+                        items={[]}
                       />
                       <button
                         ref="darkUiThemeSettings"
@@ -241,10 +250,12 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
                   <div className="theme-pair-select">
                     <div className="setting-description text theme-description">Syntax Theme</div>
                     <div className="select-container">
-                      <select
+                      <SelectBox
                         ref="darkSyntaxMenu"
                         className="form-control"
-                        onchange={this.didChangeThemeMenu.bind(this)}
+                        ariaLabel="Dark syntax theme"
+                        onDidChange={this.didChangeThemeMenu.bind(this)}
+                        items={[]}
                       />
                       <button
                         ref="darkSyntaxThemeSettings"
@@ -396,18 +407,17 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
   populateThemeMenus() {
     const uiMenus = [this.refs.lightUiMenu, this.refs.darkUiMenu];
     const syntaxMenus = [this.refs.lightSyntaxMenu, this.refs.darkSyntaxMenu];
-    for (const menu of uiMenus.concat(syntaxMenus)) {
-      menu.innerHTML = "";
-    }
+    const itemsByMenu = new Map(uiMenus.concat(syntaxMenus).map((menu) => [menu, []]));
 
     const availableThemes = _.sortBy(lumine.themes.getLoadedThemes(), "name");
     for (let { name, metadata } of availableThemes) {
       const menus =
         metadata.theme === "ui" ? uiMenus : metadata.theme === "syntax" ? syntaxMenus : [];
       for (const menu of menus) {
-        menu.appendChild(this.createThemeMenuItem(name));
+        itemsByMenu.get(menu).push(this.createThemeMenuItem(name));
       }
     }
+    for (const [menu, items] of itemsByMenu) menu.setItems(items);
 
     this.updateThemeSelections();
   }
@@ -479,10 +489,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
     const title = _.titleize(
       _.uncamelcase(themeName.replace(/-(ui|syntax)/g, "").replace(/-theme$/g, "")),
     );
-    const option = document.createElement("option");
-    option.value = themeName;
-    option.textContent = title;
-    return option;
+    return { value: themeName, label: title };
   }
 
   createPackageCard(pack) {

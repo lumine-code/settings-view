@@ -1,5 +1,6 @@
 const GeneralPanel = require("../lib/general-panel");
 const scopeContext = require("../lib/scope-context");
+const { forElement: selectBoxForElement } = require("../lib/select-box");
 
 describe("GeneralPanel", () => {
   let panel = null;
@@ -8,8 +9,8 @@ describe("GeneralPanel", () => {
     const element = panel.element.querySelector(`#${id.replace(/\./g, "\\.")}`);
     if (element.tagName === "INPUT") {
       return element.checked;
-    } else if (element.tagName === "SELECT") {
-      return element.value;
+    } else if (element.getAttribute("role") === "combobox") {
+      return selectBoxForElement(element).value;
     } else {
       return element.getModel().getText();
     }
@@ -20,9 +21,8 @@ describe("GeneralPanel", () => {
     if (element.tagName === "INPUT") {
       element.checked = value;
       return element.dispatchEvent(new Event("change", { bubbles: true }));
-    } else if (element.tagName === "SELECT") {
-      element.value = value;
-      return element.dispatchEvent(new Event("change", { bubbles: true }));
+    } else if (element.getAttribute("role") === "combobox") {
+      return selectBoxForElement(element).setValue(value, { emit: true });
     } else {
       element.getModel().setText(value?.toString());
       return window.advanceClock(10000); // wait for contents-modified to be triggered
@@ -46,7 +46,7 @@ describe("GeneralPanel", () => {
   });
 
   it("automatically binds named fields to their corresponding config keys", () => {
-    expect(getValueForId("core.enum")).toBe("4");
+    expect(getValueForId("core.enum")).toBe(4);
     expect(getValueForId("core.int")).toBe("22");
     expect(getValueForId("core.float")).toBe("0.1");
 
@@ -54,11 +54,11 @@ describe("GeneralPanel", () => {
     lumine.config.set("core.int", 222);
     lumine.config.set("core.float", 0.11);
 
-    expect(getValueForId("core.enum")).toBe("6");
+    expect(getValueForId("core.enum")).toBe(6);
     expect(getValueForId("core.int")).toBe("222");
     expect(getValueForId("core.float")).toBe("0.11");
 
-    setValueForId("core.enum", "2");
+    setValueForId("core.enum", 2);
     setValueForId("core.int", 90);
     setValueForId("core.float", 89.2);
 
@@ -71,6 +71,14 @@ describe("GeneralPanel", () => {
 
     expect(lumine.config.get("core.int")).toBeUndefined();
     expect(lumine.config.get("core.float")).toBeUndefined();
+  });
+
+  it("matches config SelectBox popup font sizes to their triggers", () => {
+    const selectElement = panel.element.querySelector('[id="core.enum"]');
+    const selectBox = selectBoxForElement(selectElement);
+
+    expect(selectElement.classList).toContain("form-control");
+    expect(selectBox.options.matchTriggerFontSize).toBe(true);
   });
 
   it("does not save the config value until it has been changed to a new value", () => {

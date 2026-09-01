@@ -83,12 +83,10 @@
   margin-top: calc(var(--component-padding) * 2);
 }
 
-/* Follow the theme like the config enum selects (select.form-control), while
+/* Follow the theme like the config enum pickers, while
    staying compact enough for the card's name row. */
 .settings-view .package-version-select {
   max-width: 16em;
-  /* Hide the native dropdown arrow; the picker still opens on click. */
-  appearance: none;
 }
 
 .settings-view .package-version-select:hover,

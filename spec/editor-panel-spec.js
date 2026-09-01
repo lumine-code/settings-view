@@ -1,5 +1,6 @@
 const EditorPanel = require("../lib/editor-panel");
 const scopeContext = require("../lib/scope-context");
+const { forElement: selectBoxForElement } = require("../lib/select-box");
 
 describe("EditorPanel", function () {
   let panel = null;
@@ -8,8 +9,8 @@ describe("EditorPanel", function () {
     const element = panel.element.querySelector(`#${id.replace(/\./g, "\\.")}`);
     if (element?.tagName === "INPUT") {
       return element.checked;
-    } else if (element?.tagName === "SELECT") {
-      return element.value;
+    } else if (element?.getAttribute("role") === "combobox") {
+      return selectBoxForElement(element).value;
     } else if (element != null) {
       return element.getModel().getText();
     } else {
@@ -22,9 +23,8 @@ describe("EditorPanel", function () {
     if (element.tagName === "INPUT") {
       element.checked = value;
       return element.dispatchEvent(new Event("change", { bubbles: true }));
-    } else if (element.tagName === "SELECT") {
-      element.value = value;
-      return element.dispatchEvent(new Event("change", { bubbles: true }));
+    } else if (element.getAttribute("role") === "combobox") {
+      return selectBoxForElement(element).setValue(value, { emit: true });
     } else {
       element.getModel().setText(value?.toString());
       return window.advanceClock(10000); // wait for contents-modified to be triggered

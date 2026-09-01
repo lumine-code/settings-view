@@ -1,6 +1,7 @@
 /** @jsx etch.dom */
 const { CompositeDisposable } = require("lumine");
 const etch = require("@lumine-code/etch");
+const { SelectBox } = require("./select-box");
 
 function isSupported() {
   return ["win32", "darwin"].includes(process.platform);
@@ -111,16 +112,17 @@ module.exports = class UriHandlerPanel {
                       <div className="setting-title">Default Registration</div>
                       <div className="setting-description">{schema.description}</div>
                     </label>
-                    <select
+                    <SelectBox
                       id="core.uriHandlerRegistration"
                       className="form-control"
-                      onChange={this.handleChange}
+                      ariaLabel="Default registration"
+                      onDidChange={this.handleChange}
                       value={lumine.config.get("core.uriHandlerRegistration")}
-                    >
-                      {schema.enum.map(({ description, value }) => (
-                        <option value={value}>{description}</option>
-                      ))}
-                    </select>
+                      items={schema.enum.map(({ description, value }) => ({
+                        value,
+                        label: description,
+                      }))}
+                    />
                   </div>
                 </div>
 
@@ -187,8 +189,8 @@ module.exports = class UriHandlerPanel {
     }
   }
 
-  handleChange(evt) {
-    lumine.config.set("core.uriHandlerRegistration", evt.target.value);
+  handleChange({ value }) {
+    lumine.config.set("core.uriHandlerRegistration", value);
   }
 
   async handleBecomeProtocolClient(evt) {

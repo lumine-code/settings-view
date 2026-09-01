@@ -56,10 +56,7 @@ describe("ThemesPanel", function () {
 
   describe("when a UI theme is selected for the active pair", () =>
     it("updates the pair config key and switches the active themes", async () => {
-      for (let child of Array.from(panel.refs.darkUiMenu.children)) {
-        child.selected = child.value === "one-day-ui";
-        child.dispatchEvent(new Event("change", { bubbles: true }));
-      }
+      panel.refs.darkUiMenu.setValue("one-day-ui", { emit: true });
       await conditionPromise(() => reloadedHandler.calls.count() === 2);
       expect(lumine.config.get("theme.dark")).toEqual(["one-day-ui", "one-night-syntax"]);
       expect(lumine.config.get(lumine.themes.getActiveThemesKeyPath())).toEqual([
@@ -71,10 +68,7 @@ describe("ThemesPanel", function () {
   describe("when a syntax theme is selected for the inactive pair", () =>
     it("updates the pair config key without switching the active themes", async () => {
       reloadedHandler.calls.reset();
-      for (let child of Array.from(panel.refs.lightSyntaxMenu.children)) {
-        child.selected = child.value === "one-night-syntax";
-        child.dispatchEvent(new Event("change", { bubbles: true }));
-      }
+      panel.refs.lightSyntaxMenu.setValue("one-night-syntax", { emit: true });
       await conditionPromise(
         () => lumine.config.get("theme.light")[1] === "one-night-syntax",
         "the light pair to update",
@@ -89,8 +83,7 @@ describe("ThemesPanel", function () {
 
   describe("when the theme mode is selected", () =>
     it("updates 'theme.mode' and switches to the matching pair", async () => {
-      panel.refs.modeMenu.value = "light";
-      panel.refs.modeMenu.dispatchEvent(new Event("change", { bubbles: true }));
+      panel.refs.modeMenu.setValue("light", { emit: true });
 
       await conditionPromise(() => reloadedHandler.calls.count() === 2);
       expect(lumine.config.get("theme.mode")).toBe("light");

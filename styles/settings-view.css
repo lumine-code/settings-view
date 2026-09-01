@@ -181,7 +181,8 @@
     }
   }
 
-  select.form-control {
+  .select-box.form-control {
+    font-size: var(--ui-input-size);
     color: var(--text-color);
     border-color: var(--button-border-color);
     background-color: var(--button-background-color);
@@ -825,7 +826,7 @@
     }
     .theme-mode-item {
       flex-basis: 100%;
-      select.form-control {
+      .select-box.form-control {
         max-width: 320px;
       }
     }
@@ -1346,6 +1347,8 @@
   right: 1px;
   bottom: 1px;
   width: 30px;
+  min-width: 0;
+  min-height: 0;
   padding: 0;
   border: 0;
   border-radius: 0 var(--component-border-radius) var(--component-border-radius) 0;
@@ -1369,15 +1372,9 @@
   translate: 7px 0;
 }
 
-.settings-view .predefined-values-editor-select {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  opacity: 0;
-  pointer-events: none;
+.settings-view .predefined-values-editor-button .select-box-label,
+.settings-view .predefined-values-editor-button .select-box-arrow {
+  display: none;
 }
 
 .settings-view .settings-scope-error {

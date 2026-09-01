@@ -13,30 +13,45 @@ describe("PredefinedValuesEditor", () => {
 
   afterEach(() => editor.destroy());
 
-  it("renders a mini TextEditor backed by a native select", () => {
+  it("renders a mini TextEditor backed by the shared SelectBox", () => {
     expect(editor.editor.isMini()).toBe(true);
     expect(editor.getText()).toBe(".source.js");
-    expect(editor.select).toHaveClass("form-control");
-    expect(editor.select.selectedIndex).toBe(1);
+    expect(editor.select.element).toHaveClass("select-box");
+    expect(editor.select.value).toBe(".source.js");
   });
 
-  it("opens the native picker from the arrow button", () => {
-    spyOn(editor.select, "showPicker");
+  it("opens the shared picker from the arrow button", async () => {
+    spyOn(editor.select, "open").and.callThrough();
     editor.button.click();
-    expect(editor.select.showPicker).toHaveBeenCalled();
+    await Promise.resolve();
+    expect(editor.select.open).toHaveBeenCalled();
+  });
+
+  it("matches the popup width to the whole editor rather than the arrow button", async () => {
+    document.body.appendChild(editor.element);
+    spyOn(editor.element, "getBoundingClientRect").and.returnValue({
+      left: 20,
+      right: 220,
+      top: 20,
+      bottom: 50,
+      width: 200,
+      height: 30,
+    });
+    await editor.openPicker();
+    expect(document.querySelector(".select-box-list").style.width).toBe("200px");
   });
 
   it("writes a selected predefined value into the TextEditor and commits it", () => {
     const committed = jasmine.createSpy("committed");
     editor.onDidCommit(committed);
-    editor.select.selectedIndex = 2;
-    editor.select.dispatchEvent(new Event("change"));
+    editor.select.setValue(".source.python", { emit: true });
     expect(editor.getText()).toBe(".source.python");
     expect(committed).toHaveBeenCalledWith(".source.python");
   });
 
   it("does not select an unrelated predefined value for custom text", () => {
     editor.setText(".custom.scope");
-    expect(editor.select.selectedIndex).toBe(-1);
+    expect(editor.select.value).toBe(".custom.scope");
+    expect(editor.select.items.find((item) => item.value === ".custom.scope").disabled).toBe(true);
   });
 });
