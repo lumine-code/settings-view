@@ -17,6 +17,8 @@ describe("PredefinedValuesEditor", () => {
     expect(editor.editor.isMini()).toBe(true);
     expect(editor.getText()).toBe(".source.js");
     expect(editor.select.element).toHaveClass("select-box");
+    expect(editor.button).not.toHaveClass("icon-chevron-down");
+    expect(editor.button.querySelector(".select-box-arrow")).toExist();
     expect(editor.select.value).toBe(".source.js");
   });
 

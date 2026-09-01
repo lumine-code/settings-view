@@ -1346,10 +1346,12 @@
   top: 1px;
   right: 1px;
   bottom: 1px;
+  box-sizing: border-box;
   width: 30px;
   min-width: 0;
   min-height: 0;
-  padding: 0;
+  justify-content: flex-end;
+  padding: 0 8px;
   border: 0;
   border-radius: 0 var(--component-border-radius) var(--component-border-radius) 0;
   color: var(--text-color);
@@ -1360,21 +1362,16 @@
 
 .settings-view .predefined-values-editor-button:hover,
 .settings-view .predefined-values-editor-button:focus {
-  color: var(--text-color-highlight);
   background: transparent;
   box-shadow: none;
 }
 
-.settings-view .predefined-values-editor .predefined-values-editor-button::before {
-  margin-right: 0;
-  font-size: calc(var(--ui-size) * 1.25);
-  color: var(--text-color);
-  translate: 7px 0;
+.settings-view .predefined-values-editor-button .select-box-label {
+  display: none;
 }
 
-.settings-view .predefined-values-editor-button .select-box-label,
 .settings-view .predefined-values-editor-button .select-box-arrow {
-  display: none;
+  margin-left: 0;
 }
 
 .settings-view .settings-scope-error {
