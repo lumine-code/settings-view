@@ -316,6 +316,12 @@ describe("SettingsPanel", () => {
       expect(tooltips).toHaveLength(1);
       const { title } = tooltips[0].options;
       expect(title()).toBe("Default: Alice");
+      expect(tooltips[0].getTitle()).toBe("Default: Alice");
+      expect(quxEditor.title).toBe("");
+
+      settingsPanel.set("foo.qux", "b");
+      expect(tooltips[0].getTitle()).toBe("Default: Alice");
+      expect(quxEditor.title).toBe("");
     });
 
     // Regression test for #783
