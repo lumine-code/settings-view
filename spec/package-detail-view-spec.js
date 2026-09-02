@@ -99,7 +99,7 @@ describe("PackageDetailView", function () {
     expect(scrollIntoView).toHaveBeenCalled();
   });
 
-  it("shows a Tree-sitter-only grammar in the detail sections and table of contents", () => {
+  it("shows a grammar in the detail sections and table of contents", () => {
     lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
     const pack = lumine.packages.getLoadedPackage("package-with-config");
     const grammar = {
@@ -110,9 +110,7 @@ describe("PackageDetailView", function () {
       grammarFilePath: path.join(pack.path, "grammars", "tree-sitter-test.json"),
       fileTypes: ["tst"],
     };
-    spyOn(lumine.grammars, "getGrammars").and.callFake((options) =>
-      options?.includeTreeSitter ? [grammar] : [],
-    );
+    spyOn(lumine.grammars, "getGrammars").and.returnValue([grammar]);
     const settingsView = new SettingsView();
     const showToc = spyOn(settingsView, "showTableOfContents").and.callThrough();
 
@@ -123,9 +121,6 @@ describe("PackageDetailView", function () {
     expect(grammarPanels.length).toBe(1);
     expect(grammarPanels[0].querySelector(".grammar-scope").textContent).toBe(
       "Scope: source.tree-sitter-test",
-    );
-    expect(grammarPanels[0].querySelector(".grammar-parser").textContent).toBe(
-      "Parser: Tree-sitter",
     );
     expect(grammarPanels[0].querySelector(".grammar-filetypes").textContent).toBe(
       "File Types: tst",

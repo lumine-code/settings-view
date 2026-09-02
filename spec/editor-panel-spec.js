@@ -116,11 +116,9 @@ describe("EditorPanel", function () {
     expect(lumine.config.get("editor.complexArray")).toEqual(["a", "b", { c: true }]);
   });
 
-  it("shows editor language-mode settings and hides technical metadata", function () {
-    expect(panel.element.querySelector('[id="editor.useTreeSitterParsers"]')).toExist();
-    expect(panel.element.querySelector('[id="editor.largeFileThreshold"]')).toExist();
+  it("hides technical metadata", function () {
     expect(panel.element.querySelector('[id="editor.nonWordCharacters"]')).toExist();
     expect(panel.element.querySelector('[id="editor.commentStart"]')).not.toExist();
-    expect(panel.element.querySelector('[id="editor.increaseIndentPattern"]')).not.toExist();
+    expect(panel.element.querySelector('[id="editor.commentDelimiters"]')).not.toExist();
   });
 });

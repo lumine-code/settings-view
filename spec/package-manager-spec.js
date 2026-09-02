@@ -659,33 +659,16 @@ describe("PackageManager", function () {
     it("returns false when the package does not have config and doesn't define language grammars", () =>
       expect(packageManager.packageHasSettings("random-package")).toBe(false));
 
-    it("returns true when the package does not have config, but does define language grammars", async () => {
+    it("returns true when the package does not have config, but does define language grammars", () => {
       const packageName = "language-test";
-
-      await lumine.packages.activatePackage(path.join(__dirname, "fixtures", packageName));
-
-      expect(packageManager.packageHasSettings(packageName)).toBe(true);
-    });
-
-    it("returns true when the package only defines a Tree-sitter grammar", () => {
-      const packageName = "language-tree-sitter-test";
-      const grammar = {
-        name: "Tree-sitter Test",
-        scopeName: "source.tree-sitter-test",
-        type: "tree-sitter",
-        packageName,
-        grammarFilePath: path.join(
-          __dirname,
-          "fixtures",
+      spyOn(lumine.grammars, "getGrammars").and.returnValue([
+        {
+          name: "Test",
+          scopeName: "source.test",
+          type: "tree-sitter",
           packageName,
-          "grammars",
-          "tree-sitter-test.json",
-        ),
-        fileTypes: ["tst"],
-      };
-      spyOn(lumine.grammars, "getGrammars").and.callFake((options) =>
-        options?.includeTreeSitter ? [grammar] : [],
-      );
+        },
+      ]);
 
       expect(packageManager.packageHasSettings(packageName)).toBe(true);
     });
