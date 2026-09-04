@@ -339,9 +339,16 @@ describe("InstallPanel", function () {
     expect(panel.refs.browseContainer.querySelectorAll(".package-card").length).toBe(50);
     expect(panel.refs.pageStatus.textContent).toContain("1000 result(s)");
 
+    const scrollIntoView = spyOn(panel.refs.browseContainer, "scrollIntoView");
     await panel.nextPage();
     expect(panel.page).toBe(2);
     expect(panel.browsePackageCards.length).toBe(50);
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
+
+    scrollIntoView.calls.reset();
+    await panel.previousPage();
+    expect(panel.page).toBe(1);
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
   });
 
   it("marks progressively available search results as incomplete while indexing", function () {

@@ -689,12 +689,23 @@ module.exports = class InstallPanel {
   previousPage() {
     if (this.page <= 1) return;
     this.page--;
-    return this.renderActivePage();
+    const rendering = this.renderActivePage();
+    this.scrollActivePackageListToTop();
+    return rendering;
   }
 
   nextPage() {
     this.page++;
-    return this.renderActivePage();
+    const rendering = this.renderActivePage();
+    this.scrollActivePackageListToTop();
+    return rendering;
+  }
+
+  scrollActivePackageListToTop() {
+    const container = this.refs.searchEditor.getText().trim()
+      ? this.refs.resultsContainer
+      : this.refs.browseContainer;
+    container.scrollIntoView({ block: "start" });
   }
 
   renderActivePage() {
