@@ -86,11 +86,15 @@ describe("SettingsPanel", () => {
 
     it("presents enum options with their descriptions", () => {
       const select = settingsPanel.element.querySelector("#foo\\.enum");
-      const pairs = selectBoxForElement(select).items.map((item) => [item.value, item.label]);
+      const selectBox = selectBoxForElement(select);
+      const pairs = selectBox.items.map((item) => [item.value, item.label]);
       expect(pairs).toEqual([
         ["one", "One"],
         ["Two", "Two"],
       ]);
+
+      selectBox.setValue("Two", { emit: true });
+      expect(lumine.config.get("foo.enum")).toBe("Two");
     });
 
     it("presents radio options with their descriptions", () => {
@@ -841,6 +845,28 @@ describe("SettingsPanel", () => {
       expect(tabLengthEditor.getPlaceholderText()).toBe("Default: 2");
       expect(tabLengthEditor.isReadOnly()).toBe(false);
       expect(tabLengthTooltip.options.title()).toBe("Default: 2");
+    });
+
+    it("does not bind the scope picker as a setting control", () => {
+      const picker = PredefinedValuesEditor.forElement(
+        settingsPanel.element.querySelector(".settings-scope-editor"),
+      );
+      const generatedKey = picker.button.id;
+
+      expect(generatedKey).toMatch(/^lumine-select-box-\d+$/);
+      expect(picker.button.title).toBe("Default");
+      expect(lumine.tooltips.findTooltips(picker.button)).toHaveLength(0);
+
+      picker.setValues([
+        { value: "", label: "Default" },
+        { value: ".source.js", label: ".source.js" },
+      ]);
+      picker.select.setValue(".source.js", { emit: true });
+
+      expect(scopeContext.get()).toBe(".source.js");
+      expect(lumine.config.inspect(generatedKey, { scopeSelector: ".source.js" }).hasOverride).toBe(
+        false,
+      );
     });
   });
 
