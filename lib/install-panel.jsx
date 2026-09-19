@@ -12,7 +12,7 @@ const { CompositeDisposable, Disposable, TextEditor } = require("lumine");
 
 const PackageCard = require("./package-card");
 const notifyPackageError = require("./notify-error");
-const { packageOrigin } = require("./utils");
+const { openExternal, packageOrigin } = require("./utils");
 const { normalizeCatalogSource } = require("./package-catalog-client");
 
 const PackageNameRegex = /config\/install\/(?:package|theme):([a-z0-9-_]+)/i;
@@ -959,7 +959,7 @@ module.exports = class InstallPanel {
 
   didClickOpenCatalog(event) {
     event.preventDefault();
-    lumine.shell.openExternal(this.catalogURL);
+    void openExternal(this.catalogURL);
   }
 
   scrollUp() {

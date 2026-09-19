@@ -2,6 +2,7 @@
 const { CompositeDisposable, Disposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 const { STATUS_DOT_TYPES } = require("./status-dots");
+const { openExternal } = require("./utils");
 
 // Renders a package badge as a small colored dot. The badge title and text are
 // shown in a hover tooltip, and clicking a badge that carries a link opens it
@@ -22,7 +23,7 @@ module.exports = class BadgeView {
       const clickHandler = (event) => {
         event.stopPropagation();
         event.preventDefault();
-        lumine.shell.openExternal(this.badge.link);
+        void openExternal(this.badge.link);
       };
       this.element.addEventListener("click", clickHandler);
       this.disposables.add(

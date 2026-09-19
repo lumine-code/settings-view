@@ -14,7 +14,7 @@ const PackageReadmeView = require("./package-readme-view");
 const PackageSnippetsView = require("./package-snippets-view");
 const focusWithHiddenContent = require("./focus-with-hidden-content");
 const SettingsPanel = require("./settings-panel");
-const { packageOrigin } = require("./utils");
+const { openExternal, packageOrigin } = require("./utils");
 
 const NORMALIZE_PACKAGE_DATA_README_ERROR = "ERROR: No README data found!";
 
@@ -88,7 +88,7 @@ module.exports = class PackageDetailView {
       event.preventDefault();
       let bugUri = this.packageManager.getRepositoryBugUri(this.pack);
       if (bugUri) {
-        lumine.shell.openExternal(bugUri);
+        void openExternal(bugUri);
       }
     };
     this.refs.issueButton.addEventListener("click", issueButtonClickHandler);
@@ -139,7 +139,7 @@ module.exports = class PackageDetailView {
       event.preventDefault();
       const repoUrl = this.packageManager.getRepositoryUrl(this.pack);
       if (repoUrl) {
-        lumine.shell.openExternal(repoUrl);
+        void openExternal(repoUrl);
       }
     };
     this.refs.learnMoreButton.addEventListener("click", learnMoreButtonClickHandler);
@@ -599,7 +599,7 @@ module.exports = class PackageDetailView {
     const meta = this.pack.metadata || {};
     const known = meta.licenseSource || this.licenseBlobUrl();
     if (known) {
-      lumine.shell.openExternal(known);
+      void openExternal(known);
       return;
     }
 
@@ -617,7 +617,7 @@ module.exports = class PackageDetailView {
       .catch(() => null);
     if (entry && entry.source) {
       meta.licenseSource = entry.source;
-      lumine.shell.openExternal(entry.source);
+      void openExternal(entry.source);
     } else {
       // The manifest names a license but the repository ships no file for it.
       lumine.notifications.addWarning(`No LICENSE file found in ${this.pack.name}.`);

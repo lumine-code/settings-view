@@ -1,4 +1,5 @@
 const {
+  openExternal,
   ownerFromRepository,
   repoUrlFromRepository,
   packageOrigin,
@@ -7,6 +8,20 @@ const {
 } = require("../lib/utils");
 
 describe("Utils", () => {
+  describe("openExternal", () => {
+    it("reports rejected metadata links without an unhandled promise", async () => {
+      const error = new Error("unsupported protocol");
+      spyOn(lumine.shell, "openExternal").and.rejectWith(error);
+      spyOn(lumine.notifications, "addWarning");
+
+      expect(await openExternal("error: bad response")).toBe(false);
+      expect(lumine.notifications.addWarning).toHaveBeenCalledWith(
+        "Unable to open the external link.",
+        { detail: error.message, dismissable: true },
+      );
+    });
+  });
+
   describe("ownerFromRepository", () => {
     it("handles a long github url", () => {
       const owner = ownerFromRepository("http://github.com/omgwow/some-package");

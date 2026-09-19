@@ -9,6 +9,7 @@ const path = require("path");
 const semver = require("semver");
 
 const {
+  openExternal,
   ownerFromRepository,
   repoUrlFromRepository,
   repoReferenceFromRepository,
@@ -742,7 +743,7 @@ module.exports = class PackageCard {
       event.stopPropagation();
       const repoUrl = repoUrlFromRepository(this.pack.repository);
       if (repoUrl) {
-        lumine.shell.openExternal(repoUrl);
+        void openExternal(repoUrl);
       }
     };
     if (this.refs.repoLink) {
@@ -770,7 +771,7 @@ module.exports = class PackageCard {
       event.stopPropagation();
       const owner = ownerFromRepository(this.pack.repository);
       if (owner) {
-        lumine.shell.openExternal(`https://github.com/${owner}`);
+        void openExternal(`https://github.com/${owner}`);
       }
     };
     this.refs.avatarLink.addEventListener("click", packageAuthorClickHandler);
