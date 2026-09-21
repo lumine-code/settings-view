@@ -8,6 +8,7 @@
  */
 
 const path = require("path");
+const fs = require("fs");
 const PackageDetailView = require("../lib/package-detail-view");
 const PackageManager = require("../lib/package-manager");
 const SettingsView = require("../lib/settings-view");
@@ -19,6 +20,11 @@ let SnippetsProvider = {
   getSnippets() {
     return lumine.config.scopedSettingsStore.propertySets;
   },
+};
+
+const activateSnippets = () => {
+  const workspaceCopy = path.resolve(__dirname, "..", "..", "snippets");
+  return lumine.packages.activatePackage(fs.existsSync(workspaceCopy) ? workspaceCopy : "snippets");
 };
 
 describe("InstalledPackageView", function () {
@@ -84,7 +90,7 @@ describe("InstalledPackageView", function () {
 
     await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-    const p = await lumine.packages.activatePackage("snippets");
+    const p = await activateSnippets();
     snippetsModule = p.mainModule;
     if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
       return;
@@ -151,7 +157,7 @@ describe("InstalledPackageView", function () {
 
       await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-      const p = await lumine.packages.activatePackage("snippets");
+      const p = await activateSnippets();
       snippetsModule = p.mainModule;
       if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
         return;
@@ -203,7 +209,7 @@ describe("InstalledPackageView", function () {
       beforeEach(async () => {
         await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-        const p = await lumine.packages.activatePackage("snippets");
+        const p = await activateSnippets();
         snippetsModule = p.mainModule;
         if (snippetsModule.provideSnippets().getUnparsedSnippets == null) {
           return;
@@ -270,7 +276,7 @@ describe("InstalledPackageView", function () {
     it("sets the packagesWithSnippetsDisabled config to include the package name", async () => {
       await lumine.packages.activatePackage(path.join(__dirname, "fixtures", "language-test"));
 
-      const { mainModule: snippetsModule } = await lumine.packages.activatePackage("snippets");
+      const { mainModule: snippetsModule } = await activateSnippets();
       SnippetsProvider = {
         getSnippets() {
           return snippetsModule.provideSnippets().getUnparsedSnippets();
@@ -431,17 +437,18 @@ describe("InstalledPackageView", function () {
       expect(packageCard.classList.contains("disabled")).toBe(true);
     });
 
-    it("still loads the config schema for the package", async () => {
+    it("reads the load-scope manifest schema without requiring the package main module", async () => {
       lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
 
       await conditionPromise(() => lumine.packages.isPackageLoaded("package-with-config") === true);
 
-      expect(lumine.config.get("package-with-config.setting")).toBe(undefined);
-
       const pack = lumine.packages.getLoadedPackage("package-with-config");
+      expect(lumine.config.get("package-with-config.setting")).toBe("something");
+      expect(pack.mainModule).toBeNull();
       new PackageDetailView(pack, new SettingsView(), new PackageManager(), SnippetsProvider);
 
       expect(lumine.config.get("package-with-config.setting")).toBe("something");
+      expect(pack.mainModule).toBeNull();
     });
   });
 

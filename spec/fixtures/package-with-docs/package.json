@@ -2,5 +2,11 @@
   "name": "package-with-docs",
   "version": "1.0.0",
   "repository": "https://github.com/example/package-with-docs",
-  "main": "main"
+  "main": "main",
+  "configSchema": {
+    "setting": {
+      "type": "string",
+      "default": "something"
+    }
+  }
 }

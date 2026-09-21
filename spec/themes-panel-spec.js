@@ -39,7 +39,7 @@ describe("ThemesPanel", function () {
 
   afterEach(async () => {
     if (lumine.packages.isPackageLoaded("a-theme")) {
-      lumine.packages.unloadPackage("a-theme");
+      await lumine.packages.unloadPackage("a-theme");
     }
     await Promise.resolve(lumine.themes.deactivateThemes());
   }); // Ensure works on promise and non-promise versions

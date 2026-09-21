@@ -385,34 +385,23 @@ describe("PackageManager", function () {
       fs.removeSync(root);
     });
 
-    it("awaits async deactivation before unloading an active package", async () => {
-      // Reproduces the "Tried to unload active package" error: deactivation is
-      // async, so unloading must wait for it to complete.
+    it("awaits the core's atomic unload of an active package", async () => {
       const root = tempRoot("lumine-uninstall-active-");
       const packagePath = installedAt(root, "active-pkg");
-      let deactivated = false;
       spyOn(lumine.packages, "getLoadedPackage").and.returnValue({
         name: "active-pkg",
         path: packagePath,
       });
-      spyOn(lumine.packages, "isPackageActive").and.callFake(() => !deactivated);
-      spyOn(lumine.packages, "deactivatePackage").and.callFake(() =>
-        Promise.resolve().then(() => {
-          deactivated = true;
-        }),
-      );
-      spyOn(lumine.packages, "unloadPackage").and.callFake((name) => {
-        if (lumine.packages.isPackageActive(name)) {
-          throw new Error(`Tried to unload active package '${name}'`);
-        }
-      });
+      spyOn(lumine.packages, "getPackageLifecycleState").and.returnValue("active");
+      spyOn(lumine.packages, "unloadPackage").and.returnValue(Promise.resolve());
       spyOn(lumine.packages, "getAvailablePackage").and.returnValue(undefined);
 
       const uninstallCallback = jasmine.createSpy("uninstallCallback");
       await packageManager.uninstall({ name: "active-pkg", path: packagePath }, uninstallCallback);
 
-      expect(lumine.packages.deactivatePackage).toHaveBeenCalledWith("active-pkg");
-      expect(lumine.packages.unloadPackage).toHaveBeenCalledWith("active-pkg");
+      expect(lumine.packages.unloadPackage).toHaveBeenCalledWith("active-pkg", {
+        preserveModuleCache: false,
+      });
       expect(uninstallCallback).toHaveBeenCalled();
       expect(uninstallCallback.calls.mostRecent().args[0]).toBeUndefined();
       fs.removeSync(root);
@@ -453,8 +442,8 @@ describe("PackageManager", function () {
         name: "search-panel",
         path: packagePath,
       });
-      spyOn(lumine.packages, "isPackageActive").and.returnValue(false);
-      spyOn(lumine.packages, "unloadPackage");
+      spyOn(lumine.packages, "getPackageLifecycleState").and.returnValue("loaded");
+      spyOn(lumine.packages, "unloadPackage").and.returnValue(Promise.resolve());
       spyOn(lumine.packages, "getAvailablePackage").and.returnValue({
         name: "search-panel",
         path: bundledPath,
@@ -464,52 +453,88 @@ describe("PackageManager", function () {
 
       await packageManager.uninstall({ name: "search-panel", path: packagePath });
       expect(lumine.packages.reconcilePackage).toHaveBeenCalledWith("search-panel", {
-        activate: true,
+        lifecycleState: "loaded",
       });
       expect(lumine.config.get("core.disabledPackages")).toContain("search-panel");
       fs.removeSync(root);
     });
 
-    it("does not wait for the copy it loads to finish activating", async () => {
-      // A package that defers activation never resolves activatePackage until
-      // its trigger fires; awaiting it would hang the uninstall.
-      const root = tempRoot("lumine-uninstall-deferred-");
-      const packagePath = installedAt(root, "deferred-bundled");
+    it("defers a native fallback until restart", async () => {
+      const root = tempRoot("lumine-uninstall-restart-");
+      const packagePath = installedAt(root, "table-editor");
+      const nativeDirectory = path.join(packagePath, "node_modules", "native-fixture");
+      fs.makeTreeSync(nativeDirectory);
+      fs.writeFileSync(path.join(nativeDirectory, "binding.node"), "native fixture");
       spyOn(lumine.packages, "getLoadedPackage").and.returnValue({
-        name: "deferred-bundled",
+        name: "table-editor",
+        path: packagePath,
+        metadata: {},
+      });
+      spyOn(lumine.packages, "getPackageLifecycleState").and.returnValue("active");
+      spyOn(lumine.packages, "unloadPackage").and.returnValue(Promise.resolve());
+      spyOn(lumine.packages, "getAvailablePackage").and.returnValue({
+        name: "table-editor",
+        path: path.join(path.sep, "app", "packages", "table-editor"),
+      });
+      spyOn(lumine.packages, "reconcilePackage");
+      spyOn(packageManager, "notifyRestartRequired");
+
+      await packageManager.uninstall({ name: "table-editor", path: packagePath });
+
+      expect(lumine.packages.unloadPackage).toHaveBeenCalledWith("table-editor", {
+        preserveModuleCache: true,
+      });
+      expect(lumine.packages.reconcilePackage).not.toHaveBeenCalled();
+      expect(packageManager.notifyRestartRequired).toHaveBeenCalledWith("table-editor");
+      fs.removeSync(root);
+    });
+
+    it("awaits restoration of the remaining copy before completing", async () => {
+      const root = tempRoot("lumine-uninstall-bundled-");
+      const packagePath = installedAt(root, "bundled-copy");
+      spyOn(lumine.packages, "getLoadedPackage").and.returnValue({
+        name: "bundled-copy",
         path: packagePath,
       });
-      spyOn(lumine.packages, "isPackageActive").and.returnValue(false);
-      spyOn(lumine.packages, "unloadPackage");
+      spyOn(lumine.packages, "getPackageLifecycleState").and.returnValue("loaded");
+      spyOn(lumine.packages, "unloadPackage").and.returnValue(Promise.resolve());
       spyOn(lumine.packages, "getAvailablePackage").and.returnValue({
-        name: "deferred-bundled",
-        path: path.join(path.sep, "app", "packages", "deferred-bundled"),
+        name: "bundled-copy",
+        path: path.join(path.sep, "app", "packages", "bundled-copy"),
       });
-      // Never resolves — mimics a package that defers activation.
-      spyOn(lumine.packages, "reconcilePackage").and.returnValue(new Promise(() => {}));
+      let finishReconcile;
+      let markReconcileStarted;
+      const reconcileStarted = new Promise((resolve) => (markReconcileStarted = resolve));
+      spyOn(lumine.packages, "reconcilePackage").and.callFake(() => {
+        markReconcileStarted();
+        return new Promise((resolve) => (finishReconcile = resolve));
+      });
 
       const uninstallCallback = jasmine.createSpy("uninstallCallback");
-      await packageManager.uninstall(
-        { name: "deferred-bundled", path: packagePath },
+      const uninstall = packageManager.uninstall(
+        { name: "bundled-copy", path: packagePath },
         uninstallCallback,
       );
 
+      await reconcileStarted;
       expect(lumine.packages.reconcilePackage).toHaveBeenCalled();
-      // The uninstall completes even though activation never resolves.
+      expect(uninstallCallback).not.toHaveBeenCalled();
+      finishReconcile();
+      await uninstall;
       expect(uninstallCallback).toHaveBeenCalled();
       expect(uninstallCallback.calls.mostRecent().args[0]).toBeUndefined();
       fs.removeSync(root);
     });
 
-    it("still completes the uninstall when loading the remaining copy fails", async () => {
+    it("reports an uninstall failure when the remaining copy cannot be restored", async () => {
       const root = tempRoot("lumine-uninstall-throw-");
       const packagePath = installedAt(root, "broken-bundled");
       spyOn(lumine.packages, "getLoadedPackage").and.returnValue({
         name: "broken-bundled",
         path: packagePath,
       });
-      spyOn(lumine.packages, "isPackageActive").and.returnValue(false);
-      spyOn(lumine.packages, "unloadPackage");
+      spyOn(lumine.packages, "getPackageLifecycleState").and.returnValue("loaded");
+      spyOn(lumine.packages, "unloadPackage").and.returnValue(Promise.resolve());
       spyOn(lumine.packages, "getAvailablePackage").and.returnValue({
         name: "broken-bundled",
         path: path.join(path.sep, "app", "packages", "broken-bundled"),
@@ -526,10 +551,40 @@ describe("PackageManager", function () {
         uninstallCallback,
       );
 
-      // The on-disk removal succeeded, so the uninstall reports success even
-      // though the best-effort load of the remaining copy failed.
       expect(uninstallCallback).toHaveBeenCalled();
-      expect(uninstallCallback.calls.mostRecent().args[0]).toBeUndefined();
+      expect(uninstallCallback.calls.mostRecent().args[0]).toEqual(
+        jasmine.objectContaining({ message: "cannot load bundled package" }),
+      );
+      fs.removeSync(root);
+    });
+
+    it("restores the previous lifecycle when removal fails and the package remains", async () => {
+      const root = tempRoot("lumine-uninstall-remove-failure-");
+      const packagePath = installedAt(root, "stubborn-package");
+      spyOn(lumine.packages, "getLoadedPackage").and.returnValue({
+        name: "stubborn-package",
+        path: packagePath,
+        metadata: {},
+      });
+      spyOn(lumine.packages, "getPackageLifecycleState").and.returnValue("loaded");
+      spyOn(lumine.packages, "unloadPackage").and.returnValue(Promise.resolve());
+      spyOn(lumine.packages, "isPackageLoaded").and.returnValue(false);
+      spyOn(lumine.packages, "reconcilePackage").and.returnValue(Promise.resolve({}));
+      spyOn(packageManager, "removePackageDir").and.returnValue(
+        Promise.reject(new Error("directory is locked")),
+      );
+      const uninstallCallback = jasmine.createSpy("uninstallCallback");
+
+      await packageManager.uninstall(
+        { name: "stubborn-package", path: packagePath },
+        uninstallCallback,
+      );
+
+      expect(lumine.packages.reconcilePackage).toHaveBeenCalledWith("stubborn-package", {
+        lifecycleState: "loaded",
+      });
+      expect(uninstallCallback).toHaveBeenCalled();
+      expect(uninstallCallback.calls.mostRecent().args[0].message).toBe("directory is locked");
       fs.removeSync(root);
     });
 
@@ -574,6 +629,31 @@ describe("PackageManager", function () {
 
     it("resolves without error when the directory is already gone", async () => {
       await packageManager.removePackageDir(path.join(os.tmpdir(), "lumine-not-there-xyz"));
+    });
+  });
+
+  describe("::requiresRestartForReplacement()", () => {
+    it("honors the manifest boundary for persistent custom elements", () => {
+      expect(
+        packageManager.requiresRestartForReplacement(
+          { metadata: { requiresRestartOnUpdate: true } },
+          path.join(os.tmpdir(), "missing-package"),
+        ),
+      ).toBe(true);
+      expect(
+        packageManager.requiresRestartForReplacement(
+          { metadata: {} },
+          path.join(os.tmpdir(), "missing-package"),
+        ),
+      ).toBe(false);
+    });
+
+    it("also defers a flagged new generation when no loaded copy was replaced", () => {
+      expect(
+        packageManager.shouldWaitForRestart({ requiresRestartOnUpdate: true }, { replaced: false }),
+      ).toBe(true);
+      expect(packageManager.shouldWaitForRestart({}, { requiresRestart: true })).toBe(true);
+      expect(packageManager.shouldWaitForRestart({}, { replaced: false })).toBe(false);
     });
   });
 
@@ -634,26 +714,51 @@ describe("PackageManager", function () {
       expect(source).toContain("lumine-code/hydrogen-next");
     });
 
-    it("does not block install completion on a package that defers activation", function () {
-      spyOn(lumine.packages, "loadPackage");
+    it("starts a newly installed package through the ordinary bootstrap", async function () {
+      spyOn(lumine.packages, "loadPackage").and.returnValue({ name: "new-package" });
       spyOn(lumine.packages, "isPackageDisabled").and.returnValue(false);
-      // A package with activationCommands/hooks never resolves activatePackage
-      // until its trigger fires; the install must not await that.
-      spyOn(lumine.packages, "activatePackage").and.returnValue(new Promise(() => {}));
+      spyOn(lumine.packages, "startPackage").and.returnValue(Promise.resolve());
 
-      const result = packageManager.activateInstalledPackage("deferred-package", { theme: false });
+      const result = packageManager.activateInstalledPackage("new-package", { theme: false });
 
-      expect(lumine.packages.loadPackage).toHaveBeenCalledWith("deferred-package");
-      expect(lumine.packages.activatePackage).toHaveBeenCalledWith("deferred-package");
-      // Returns synchronously — it must not await the (never-resolving) activation.
-      expect(result).toBeUndefined();
+      expect(lumine.packages.loadPackage).toHaveBeenCalledWith("new-package");
+      expect(lumine.packages.startPackage).toHaveBeenCalledWith("new-package");
+      await expectAsync(result).toBeResolved();
+    });
+
+    it("restores a loaded replacement through the core reconciler", async () => {
+      spyOn(lumine.packages, "refreshPackageIndex");
+      spyOn(lumine.packages, "reconcilePackage").and.returnValue(Promise.resolve({}));
+      spyOn(lumine.packages, "startPackage");
+
+      await packageManager.activateInstalledPackage("new-package", { theme: false }, "loaded");
+
+      expect(lumine.packages.reconcilePackage).toHaveBeenCalledWith("new-package", {
+        lifecycleState: "loaded",
+      });
+      expect(lumine.packages.startPackage).not.toHaveBeenCalled();
+    });
+
+    it("restores an active theme through ThemeManager-backed reconciliation", async () => {
+      spyOn(lumine.packages, "refreshPackageIndex");
+      spyOn(lumine.packages, "reconcilePackage").and.returnValue(Promise.resolve({}));
+
+      await packageManager.activateInstalledPackage("active-theme", { theme: "ui" }, "active");
+
+      expect(lumine.packages.reconcilePackage).toHaveBeenCalledWith("active-theme", {
+        lifecycleState: "active",
+      });
     });
   });
 
   describe("::packageHasSettings", function () {
     it("returns true when the package has config", function () {
-      lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+      const pack = lumine.packages.loadPackage(
+        path.join(__dirname, "fixtures", "package-with-config"),
+      );
+      expect(pack.mainModule).toBeNull();
       expect(packageManager.packageHasSettings("package-with-config")).toBe(true);
+      expect(pack.mainModule).toBeNull();
     });
 
     it("returns false when the package does not have config and doesn't define language grammars", () =>

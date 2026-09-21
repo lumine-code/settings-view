@@ -239,13 +239,6 @@ module.exports = class PackageDetailView {
     this.refs.errorMessage.classList.add("hidden");
   }
 
-  activateConfig() {
-    // Package.activateConfig() is part of the Private package API and should not be used outside of core.
-    if (this.getMatchingLoadedPackage() && !lumine.packages.isPackageActive(this.pack.name)) {
-      this.pack.activateConfig();
-    }
-  }
-
   destroy() {
     this.settingsPanel = this.destroySection(this.settingsPanel);
     this.keymapView = this.destroySection(this.keymapView);
@@ -498,7 +491,6 @@ module.exports = class PackageDetailView {
     this.snippetsView = this.destroySection(this.snippetsView);
     this.docsView = this.destroySection(this.docsView);
 
-    this.activateConfig();
     this.refs.startupTime.style.display = "none";
     this.configSectionsBuilt = this.packageIsEnabled();
 
@@ -853,11 +845,7 @@ module.exports = class PackageDetailView {
   }
 
   openMarkdownFile(path) {
-    if (lumine.packages.isPackageActive("markdown-preview")) {
-      lumine.workspace.open(encodeURI(`markdown-preview://${path}`));
-    } else {
-      lumine.workspace.open(path);
-    }
+    lumine.workspace.open(encodeURI(`markdown-preview://${path}`));
   }
 
   updateFileButtons() {

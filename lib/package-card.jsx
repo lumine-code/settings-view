@@ -781,13 +781,20 @@ module.exports = class PackageCard {
       }),
     );
 
-    const enablementButtonClickHandler = (event) => {
+    const enablementButtonClickHandler = async (event) => {
       event.stopPropagation();
       event.preventDefault();
-      if (this.isDisabled()) {
-        lumine.packages.enablePackage(this.pack.name);
-      } else {
-        lumine.packages.disablePackage(this.pack.name);
+      try {
+        if (this.isDisabled()) {
+          await lumine.packages.enablePackage(this.pack.name);
+        } else {
+          await lumine.packages.disablePackage(this.pack.name);
+        }
+      } catch (error) {
+        lumine.notifications.addError(`Unable to change ${this.pack.name}`, {
+          detail: error.message,
+          dismissable: true,
+        });
       }
     };
     this.refs.enablementButton.addEventListener("click", enablementButtonClickHandler);
@@ -918,6 +925,13 @@ module.exports = class PackageCard {
       this.badgeViews.push(badgeView);
       this.refs.badges.appendChild(badgeView.element);
     }
+  }
+
+  refreshBadges() {
+    if (!this.refs.badges) return;
+    for (const badgeView of this.badgeViews || []) badgeView.destroy();
+    this.refs.badges.textContent = "";
+    this.addBadges();
   }
 
   // The card's own status dots, shown ahead of any catalog badges. States can
@@ -1375,6 +1389,7 @@ module.exports = class PackageCard {
       lumine.packages.onDidDeactivatePackage((pack) => {
         if (pack.name === this.pack.name) {
           this.updateDisabledState();
+          this.refreshBadges();
         }
       }),
     );
@@ -1383,13 +1398,27 @@ module.exports = class PackageCard {
       lumine.packages.onDidActivatePackage((pack) => {
         if (pack.name === this.pack.name) {
           this.updateDisabledState();
+          this.refreshBadges();
         }
+      }),
+    );
+
+    this.disposables.add(
+      lumine.packages.onDidLoadPackage((pack) => {
+        if (pack.name === this.pack.name) this.refreshBadges();
+      }),
+    );
+
+    this.disposables.add(
+      lumine.packages.onDidUnloadPackage((pack) => {
+        if (pack.name === this.pack.name) this.refreshBadges();
       }),
     );
 
     this.disposables.add(
       lumine.config.onDidChange("core.disabledPackages", () => {
         this.updateDisabledState();
+        this.refreshBadges();
       }),
     );
 
@@ -1553,7 +1582,12 @@ module.exports = class PackageCard {
         } else {
           // if a package was disabled before installing it, re-enable it
           if (this.isDisabled()) {
-            lumine.packages.enablePackage(this.pack.name);
+            lumine.packages.enablePackage(this.pack.name).catch((error) => {
+              lumine.notifications.addError(`Unable to enable ${this.pack.name}`, {
+                detail: error.message,
+                dismissable: true,
+              });
+            });
           }
         }
       },

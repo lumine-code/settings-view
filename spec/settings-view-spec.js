@@ -1,7 +1,5 @@
 const path = require("path");
-const main = require("../lib/main");
 const PackageManager = require("../lib/package-manager");
-const recentSettings = require("../lib/recent-settings");
 const scopeContext = require("../lib/scope-context");
 const SnippetsProvider = {
   getSnippets() {
@@ -12,10 +10,14 @@ const SnippetsProvider = {
 const wait = timeoutPromise;
 
 describe("SettingsView", function () {
-  let settingsView = null;
+  let main, recentSettings, settingsView;
   const packageManager = new PackageManager();
 
   beforeEach(async () => {
+    // Package unload deliberately evicts its module tree. Resolve the current
+    // main-module instance instead of retaining the pre-unload singleton.
+    main = require("../lib/main");
+    recentSettings = require("../lib/recent-settings");
     // `openSetting` records into a module singleton, so specs below would
     // otherwise seed the Search panel for every later spec in the run.
     recentSettings.clear();
@@ -39,8 +41,29 @@ describe("SettingsView", function () {
     });
   });
 
+  describe("service lifecycle", () => {
+    it("restores the fallback snippets provider when the service edge disappears", () => {
+      const fallback = settingsView.snippetsProvider.getSnippets;
+      const fallbackPath = settingsView.snippetsProvider.getUserSnippetsPath;
+      const snippets = {
+        getUnparsedSnippets: jasmine.createSpy("get snippets").and.returnValue(["service"]),
+        getUserSnippetsPath: jasmine
+          .createSpy("get user snippets path")
+          .and.returnValue("C:/snippets.json"),
+      };
+
+      const registration = main.consumeSnippets(snippets);
+      expect(settingsView.snippetsProvider.getSnippets()).toEqual(["service"]);
+      expect(settingsView.snippetsProvider.getUserSnippetsPath()).toBe("C:/snippets.json");
+
+      registration.dispose();
+      expect(settingsView.snippetsProvider.getSnippets).toBe(fallback);
+      expect(settingsView.snippetsProvider.getUserSnippetsPath).toBe(fallbackPath);
+    });
+  });
+
   describe("when the package is disabled", function () {
-    it("offers to enable it again from the warning notification", function () {
+    it("offers to enable it again from the warning notification", async function () {
       const notification = { dismiss: jasmine.createSpy("dismiss") };
       spyOn(lumine.notifications, "addWarning").and.returnValue(notification);
       spyOn(lumine.packages, "enablePackage");
@@ -56,6 +79,9 @@ describe("SettingsView", function () {
       options.buttons[0].onDidClick();
       expect(lumine.packages.enablePackage).toHaveBeenCalledWith("settings-view");
       expect(notification.dismiss).toHaveBeenCalled();
+      if (lumine.packages.getPackageLifecycleState("settings-view") === "active") {
+        await lumine.packages.deactivatePackage("settings-view");
+      }
     });
   });
 

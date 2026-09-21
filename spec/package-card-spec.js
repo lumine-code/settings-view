@@ -1268,12 +1268,28 @@ describe("PackageCard", function () {
 
     it("can be disabled if installed", function () {
       setPackageStatusSpies({ installed: true, disabled: false });
-      spyOn(lumine.packages, "disablePackage").and.returnValue(true);
+      spyOn(lumine.packages, "disablePackage").and.returnValue(Promise.resolve());
 
       card = new PackageCard({ name: "test-package" }, new SettingsView(), packageManager);
       expect(card.refs.enablementButton.querySelector(".disable-text").textContent).toBe("Disable");
       card.refs.enablementButton.click();
       expect(lumine.packages.disablePackage).toHaveBeenCalled();
+    });
+
+    it("reports a package enablement failure", async function () {
+      const error = new Error("deactivation failed");
+      setPackageStatusSpies({ installed: true, disabled: false });
+      spyOn(lumine.packages, "disablePackage").and.returnValue(Promise.reject(error));
+      spyOn(lumine.notifications, "addError");
+
+      card = new PackageCard({ name: "test-package" }, new SettingsView(), packageManager);
+      card.refs.enablementButton.click();
+      await Promise.resolve();
+
+      expect(lumine.notifications.addError).toHaveBeenCalledWith("Unable to change test-package", {
+        detail: error.message,
+        dismissable: true,
+      });
     });
 
     it("can be updated", async () => {

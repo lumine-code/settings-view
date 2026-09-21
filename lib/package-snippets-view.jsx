@@ -118,7 +118,17 @@ module.exports = class PackageSnippetsView {
     });
   }
 
-  getSnippets(callback) {
+  async getSnippets(callback) {
+    try {
+      await lumine.packages.requestService("snippets", "^1.0.0");
+    } catch (error) {
+      lumine.notifications.addError("Unable to load snippets", {
+        detail: error.message,
+        dismissable: true,
+      });
+      callback([]);
+      return;
+    }
     const snippetsPackage = lumine.packages.getLoadedPackage("snippets");
     const snippetsModule = snippetsPackage ? snippetsPackage.mainModule : null;
     if (snippetsModule) {

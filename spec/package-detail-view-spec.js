@@ -74,6 +74,17 @@ describe("PackageDetailView", function () {
     expect(renderReadme).toHaveBeenCalledTimes(1);
   });
 
+  it("always routes Markdown files through the deferred preview opener", () => {
+    lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+    const pack = lumine.packages.getLoadedPackage("package-with-config");
+    view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
+    spyOn(lumine.workspace, "open").and.returnValue(Promise.resolve());
+
+    view.openMarkdownFile("/tmp/read me.md");
+
+    expect(lumine.workspace.open).toHaveBeenCalledWith("markdown-preview:///tmp/read%20me.md");
+  });
+
   it("shows every section at once and lists them in the table of contents", () => {
     lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
     const pack = lumine.packages.getLoadedPackage("package-with-config");
@@ -310,7 +321,7 @@ describe("PackageDetailView", function () {
     });
   });
 
-  it("adds the sections when a package that started disabled is enabled", () => {
+  it("adds the sections when a package that started disabled is enabled", async () => {
     const packagePath = path.join(__dirname, "fixtures", "package-with-config");
     lumine.packages.packageDirPaths.push(path.join(__dirname, "fixtures"));
     lumine.config.pushAtKeyPath("core.disabledPackages", "package-with-config");
@@ -329,7 +340,7 @@ describe("PackageDetailView", function () {
 
     // Enabling it loads the package, so its settings appear in the panel that is
     // already open, built from the package that was just loaded.
-    lumine.packages.enablePackage("package-with-config");
+    await lumine.packages.enablePackage("package-with-config");
     expect(view.pack).toBe(lumine.packages.getLoadedPackage("package-with-config"));
     expect(settingsSection()).not.toBeNull();
     expect(settingsSection().querySelector(".control-group")).not.toBeNull();

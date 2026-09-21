@@ -2,5 +2,11 @@
   "theme": "ui",
   "name": "ui-theme-with-config",
   "version": "1.0.0",
-  "main": "./main"
+  "main": "./main",
+  "configSchema": {
+    "setting": {
+      "type": "string",
+      "default": "something"
+    }
+  }
 }

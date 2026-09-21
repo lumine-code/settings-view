@@ -30,8 +30,7 @@
     "You can install packages, themes, and customize your editor in Settings with {{ 'settings-view:open' | keystroke }}"
   ],
   "uriHandler": {
-    "method": "handleURI",
-    "deferActivation": false
+    "method": "handleURI"
   },
   "scripts": {
     "test": "lumine --test spec",
