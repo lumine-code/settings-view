@@ -26,9 +26,6 @@
   "engines": {
     "lumine": "^1.0.0"
   },
-  "backgroundTips": [
-    "You can install packages, themes, and customize your editor in Settings with {{ 'settings-view:open' | keystroke }}"
-  ],
   "uriHandler": {
     "method": "handleURI"
   },
@@ -81,6 +78,13 @@
       "description": "Whether or not to show a settings icon in the Lumine Status Bar.",
       "type": "boolean",
       "default": true
+    }
+  },
+  "providedServices": {
+    "background-tips.provider": {
+      "versions": {
+        "1.0.0": "provideBackgroundTips"
+      }
     }
   },
   "consumedServices": {
