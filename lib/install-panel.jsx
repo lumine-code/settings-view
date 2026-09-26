@@ -870,7 +870,7 @@ module.exports = class InstallPanel {
 
       const editorContainer = document.createElement("div");
       editorContainer.className = "editor-container";
-      const editor = new TextEditor({ mini: true });
+      const editor = lumine.workspace.buildTextEditor({ mini: true });
       editor.setText(source);
       editorContainer.appendChild(editor.element);
       this.sourceEditors.push(editor);

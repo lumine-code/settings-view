@@ -735,6 +735,20 @@ describe("SettingsPanel", () => {
     });
   });
 
+  describe("known scope selectors", () => {
+    it("offers the plain-text grammar without exposing the null fallback", () => {
+      spyOn(lumine.config, "getScopeSelectors").and.returnValue([]);
+      spyOn(lumine.grammars, "getGrammars").and.returnValue([
+        lumine.grammars.nullGrammar,
+        { scopeName: "text.plain" },
+      ]);
+
+      const panel = Object.create(SettingsPanel.prototype);
+      expect(panel.getKnownScopeSelectors()).toContain(".text.plain");
+      expect(panel.getKnownScopeSelectors()).not.toContain(".text.plain.null-grammar");
+    });
+  });
+
   describe("scope context transitions", () => {
     beforeEach(() => {
       lumine.config.setSchema("scope-transition", {

@@ -121,7 +121,7 @@ describe("PackageDetailView", function () {
       grammarFilePath: path.join(pack.path, "grammars", "tree-sitter-test.json"),
       fileTypes: ["tst"],
     };
-    spyOn(lumine.grammars, "getGrammars").and.returnValue([grammar]);
+    spyOn(lumine.grammars, "getGrammars").and.returnValue([lumine.grammars.nullGrammar, grammar]);
     const settingsView = new SettingsView();
     const showToc = spyOn(settingsView, "showTableOfContents").and.callThrough();
 
