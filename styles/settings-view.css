@@ -1322,25 +1322,18 @@
 }
 
 .settings-view .settings-heading-row > .settings-scope-control {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
   flex: 1 1 220px;
   min-width: 220px;
   max-width: 520px;
   margin-left: auto;
 }
 
-.settings-view .settings-target-control {
-  display: flex;
-  align-items: center;
-  gap: var(--component-padding);
+.settings-view .settings-target-checkbox {
   margin: 0;
-}
-
-.settings-view .settings-target-selector {
-  min-width: 140px;
-}
-
-.settings-view .settings-target-description {
-  margin-top: var(--component-padding);
 }
 
 .settings-view .setting-local-unavailable,
@@ -1394,6 +1387,7 @@
 }
 
 .settings-view .settings-scope-error {
+  grid-column: 2;
   margin-top: 6px;
 }
 

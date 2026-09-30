@@ -983,27 +983,42 @@ describe("SettingsPanel", () => {
 
     it("switches editing targets without writing or replacing controls", () => {
       const sizeEditor = editorFor("size");
-      const selector = settingsPanel.element.querySelector(".settings-target-selector");
-      const target = selectBoxForElement(selector);
+      const target = settingsPanel.element.querySelector(".settings-target-checkbox");
       spyOn(lumine.config, "set").and.callThrough();
       spyOn(lumine.config, "unset").and.callThrough();
 
-      expect(target.value).toBe("global");
-      target.setValue("window", { emit: true });
+      expect(target.checked).toBe(false);
+      expect(target.nextElementSibling).toHaveClass("settings-scope-editor");
+      expect(target.getAttribute("aria-label")).toContain("unchecked uses global settings");
+      expect(target.getAttribute("title") || "").toBe("");
+      const tooltips = lumine.tooltips.findTooltips(target);
+      expect(tooltips).toHaveLength(1);
+      expect(tooltips[0].options.title).toContain("until reload or close");
+      expect(tooltips[0].options.title).toContain(
+        "Unchecked: global settings shared by all windows",
+      );
+      expect(tooltips[0].options.trigger).toBe("hover focus");
+      expect(settingsPanel.element.querySelector(".settings-target-description")).toBeNull();
+      expect(settingsPanel.element.textContent).not.toContain("Apply to");
+      target.checked = true;
+      target.dispatchEvent(new Event("change"));
       expect(scopeContext.getTarget()).toBe("window");
       expect(toggleFor("size").hidden).toBe(false);
       expect(toggleFor("size")).not.toBeChecked();
       expect(sizeEditor.isReadOnly()).toBe(true);
-      expect(settingsPanel.element.textContent).toContain("expire when it is reloaded or closed");
-      target.setValue("global", { emit: true });
+      target.checked = false;
+      target.dispatchEvent(new Event("change"));
       advanceClock(sizeEditor.getBuffer().getStoppedChangingDelay());
 
       expect(editorFor("size")).toBe(sizeEditor);
-      expect(settingsPanel.element.querySelector(".settings-target-selector")).toBe(selector);
+      expect(settingsPanel.element.querySelector(".settings-target-checkbox")).toBe(target);
       expect(sizeEditor.isReadOnly()).toBe(false);
       expect(toggleFor("size").hidden).toBe(true);
       expect(lumine.config.set).not.toHaveBeenCalled();
       expect(lumine.config.unset).not.toHaveBeenCalled();
+      settingsPanel.destroy();
+      settingsPanel = null;
+      expect(lumine.tooltips.findTooltips(target)).toHaveLength(0);
     });
 
     it("uses explicit override presence and reveals the latest global value when unchecked", () => {

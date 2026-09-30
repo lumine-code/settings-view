@@ -41,11 +41,11 @@ Commands available in `lumine-workspace`:
 
 ## Usage
 
-Configuration panels have an **Apply to** selector beside the scope field. **Global** saves changes to your config file and shares them with every window. **This window** creates temporary overrides for the current window without saving them; they expire when the window is reloaded or closed. Scope selectors work independently in either target, and project settings keep their existing priority.
+Configuration panels have a checkbox immediately to the left of the scope field. Leave it unchecked to save changes globally in your config file and share them with every window. Check it to create temporary overrides only in this window without saving them; they expire when the window is reloaded or closed. Scope selectors work independently in either target, and project settings keep their existing priority.
 
-In **This window**, check a setting's override checkbox to copy its inherited value, then edit it. Unchecking removes that exact local override and reveals the latest inherited value. A checked checkbox means an override exists even when it equals the inherited value. Settings that require global configuration are disabled with an explanation.
+When editing only this window, check a setting's override checkbox to copy its inherited value, then edit it. Unchecking that setting's checkbox removes its exact local override and reveals the latest inherited value. A checked override checkbox means an override exists even when it equals the inherited value. Settings that require global configuration are disabled with an explanation.
 
-Changing the same setting globally in this window removes its local override. Config file updates arriving from another window preserve local overrides. Existing commands, the Themes panel, package installation, and system integration retain their global behavior. The editing target returns to **Global** after a window reload; closing Settings alone does not remove local overrides.
+Changing the same setting globally in this window removes its local override. Config file updates arriving from another window preserve local overrides. Existing commands, the Themes panel, package installation, and system integration retain their global behavior. The checkbox beside the scope field is unchecked after a window reload; closing Settings alone does not remove local overrides.
 
 ## Services
 
