@@ -1323,16 +1323,16 @@
 
 .settings-view .settings-heading-row > .settings-scope-control {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
-  column-gap: 8px;
+  column-gap: 4px;
   flex: 1 1 220px;
   min-width: 220px;
   max-width: 520px;
   margin-left: auto;
 }
 
-.settings-view .settings-target-checkbox {
+.settings-view input.settings-target-checkbox[type="checkbox"] {
   margin: 0;
 }
 
