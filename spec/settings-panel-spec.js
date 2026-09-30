@@ -7,8 +7,16 @@ const _ = require("@lumine-code/underscore-plus");
 describe("SettingsPanel", () => {
   let settingsPanel = null;
 
-  beforeEach(() => scopeContext.set(null));
-  afterEach(() => scopeContext.set(null));
+  beforeEach(() => {
+    scopeContext.set(null);
+    scopeContext.setTarget("global");
+  });
+  afterEach(() => {
+    settingsPanel?.destroy();
+    settingsPanel = null;
+    scopeContext.set(null);
+    scopeContext.setTarget("global");
+  });
 
   describe("sorted settings", () => {
     beforeEach(() => {
@@ -934,6 +942,288 @@ describe("SettingsPanel", () => {
       expect(
         lumine.config.inspect("scope-test.enabled", { scopeSelector: ".source.js" }).hasOverride,
       ).toBe(false);
+    });
+  });
+
+  describe("window-local settings", () => {
+    const namespace = "window-settings";
+    const key = (name) => `${namespace}.${name}`;
+    const groupFor = (name) =>
+      settingsPanel.element.querySelector(`.control-group[data-setting-key="${key(name)}"]`);
+    const editorFor = (name) =>
+      settingsPanel.element.querySelector(`[id="${key(name)}"]`).getModel();
+    const toggleFor = (name) => groupFor(name).querySelector(":scope > .scope-override-toggle");
+    const setOverride = (name, checked) => {
+      const toggle = toggleFor(name);
+      toggle.checked = checked;
+      toggle.dispatchEvent(new Event("change"));
+    };
+
+    beforeEach(() => {
+      lumine.config.resetUserSettings({});
+      lumine.config.setSchema(namespace, {
+        type: "object",
+        properties: {
+          enabled: { type: "boolean", default: true, scopeResolution: "grammar" },
+          size: { type: "integer", default: 12, minimum: 1, maximum: 100 },
+          names: { type: "array", items: { type: "string" }, default: ["one"] },
+          choice: { type: "string", enum: ["one", "two"], default: "one" },
+          radio: { type: "string", enum: ["one", "two"], radio: true, default: "one" },
+          color: { type: "color", default: "#010203" },
+          globalOnly: { type: "string", allowLocal: false, default: "global" },
+          nested: {
+            type: "object",
+            allowLocal: false,
+            properties: { value: { type: "string", default: "nested" } },
+          },
+        },
+      });
+      settingsPanel = new SettingsPanel({ namespace, includeTitle: false });
+    });
+
+    it("switches editing targets without writing or replacing controls", () => {
+      const sizeEditor = editorFor("size");
+      const selector = settingsPanel.element.querySelector(".settings-target-selector");
+      const target = selectBoxForElement(selector);
+      spyOn(lumine.config, "set").and.callThrough();
+      spyOn(lumine.config, "unset").and.callThrough();
+
+      expect(target.value).toBe("global");
+      target.setValue("window", { emit: true });
+      expect(scopeContext.getTarget()).toBe("window");
+      expect(toggleFor("size").hidden).toBe(false);
+      expect(toggleFor("size")).not.toBeChecked();
+      expect(sizeEditor.isReadOnly()).toBe(true);
+      expect(settingsPanel.element.textContent).toContain("expire when it is reloaded or closed");
+      target.setValue("global", { emit: true });
+      advanceClock(sizeEditor.getBuffer().getStoppedChangingDelay());
+
+      expect(editorFor("size")).toBe(sizeEditor);
+      expect(settingsPanel.element.querySelector(".settings-target-selector")).toBe(selector);
+      expect(sizeEditor.isReadOnly()).toBe(false);
+      expect(toggleFor("size").hidden).toBe(true);
+      expect(lumine.config.set).not.toHaveBeenCalled();
+      expect(lumine.config.unset).not.toHaveBeenCalled();
+    });
+
+    it("uses explicit override presence and reveals the latest global value when unchecked", () => {
+      lumine.config.set(key("size"), 24);
+      scopeContext.setTarget("window");
+      expect(editorFor("size").getPlaceholderText()).toBe("Default: 24");
+      setOverride("size", true);
+      expect(toggleFor("size")).toBeChecked();
+      expect(editorFor("size").getText()).toBe("24");
+      expect(settingsPanel.isDefault(key("size"))).toBe(false);
+
+      lumine.config.resetUserSettings({ "*": { [namespace]: { size: 30 } } });
+      expect(lumine.config.get(key("size"))).toBe(24);
+      setOverride("size", false);
+      expect(lumine.config.get(key("size"))).toBe(30);
+      expect(toggleFor("size")).not.toBeChecked();
+      expect(editorFor("size").getPlaceholderText()).toBe("Default: 30");
+    });
+
+    it("shows original global values and clears the matching local override on a global write", () => {
+      lumine.config.set(key("size"), 24);
+      lumine.config.set(key("size"), 40, { local: true });
+      expect(editorFor("size").getText()).toBe("24");
+      expect(groupFor("size").querySelector(".setting-local-override").hidden).toBe(false);
+      settingsPanel.set(key("size"), 28);
+      expect(lumine.config.get(key("size"))).toBe(28);
+      expect(lumine.config.inspect(key("size"), { local: true }).hasOverride).toBe(false);
+      expect(groupFor("size").querySelector(".setting-local-override").hidden).toBe(true);
+    });
+
+    it("keeps local base and scoped overrides separate from global scoped declarations", () => {
+      lumine.config.set(key("size"), 16, { scopeSelector: ".source.js" });
+      lumine.config.set(key("size"), 20, { local: true });
+      scopeContext.setTarget("window");
+      scopeContext.set(".source.js");
+      expect(toggleFor("size")).not.toBeChecked();
+      expect(editorFor("size").getPlaceholderText()).toBe("Default: 16");
+      setOverride("size", true);
+      settingsPanel.set(key("size"), 32);
+      lumine.config.set(key("size"), 36, { local: true, scopeSelector: ".source.python" });
+      setOverride("size", false);
+
+      expect(lumine.config.get(key("size"), { scope: ["source.js"] })).toBe(16);
+      expect(lumine.config.get(key("size"), { scope: ["source.python"] })).toBe(36);
+      expect(lumine.config.get(key("size"))).toBe(20);
+      expect(
+        lumine.config.inspect(key("size"), { scopeSelector: ".source.js", local: false })
+          .overrideValue,
+      ).toBe(16);
+    });
+
+    it("keeps project precedence while displaying the editable local value", () => {
+      lumine.project.replace({ originPath: "TEST", config: { [namespace]: { size: 50 } } });
+      scopeContext.setTarget("window");
+      setOverride("size", true);
+      settingsPanel.set(key("size"), 20);
+      expect(lumine.config.get(key("size"))).toBe(50);
+      expect(editorFor("size").getText()).toBe("20");
+      expect(groupFor("size").querySelector(".setting-override-warning").style.display).toBe(
+        "block",
+      );
+    });
+
+    it("targets checkbox, enum, radio and array writes to this window", () => {
+      scopeContext.setTarget("window");
+      for (const name of ["enabled", "choice", "radio", "names"]) setOverride(name, true);
+      const checkbox = settingsPanel.element.querySelector(`[id="${key("enabled")}"]`);
+      checkbox.checked = false;
+      checkbox.dispatchEvent(new Event("change"));
+      selectBoxForElement(settingsPanel.element.querySelector(`[id="${key("choice")}"]`)).setValue(
+        "two",
+        { emit: true },
+      );
+      const radio = settingsPanel.element.querySelector(
+        `input[name="${key("radio")}"][value="two"]`,
+      );
+      radio.checked = true;
+      radio.dispatchEvent(new Event("change"));
+      const names = editorFor("names");
+      names.setText("two, three");
+      advanceClock(names.getBuffer().getStoppedChangingDelay());
+
+      expect(lumine.config.inspect(key("enabled"), { local: true }).overrideValue).toBe(false);
+      expect(lumine.config.inspect(key("choice"), { local: true }).overrideValue).toBe("two");
+      expect(lumine.config.inspect(key("radio"), { local: true }).overrideValue).toBe("two");
+      expect(lumine.config.inspect(key("names"), { local: true }).overrideValue).toEqual([
+        "two",
+        "three",
+      ]);
+      for (const name of ["enabled", "choice", "radio", "names"]) {
+        expect(lumine.config.inspect(key(name), { local: false }).hasOverride).toBe(false);
+      }
+    });
+
+    it("disables global-only settings including inherited parent restrictions", () => {
+      scopeContext.setTarget("window");
+      for (const name of ["globalOnly", "nested.value"]) {
+        expect(editorFor(name).isReadOnly()).toBe(true);
+        expect(toggleFor(name).disabled).toBe(true);
+        const reason = groupFor(name).querySelector(".setting-local-unavailable");
+        expect(reason.hidden).toBe(false);
+        expect(reason.textContent).toBe("This setting can only be changed globally.");
+      }
+      scopeContext.setTarget("global");
+      expect(editorFor("globalOnly").isReadOnly()).toBe(false);
+      expect(groupFor("globalOnly").querySelector(".setting-local-unavailable").hidden).toBe(true);
+    });
+
+    it("flushes a pending mini-editor edit to its original target before a target change", () => {
+      const size = editorFor("size");
+      size.setText("27");
+      spyOn(lumine.config, "set").and.callThrough();
+      scopeContext.setTarget("window");
+      expect(lumine.config.inspect(key("size"), { local: false }).overrideValue).toBe(27);
+      expect(lumine.config.inspect(key("size"), { local: true }).hasOverride).toBe(false);
+      advanceClock(size.getBuffer().getStoppedChangingDelay());
+      expect(lumine.config.set.calls.count()).toBe(1);
+    });
+
+    it("captures both target and selector for a pending mini-editor edit", () => {
+      scopeContext.setTarget("window");
+      scopeContext.set(".source.js");
+      setOverride("size", true);
+      const size = editorFor("size");
+      size.setText("35");
+      scopeContext.set(".source.python");
+      scopeContext.setTarget("global");
+      advanceClock(size.getBuffer().getStoppedChangingDelay());
+      expect(
+        lumine.config.inspect(key("size"), { local: true, scopeSelector: ".source.js" })
+          .overrideValue,
+      ).toBe(35);
+      expect(
+        lumine.config.inspect(key("size"), { local: true, scopeSelector: ".source.python" })
+          .hasOverride,
+      ).toBe(false);
+      expect(
+        lumine.config.inspect(key("size"), { local: false, scopeSelector: ".source.js" })
+          .hasOverride,
+      ).toBe(false);
+    });
+
+    it("captures both target and selector for a debounced color edit", () => {
+      scopeContext.setTarget("window");
+      scopeContext.set(".source.js");
+      setOverride("color", true);
+      const color = settingsPanel.element.querySelector(`[id="${key("color")}"]`);
+      color.value = "#abcdef";
+      color.dispatchEvent(new Event("change"));
+      scopeContext.setTarget("global");
+      scopeContext.set(".source.python");
+      advanceClock(100);
+      expect(
+        lumine.config
+          .inspect(key("color"), { local: true, scopeSelector: ".source.js" })
+          .overrideValue.toHexString(),
+      ).toBe("#abcdef");
+      expect(
+        lumine.config.inspect(key("color"), { local: false, scopeSelector: ".source.js" })
+          .hasOverride,
+      ).toBe(false);
+    });
+
+    for (const { target, selector } of [
+      { target: "window", selector: null },
+      { target: "window", selector: ".source.js" },
+      { target: "global", selector: ".source.js" },
+    ]) {
+      it(`does not recreate a removed ${target} ${selector || "base"} override after a pending mini-editor edit`, () => {
+        scopeContext.setTarget(target);
+        scopeContext.set(selector);
+        setOverride("size", true);
+        const size = editorFor("size");
+        size.setText("35");
+        setOverride("size", false);
+        const options = { local: target === "window", scopeSelector: selector };
+
+        expect(lumine.config.inspect(key("size"), options).hasOverride).toBe(false);
+        advanceClock(size.getBuffer().getStoppedChangingDelay());
+        expect(lumine.config.inspect(key("size"), options).hasOverride).toBe(false);
+        expect(toggleFor("size")).not.toBeChecked();
+        expect(size.isReadOnly()).toBe(true);
+      });
+
+      it(`does not recreate a removed ${target} ${selector || "base"} override after a pending color edit`, () => {
+        scopeContext.setTarget(target);
+        scopeContext.set(selector);
+        setOverride("color", true);
+        const color = settingsPanel.element.querySelector(`[id="${key("color")}"]`);
+        color.value = "#abcdef";
+        color.dispatchEvent(new Event("change"));
+        setOverride("color", false);
+        const options = { local: target === "window", scopeSelector: selector };
+
+        expect(lumine.config.inspect(key("color"), options).hasOverride).toBe(false);
+        advanceClock(100);
+        expect(lumine.config.inspect(key("color"), options).hasOverride).toBe(false);
+        expect(toggleFor("color")).not.toBeChecked();
+        expect(color.disabled).toBe(true);
+      });
+    }
+
+    it("does not write when inherited mini-editor values receive focus or blur", () => {
+      const size = editorFor("size");
+      spyOn(lumine.config, "set").and.callThrough();
+      size.element.dispatchEvent(new Event("focus"));
+      advanceClock(size.getBuffer().getStoppedChangingDelay());
+      size.element.dispatchEvent(new Event("blur"));
+      advanceClock(size.getBuffer().getStoppedChangingDelay());
+      scopeContext.setTarget("window");
+      scopeContext.setTarget("global");
+      advanceClock(size.getBuffer().getStoppedChangingDelay());
+      expect(lumine.config.set).not.toHaveBeenCalled();
+    });
+
+    it("retains local overrides when the settings panel is destroyed", () => {
+      lumine.config.set(key("size"), 42, { local: true });
+      settingsPanel.destroy();
+      settingsPanel = null;
+      expect(lumine.config.get(key("size"))).toBe(42);
     });
   });
 });

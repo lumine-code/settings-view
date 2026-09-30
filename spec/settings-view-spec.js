@@ -1,6 +1,6 @@
 const path = require("path");
 const PackageManager = require("../lib/package-manager");
-const scopeContext = require("../lib/scope-context");
+let scopeContext;
 const SnippetsProvider = {
   getSnippets() {
     return {};
@@ -17,6 +17,8 @@ describe("SettingsView", function () {
     // Package unload deliberately evicts its module tree. Resolve the current
     // main-module instance instead of retaining the pre-unload singleton.
     main = require("../lib/main");
+    scopeContext = require("../lib/scope-context");
+    scopeContext.setTarget("global");
     recentSettings = require("../lib/recent-settings");
     // `openSetting` records into a module singleton, so specs below would
     // otherwise seed the Search panel for every later spec in the run.
@@ -67,8 +69,10 @@ describe("SettingsView", function () {
       const notification = { dismiss: jasmine.createSpy("dismiss") };
       spyOn(lumine.notifications, "addWarning").and.returnValue(notification);
       spyOn(lumine.packages, "enablePackage");
+      lumine.config.set("editor.fontSize", 37, { local: true });
 
       main.deactivate();
+      expect(lumine.config.get("editor.fontSize")).toBe(37);
 
       const [message, options] = lumine.notifications.addWarning.calls.mostRecent().args;
       expect(message).toContain("disabled the settings-view package");
@@ -102,6 +106,20 @@ describe("SettingsView", function () {
       expect(scopeContext.get()).toBe(".source.python");
       expect(newSettingsView.getURI()).toContain("scope=.source.python");
       newSettingsView.destroy();
+    });
+
+    it("keeps the editing target out of serialized state and Settings URIs", () => {
+      scopeContext.set(".source.python");
+      const originalURI = settingsView.getURI();
+      scopeContext.setTarget("window");
+      const state = settingsView.serialize();
+      expect(state.target).toBeUndefined();
+      expect(state.local).toBeUndefined();
+      expect(state.uri).not.toContain("target=");
+      expect(state.uri).not.toContain("local=");
+      expect(state.uri).toBe(originalURI);
+      expect(new scopeContext.constructor().getTarget()).toBe("global");
+      scopeContext.setTarget("global");
     });
 
     it("shows the previously active panel if it is added after deserialization", async () => {

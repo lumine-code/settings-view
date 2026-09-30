@@ -1328,6 +1328,26 @@
   margin-left: auto;
 }
 
+.settings-view .settings-target-control {
+  display: flex;
+  align-items: center;
+  gap: var(--component-padding);
+  margin: 0;
+}
+
+.settings-view .settings-target-selector {
+  min-width: 140px;
+}
+
+.settings-view .settings-target-description {
+  margin-top: var(--component-padding);
+}
+
+.settings-view .setting-local-unavailable,
+.settings-view .setting-local-override {
+  margin-top: 6px;
+}
+
 .settings-view .predefined-values-editor {
   position: relative;
   width: 100%;
