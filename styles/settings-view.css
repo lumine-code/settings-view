@@ -1399,17 +1399,22 @@
   position: relative;
 }
 
+/* Scope controls belong inside the panel, including compact themes and docks. */
+.settings-view .settings-panel .section-body {
+  padding-left: var(--settings-scope-gutter);
+}
+
 .settings-view .scope-has-toggle > .scope-override-toggle {
   position: absolute;
   top: 3px;
-  left: calc(-2.25em - var(--scope-indent, 0px));
+  left: calc(-1 * var(--settings-scope-gutter) - var(--scope-indent, 0px));
   margin: 0;
 }
 
 .settings-view .scope-has-toggle > .scope-resolution-indicator {
   position: absolute;
   top: 3px;
-  left: calc(-2.25em - var(--scope-indent, 0px));
+  left: calc(-1 * var(--settings-scope-gutter) - var(--scope-indent, 0px));
   display: flex;
   align-items: center;
   justify-content: center;

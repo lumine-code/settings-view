@@ -15,6 +15,8 @@
 }
 
 .settings-view {
+  /* Reserve a 16px scope control and its 8px gap independently of theme padding. */
+  --settings-scope-gutter: 24px;
   --package-card-background-color: hsl(from var(--tool-panel-background-color) h s calc(l + 8));
   --package-card-disabled-background-color: hsl(
     from var(--package-card-background-color) h s calc(l - 3)
