@@ -375,19 +375,12 @@
 
   .sub-section {
     .sub-section-heading {
-      position: sticky;
-      top: -1px; /* -1px fixes a rounding issue on retina screens */
-      z-index: 1;
       margin: 0;
       padding: var(--component-padding) 0;
       font-size: 1.4em;
       font-weight: bold;
       line-height: 1;
       color: var(--text-color-highlight);
-      /* Opaque so the settings it pins scroll under it — and the same surface
-         the panel is painted in (`& > .panels` in ui-contract.css), so a
-         theme that shades level 2 does not get a lighter band per heading. */
-      background-color: var(--level-2-color);
       -webkit-user-select: none;
 
       &.has-items {

@@ -56,7 +56,7 @@
 
   /* Cards ------------------------------ */
 
-  /* Breathing room between the last card and the next sticky heading. A
+  /* Breathing room between the last card and the next heading. A
      collapsed or empty section shows no card, so it keeps only the spacing the
      headings carry themselves — otherwise a section listing nothing opens a
      hole its neighbours do not. `:not()` weighs its most specific argument, so
