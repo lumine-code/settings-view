@@ -29,6 +29,60 @@ describe("SettingsView", function () {
     await conditionPromise(() => settingsView.initializePanels.calls.count() > 0);
   });
 
+  describe("destruction", () => {
+    beforeEach(async () => {
+      await settingsView.destroy();
+      lumine.config.set("settings-view.enableSettingsSearch", true);
+      lumine.config.set("settings-view.searchSettingsMinimumScore", 0.05);
+      settingsView = main.createSettingsView({});
+      settingsView.initializePanels();
+    });
+
+    afterEach(() => settingsView.destroy());
+
+    it("destroys panels only once while DOM cleanup is pending", async () => {
+      const searchPanel = settingsView.panelsByName.Search;
+      spyOn(searchPanel, "destroy").and.callThrough();
+
+      const destruction = settingsView.destroy();
+      expect(settingsView.destroy()).toBe(destruction);
+      expect(searchPanel.destroy.calls.count()).toBe(1);
+      await destruction;
+    });
+
+    it("can close the pane after package deactivation has destroyed the search DOM", async () => {
+      const pane = lumine.workspace.getActivePane().splitRight({ items: [settingsView] });
+      const searchPanel = settingsView.panelsByName.Search;
+      recentSettings.add("editor.fontSize");
+      searchPanel.renderRecentSettings();
+      searchPanel.refs.searchEditor.setText("font");
+      searchPanel.matchSettings();
+      expect(searchPanel.searchResults.length).toBeGreaterThan(0);
+      expect(searchPanel.recentViews.length).toBe(1);
+      spyOn(searchPanel, "destroy").and.callThrough();
+
+      main.deactivate();
+      await lumine.views.getNextUpdatePromise();
+      expect(searchPanel.refs.searchResults).toBeUndefined();
+      expect(searchPanel.refs.recentResults).toBeUndefined();
+
+      expect(() => pane.destroy()).not.toThrow();
+      expect(searchPanel.destroy.calls.count()).toBe(1);
+      expect(searchPanel.searchResults).toEqual([]);
+      expect(searchPanel.recentViews).toEqual([]);
+    });
+
+    it("skips deferred panel initialization after destruction", async () => {
+      const view = main.createSettingsView({});
+      const destruction = view.destroy();
+
+      view.initializePanels();
+      expect(Object.keys(view.panelsByName)).toEqual([]);
+      await destruction;
+      expect(() => view.initializePanels()).not.toThrow();
+    });
+  });
+
   describe("when a package operation fails", function () {
     it("surfaces the failure as a single editor notification with the stderr detail", async () => {
       spyOn(lumine.notifications, "addError").and.callThrough();

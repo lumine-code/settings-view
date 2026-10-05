@@ -103,6 +103,9 @@ module.exports = class SettingsView {
   update() {}
 
   destroy() {
+    // Package deactivation and pane teardown can both destroy the same view.
+    // Etch handles repeated DOM cleanup, but our panels must be disposed once.
+    if (this.destroyed) return etch.destroy(this);
     this.destroyed = true;
     clearTimeout(this.revealSettingTimeout);
     this.disposables.dispose();
@@ -150,7 +153,7 @@ module.exports = class SettingsView {
   }
 
   initializePanels() {
-    if (this.refs.panels.children.length > 1) {
+    if (this.destroyed || this.refs.panels.children.length > 1) {
       return;
     }
 
