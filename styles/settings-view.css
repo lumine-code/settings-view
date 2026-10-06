@@ -35,8 +35,8 @@
 }
 
 .settings-view {
-  --section-padding: calc(2 * var(--component-padding));
-  --breadcrumb-padding: calc(2 * var(--component-padding));
+  --section-padding: calc(2 * var(--ui-spacing));
+  --breadcrumb-padding: calc(2 * var(--ui-spacing));
 
   --settings-view-alert-info-dark-flag: hsl(
     from color-mix(in srgb, var(--background-color-info) 10%, var(--base-background-color)) 0 0
@@ -182,7 +182,7 @@
   }
 
   .select-box.form-control {
-    font-size: var(--ui-input-size);
+    font-size: var(--ui-input-font-size);
     color: var(--text-color);
     border-color: var(--button-border-color);
     background-color: var(--button-background-color);
@@ -257,7 +257,7 @@
   }
 
   .editor-container {
-    margin: calc(var(--component-padding) * 2) 0;
+    margin: calc(var(--ui-spacing) * 2) 0;
     &:last-child {
       margin-bottom: 0;
     }
@@ -310,7 +310,7 @@
   .languages-panel section.section.settings-panel {
     padding: 0;
     border-top: none;
-    margin-top: calc(var(--component-padding) * 3);
+    margin-top: calc(var(--ui-spacing) * 3);
   }
 
   .section-container {
@@ -319,8 +319,8 @@
     &.updates-container {
       .package-container {
         > .row {
-          margin-left: calc(-1 * var(--component-padding));
-          margin-right: calc(-1 * var(--component-padding));
+          margin-left: calc(-1 * var(--ui-spacing));
+          margin-right: calc(-1 * var(--ui-spacing));
         }
       }
       .native-key-bindings,
@@ -332,7 +332,7 @@
 
   section .section-heading,
   .section .section-heading {
-    margin-bottom: calc(var(--component-padding) * 2);
+    margin-bottom: calc(var(--ui-spacing) * 2);
     color: var(--text-color-highlight);
     font-size: 1.75em;
     font-weight: bold;
@@ -347,7 +347,7 @@
   .sub-section-heading.icon:before,
   .sub-section-heading.has-items:before,
   .section-heading.icon:before {
-    margin-right: calc(var(--component-padding) * 0.8);
+    margin-right: calc(var(--ui-spacing) * 0.8);
   }
 
   /* Section headings run 1.75em against the icon contract's 16px box, so
@@ -376,7 +376,7 @@
   .sub-section {
     .sub-section-heading {
       margin: 0;
-      padding: var(--component-padding) 0;
+      padding: var(--ui-spacing) 0;
       font-size: 1.4em;
       font-weight: bold;
       line-height: 1;
@@ -414,8 +414,8 @@
     }
 
     .sub-section-body {
-      margin-top: var(--component-padding);
-      margin-bottom: calc(var(--component-padding) * 3);
+      margin-top: var(--ui-spacing);
+      margin-bottom: calc(var(--ui-spacing) * 3);
       margin-left: 6px;
       padding-left: 14px;
       border-left: 1px solid var(--base-border-color);
@@ -479,11 +479,11 @@
   }
 
   .link {
-    color: var(--accent-only-text-color);
+    color: var(--accent-link-color);
 
     &:hover,
     &:focus {
-      color: hsl(from var(--accent-only-text-color) h s calc(l + 4));
+      color: hsl(from var(--accent-link-color) h s calc(l + 4));
     }
   }
 
@@ -493,7 +493,7 @@
     max-width: 240px;
     -webkit-user-select: none;
     user-select: none;
-    padding-top: var(--component-padding);
+    padding-top: var(--ui-spacing);
     background-color: hsl(from var(--base-background-color) h s calc(l + 2));
     border-right: 1px solid var(--base-border-color);
     /* Column layout so the panel menu and button stay put and only the TOC
@@ -516,8 +516,8 @@
        nav-stacked) styling, like the panels menu. */
     .config-toc {
       border-top: 1px solid var(--base-border-color);
-      padding-top: calc(var(--component-padding) / 2);
-      padding-bottom: var(--component-padding);
+      padding-top: calc(var(--ui-spacing) / 2);
+      padding-bottom: var(--ui-spacing);
       /* Only the TOC scrolls; the panel menu above stays fixed. */
       flex: 1 1 auto;
       min-height: 0;
@@ -678,7 +678,7 @@
     }
 
     .grammar-filetypes {
-      margin-top: var(--component-padding);
+      margin-top: var(--ui-spacing);
     }
 
     .input-radio-group .input-label {
@@ -698,8 +698,8 @@
       /* Keep the left padding inside the 100% width; without border-box the
          padding is added on top and the right edge overflows (clipped). */
       box-sizing: border-box;
-      padding-top: var(--component-padding);
-      padding-left: var(--component-padding);
+      padding-top: var(--ui-spacing);
+      padding-left: var(--ui-spacing);
 
       td {
         white-space: nowrap;
@@ -779,7 +779,7 @@
     }
 
     .update-message {
-      padding-right: var(--component-padding);
+      padding-right: var(--ui-spacing);
     }
 
     .link {
@@ -788,27 +788,27 @@
 
     .link,
     .text {
-      margin: 0 15px var(--component-padding) 15px;
+      margin: 0 15px var(--ui-spacing) 15px;
     }
 
     .startup-time {
-      margin: var(--component-padding) 0 0 0;
+      margin: var(--ui-spacing) 0 0 0;
     }
   }
 
   .themes-panel {
     .control-group {
-      margin-top: calc(var(--component-padding) * 3);
+      margin-top: calc(var(--ui-spacing) * 3);
     }
     .themes-picker {
       display: flex;
       flex-wrap: wrap;
-      margin: 0 calc(-1 * var(--component-padding));
+      margin: 0 calc(-1 * var(--ui-spacing));
     }
     .themes-picker-item {
       flex: 1;
       min-width: 320px; /* Enough for the UI Theme description */
-      padding: 0 var(--component-padding);
+      padding: 0 var(--ui-spacing);
       .controls {
         height: 100%;
         display: flex;
@@ -826,13 +826,13 @@
       justify-content: flex-start;
     }
     .theme-pair-select {
-      margin-top: var(--component-padding);
+      margin-top: var(--ui-spacing);
       .theme-description {
-        margin-bottom: calc(var(--component-padding) / 2);
+        margin-bottom: calc(var(--ui-spacing) / 2);
       }
     }
     .theme-active-badge {
-      margin-left: calc(var(--component-padding) / 2);
+      margin-left: calc(var(--ui-spacing) / 2);
       vertical-align: middle;
     }
   }
@@ -847,7 +847,7 @@
     }
 
     .theme-chooser {
-      padding-top: calc(var(--component-padding) * 2);
+      padding-top: calc(var(--ui-spacing) * 2);
     }
 
     .theme-description {
@@ -862,42 +862,42 @@
     /* Space the first card from the search row (the browse message that
        normally provides this gap is hidden once cards render). */
     .package-container:not(:empty) {
-      margin-top: calc(var(--component-padding) * 2);
+      margin-top: calc(var(--ui-spacing) * 2);
     }
 
     .search-container {
       display: flex;
       flex-wrap: wrap;
-      margin: 0 calc(var(--component-padding) / -2);
-      padding-top: calc(var(--component-padding) * 1.5);
+      margin: 0 calc(var(--ui-spacing) / -2);
+      padding-top: calc(var(--ui-spacing) * 1.5);
 
       .editor-container {
         flex: 1;
         min-width: 130px;
-        margin: calc(var(--component-padding) / 2);
+        margin: calc(var(--ui-spacing) / 2);
       }
 
       .btn-group {
-        margin: calc(var(--component-padding) / 2);
+        margin: calc(var(--ui-spacing) / 2);
         padding-left: 1px; /* Counter balance since btns have margin-left: -1px */
       }
     }
 
     .search-message {
-      margin: var(--component-padding) 0 0;
+      margin: var(--ui-spacing) 0 0;
     }
   }
 
   .btn-retry {
-    margin-left: var(--component-padding);
+    margin-left: var(--ui-spacing);
   }
 
   .readme {
-    margin-top: var(--component-padding);
+    margin-top: var(--ui-spacing);
   }
 
   .panel-heading .label {
-    margin-left: var(--component-padding);
+    margin-left: var(--ui-spacing);
   }
 
   .loading-area {
@@ -911,13 +911,13 @@
   }
 
   .error-view {
-    margin: var(--component-padding) 0 var(--component-padding) 0;
+    margin: var(--ui-spacing) 0 var(--ui-spacing) 0;
   }
 
   .packages-panel {
     .nav {
       .badge {
-        margin-left: var(--component-icon-padding);
+        margin-left: var(--ui-icon-spacing);
       }
     }
   }
@@ -938,12 +938,12 @@
     }
 
     th {
-      padding: calc(var(--component-padding) - 2px) var(--component-padding);
+      padding: calc(var(--ui-spacing) - 2px) var(--ui-spacing);
       padding-left: 0;
     }
 
     td {
-      height: var(--component-line-height);
+      height: var(--ui-control-height);
     }
 
     td,
@@ -981,7 +981,7 @@
 
     td,
     th {
-      padding: 0 var(--component-padding) calc(var(--component-padding) / 2) 0;
+      padding: 0 var(--ui-spacing) calc(var(--ui-spacing) / 2) 0;
     }
   }
 }
@@ -1023,12 +1023,12 @@
   }
 
   .update-all-button:last-child {
-    margin-left: calc(var(--component-padding) / 2);
+    margin-left: calc(var(--ui-spacing) / 2);
   }
 
   .keybindings-heading-row {
     display: flex;
-    gap: var(--component-padding);
+    gap: var(--ui-spacing);
     align-items: center;
     justify-content: space-between;
 
@@ -1047,27 +1047,27 @@
 
   .keybindings-actions {
     display: flex;
-    gap: calc(var(--component-padding) / 2);
+    gap: calc(var(--ui-spacing) / 2);
     flex-wrap: wrap;
   }
 
   .keybindings-help {
-    margin: var(--component-padding) 0 0;
+    margin: var(--ui-spacing) 0 0;
   }
 
   .keybindings-search-row {
     display: flex;
-    gap: calc(var(--component-padding) / 2);
+    gap: calc(var(--ui-spacing) / 2);
     align-items: stretch;
 
     .editor-container {
       flex: 1;
-      margin-bottom: var(--component-padding);
+      margin-bottom: var(--ui-spacing);
     }
 
     > .btn {
       flex: none;
-      margin-top: calc(var(--component-padding) * 2);
+      margin-top: calc(var(--ui-spacing) * 2);
     }
   }
 
@@ -1077,8 +1077,8 @@
   }
 
   .keybindings-result-status {
-    min-height: var(--component-line-height);
-    margin: var(--component-padding) 0;
+    min-height: var(--ui-control-height);
+    margin: var(--ui-spacing) 0;
   }
 
   .keybindings-empty-state {
@@ -1165,7 +1165,7 @@
   }
 
   .btn-wrap-group .btn {
-    margin: 0 calc(var(--component-padding) / 2) calc(var(--component-padding) / 2) 0;
+    margin: 0 calc(var(--ui-spacing) / 2) calc(var(--ui-spacing) / 2) 0;
   }
 }
 
@@ -1175,7 +1175,7 @@
   }
 
   .keybindings-actions {
-    margin-top: var(--component-padding);
+    margin-top: var(--ui-spacing);
   }
 
   .keybindings-table {
@@ -1192,20 +1192,20 @@
 
     tr {
       display: block;
-      margin-bottom: var(--component-padding);
-      padding: calc(var(--component-padding) / 2) var(--component-padding);
+      margin-bottom: var(--ui-spacing);
+      padding: calc(var(--ui-spacing) / 2) var(--ui-spacing);
       border: 1px solid var(--base-border-color);
-      border-radius: var(--component-border-radius);
+      border-radius: var(--ui-border-radius);
       background-color: var(--base-background-color);
     }
 
     td {
       display: grid;
       grid-template-columns: 82px minmax(0, 1fr);
-      gap: var(--component-padding);
+      gap: var(--ui-spacing);
       width: 100%;
       height: auto;
-      padding: calc(var(--component-padding) / 2) 0;
+      padding: calc(var(--ui-spacing) / 2) 0;
       white-space: normal;
       overflow: visible;
 
@@ -1237,19 +1237,19 @@
 
     tr {
       display: block;
-      margin-bottom: var(--component-padding);
-      padding: calc(var(--component-padding) / 2) var(--component-padding);
+      margin-bottom: var(--ui-spacing);
+      padding: calc(var(--ui-spacing) / 2) var(--ui-spacing);
       border: 1px solid var(--base-border-color);
-      border-radius: var(--component-border-radius);
+      border-radius: var(--ui-border-radius);
     }
 
     td {
       display: grid;
       grid-template-columns: 82px minmax(0, 1fr);
-      gap: var(--component-padding);
+      gap: var(--ui-spacing);
       width: 100%;
       height: auto;
-      padding: calc(var(--component-padding) / 2) 0;
+      padding: calc(var(--ui-spacing) / 2) 0;
       white-space: normal;
       overflow: visible;
 
@@ -1305,8 +1305,8 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  column-gap: calc(var(--component-padding) * 2);
-  row-gap: var(--component-padding);
+  column-gap: calc(var(--ui-spacing) * 2);
+  row-gap: var(--ui-spacing);
 }
 
 .settings-view .settings-panel .settings-heading-row > .section-heading {
@@ -1358,7 +1358,7 @@
   justify-content: flex-end;
   padding: 0 8px;
   border: 0;
-  border-radius: 0 var(--component-border-radius) var(--component-border-radius) 0;
+  border-radius: 0 var(--ui-border-radius) var(--ui-border-radius) 0;
   color: var(--text-color);
   background: transparent;
   box-shadow: none;

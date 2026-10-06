@@ -2,11 +2,11 @@
   /* TODO: Somehow unify the "card". */
 
   .package-card {
-    padding: calc(var(--component-padding) * 1.5);
-    margin-bottom: var(--component-padding);
+    padding: calc(var(--ui-spacing) * 1.5);
+    margin-bottom: var(--ui-spacing);
     list-style-type: none;
     font-size: 1.2em;
-    border-radius: calc(var(--component-border-radius) * 2);
+    border-radius: calc(var(--ui-border-radius) * 2);
     border: 1px solid var(--base-border-color);
     background-color: var(--package-card-background-color);
     overflow: hidden;
@@ -37,9 +37,9 @@
 
     &.col-lg-4 {
       min-width: 190px;
-      padding: var(--component-padding) 0;
-      padding-left: var(--component-padding);
-      padding-right: var(--component-padding);
+      padding: var(--ui-spacing) 0;
+      padding-left: var(--ui-spacing);
+      padding-right: var(--ui-spacing);
     }
 
     .thumbnail {
@@ -47,7 +47,7 @@
       margin: 0;
       min-height: 140px;
       color: var(--text-color);
-      border-radius: calc(var(--component-border-radius) * 2);
+      border-radius: calc(var(--ui-border-radius) * 2);
       border: 1px solid var(--base-border-color);
       background-color: var(--package-card-background-color);
 
@@ -64,7 +64,7 @@
 
     .package-version {
       font-size: 0.8em;
-      margin-right: var(--component-padding);
+      margin-right: var(--ui-spacing);
     }
 
     /* The SPDX identifier (e.g. "MIT"), to the right of the version control. */
@@ -78,9 +78,9 @@
     .package-repo {
       font-weight: normal;
       color: var(--text-color-subtle);
-      margin-left: var(--component-padding);
+      margin-left: var(--ui-spacing);
       &:hover {
-        color: var(--accent-only-text-color);
+        color: var(--accent-link-color);
         text-decoration: underline;
       }
     }
@@ -97,7 +97,7 @@
     .package-directory {
       font-weight: normal;
       color: var(--text-color-subtle);
-      margin-left: var(--component-padding);
+      margin-left: var(--ui-spacing);
       &:before {
         margin-right: 0.3em;
         position: relative;
@@ -266,14 +266,14 @@
 
     .meta-user {
       flex: 1 0 auto;
-      margin-top: var(--component-padding);
-      margin-right: var(--component-padding);
+      margin-top: var(--ui-spacing);
+      margin-right: var(--ui-spacing);
 
       /* Deliberately `middle` rather than the glyph box's `text-bottom`: a
          round mark reads as sitting low when its box is aligned like a
          glyph's, so it keeps the higher position. */
       .avatar {
-        border-radius: var(--component-border-radius);
+        border-radius: var(--ui-border-radius);
         height: 16px;
         width: 16px;
         display: inline-block;
@@ -282,7 +282,7 @@
 
       .author {
         color: var(--text-color-subtle);
-        margin-left: var(--component-padding);
+        margin-left: var(--ui-spacing);
         &:focus {
           outline: none;
         }
@@ -290,7 +290,7 @@
     }
 
     .meta-controls {
-      margin-top: calc(var(--component-padding) / 2);
+      margin-top: calc(var(--ui-spacing) / 2);
 
       .install-button.is-installing,
       .replace-button.is-installing,
@@ -303,7 +303,7 @@
 
       .status-indicator {
         padding: 0;
-        width: calc(var(--component-padding) / 2);
+        width: calc(var(--ui-spacing) / 2);
         min-width: 4px;
         pointer-events: none;
         transition: background 0.4s;
@@ -319,7 +319,7 @@
       }
 
       .btn-toolbar > .btn-group {
-        margin: calc(var(--component-padding) / 2) 0 0 calc(var(--component-padding) / 2);
+        margin: calc(var(--ui-spacing) / 2) 0 0 calc(var(--ui-spacing) / 2);
       }
     }
 

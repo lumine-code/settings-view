@@ -1,11 +1,11 @@
 .settings-view {
   .search-settings-help {
-    margin: 0 0 var(--component-padding);
+    margin: 0 0 var(--ui-spacing);
   }
 
   .search-settings-input-row {
     display: flex;
-    gap: calc(var(--component-padding) / 2);
+    gap: calc(var(--ui-spacing) / 2);
     align-items: stretch;
 
     .editor-container {
@@ -21,7 +21,7 @@
   .search-settings-filters {
     display: flex;
     flex-wrap: wrap;
-    margin-top: var(--component-padding);
+    margin-top: var(--ui-spacing);
 
     .btn {
       flex: 0 0 auto;
@@ -29,8 +29,8 @@
   }
 
   .search-settings-status {
-    min-height: var(--component-line-height);
-    margin: var(--component-padding) 0;
+    min-height: var(--ui-control-height);
+    margin: var(--ui-spacing) 0;
   }
 
   .search-results {
@@ -38,9 +38,9 @@
   }
 
   .search-result {
-    margin-bottom: var(--component-padding);
+    margin-bottom: var(--ui-spacing);
     border: 1px solid var(--base-border-color);
-    border-radius: calc(var(--component-border-radius) * 2);
+    border-radius: calc(var(--ui-border-radius) * 2);
     background-color: var(--package-card-background-color);
     overflow: hidden;
 
@@ -54,14 +54,14 @@
     }
 
     &:focus-within {
-      border-color: var(--accent-color);
-      box-shadow: 0 0 0 1px var(--accent-color);
+      border-color: var(--accent-indicator-color);
+      box-shadow: 0 0 0 1px var(--accent-indicator-color);
     }
 
     .search-result-link {
       display: block;
-      padding: calc(var(--component-padding) * 1.5);
-      padding-bottom: calc(var(--component-padding) / 2);
+      padding: calc(var(--ui-spacing) * 1.5);
+      padding-bottom: calc(var(--ui-spacing) / 2);
       color: inherit;
       text-decoration: none;
       outline: none;
@@ -69,7 +69,7 @@
 
     .search-result-heading {
       display: flex;
-      gap: var(--component-padding);
+      gap: var(--ui-spacing);
       align-items: baseline;
       justify-content: space-between;
     }
@@ -90,12 +90,12 @@
     }
 
     .search-result-icon {
-      margin-right: calc(var(--component-padding) / 2);
+      margin-right: calc(var(--ui-spacing) / 2);
     }
 
     .search-id {
       display: block;
-      margin-top: calc(var(--component-padding) / 4);
+      margin-top: calc(var(--ui-spacing) / 4);
       color: var(--text-color-subtle);
       font-family: monospace;
       font-size: 0.9em;
@@ -103,10 +103,10 @@
 
     .search-description {
       display: -webkit-box;
-      max-height: calc(var(--component-line-height) * 2);
-      margin: 0 calc(var(--component-padding) * 1.5) calc(var(--component-padding) * 1.5);
+      max-height: calc(var(--ui-control-height) * 2);
+      margin: 0 calc(var(--ui-spacing) * 1.5) calc(var(--ui-spacing) * 1.5);
       color: var(--text-color);
-      line-height: var(--component-line-height);
+      line-height: var(--ui-control-height);
       overflow: hidden;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
@@ -120,7 +120,7 @@
     mark {
       color: var(--text-color-selected);
       background-color: var(--background-color-selected);
-      border-radius: var(--component-border-radius);
+      border-radius: var(--ui-border-radius);
     }
   }
 
@@ -128,14 +128,14 @@
     position: relative;
     z-index: 0;
     isolation: isolate;
-    border-radius: var(--component-border-radius);
+    border-radius: var(--ui-border-radius);
 
     &::before {
       content: "";
       position: absolute;
       z-index: -1;
-      inset: calc(var(--component-padding) / -2);
-      border-radius: calc(var(--component-border-radius) * 2);
+      inset: calc(var(--ui-spacing) / -2);
+      border-radius: calc(var(--ui-border-radius) * 2);
       background: linear-gradient(
         90deg,
         color-mix(in srgb, var(--background-color-highlight) 35%, transparent) 0%,
@@ -172,6 +172,6 @@
 
   .settings-view .search-result .search-package-name {
     display: block;
-    margin-top: calc(var(--component-padding) / 2);
+    margin-top: calc(var(--ui-spacing) / 2);
   }
 }

@@ -15,7 +15,7 @@ lumine-dock.right .settings-view {
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    padding: calc(var(--component-padding) / 2);
+    padding: calc(var(--ui-spacing) / 2);
     min-width: 0;
     max-width: none;
     border: none;
@@ -28,7 +28,7 @@ lumine-dock.right .settings-view {
 
       & > li > a {
         padding: 0 0.5em;
-        border-radius: var(--component-border-radius);
+        border-radius: var(--ui-border-radius);
       }
 
       .icon:before {
@@ -42,8 +42,8 @@ lumine-dock.right .settings-view {
       .icon-link-external {
         font-size: 0;
         width: auto;
-        margin: 0 calc(var(--component-padding) / 2);
-        padding: calc(var(--component-padding) / 4) calc(var(--component-padding) / 2);
+        margin: 0 calc(var(--ui-spacing) / 2);
+        padding: calc(var(--ui-spacing) / 4) calc(var(--ui-spacing) / 2);
         overflow: hidden;
         &:before {
           font-size: 16px;
@@ -60,7 +60,7 @@ lumine-dock.right .settings-view {
   .section,
   .section:first-child,
   .settings-view .section:last-child {
-    padding: calc(var(--component-padding) * 1.5);
+    padding: calc(var(--ui-spacing) * 1.5);
   }
 
   .sub-section:not(.collapsed) .package-container {
@@ -93,7 +93,7 @@ lumine-dock.right .settings-view {
   }
 
   .package-card {
-    padding: var(--component-padding);
+    padding: var(--ui-spacing);
     font-size: inherit;
     background-color: color-mix(
       in srgb,
@@ -150,10 +150,10 @@ lumine-dock.right .settings-view {
 
   .themes-panel {
     .themes-picker-item {
-      margin-top: calc(var(--component-padding) * 1.5);
+      margin-top: calc(var(--ui-spacing) * 1.5);
     }
     .theme-description {
-      margin: calc(var(--component-padding) / 2) 0;
+      margin: calc(var(--ui-spacing) / 2) 0;
     }
   }
 }

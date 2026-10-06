@@ -5,8 +5,8 @@
 
   .config-menu {
     position: relative;
-    min-width: calc(var(--ui-size) * 15);
-    max-width: calc(var(--ui-size) * 20);
+    min-width: calc(var(--ui-unit) * 15);
+    max-width: calc(var(--ui-unit) * 20);
     border-width: 0 1px 0 0;
     border-image: linear-gradient(var(--level-2-color) 10px, var(--base-border-color) 200px) 0 1 0 0
       stretch;
@@ -14,15 +14,15 @@
 
     .btn {
       white-space: initial;
-      font-size: calc(var(--ui-size) * 0.889); /* step -1 of modular scale 1.125 */
+      font-size: calc(var(--ui-unit) * 0.889); /* step -1 of modular scale 1.125 */
       line-height: 1;
-      padding: calc(var(--ui-padding) / 3) calc(var(--ui-padding) / 2);
+      padding: calc(var(--ui-panel-padding) / 3) calc(var(--ui-panel-padding) / 2);
     }
   }
   .nav {
     & > li > a {
-      padding: calc(var(--ui-padding) / 2) var(--ui-padding);
-      line-height: var(--ui-line-height);
+      padding: calc(var(--ui-panel-padding) / 2) var(--ui-panel-padding);
+      line-height: var(--ui-row-height);
     }
   }
 
@@ -35,23 +35,23 @@
   .section,
   .section:first-child,
   .section:last-child {
-    padding: calc(var(--ui-padding) * 3);
+    padding: calc(var(--ui-panel-padding) * 3);
   }
 
   .themes-panel .control-group {
-    margin-top: calc(var(--ui-padding) * 2);
+    margin-top: calc(var(--ui-panel-padding) * 2);
   }
 
   /* Titles ------------------------------ */
 
   .section .section-heading {
-    margin-bottom: calc(var(--ui-padding) / 1.5);
+    margin-bottom: calc(var(--ui-panel-padding) / 1.5);
   }
 
   .sub-section-heading.icon:before,
   .sub-section-heading.has-items:before,
   .section-heading.icon:before {
-    margin-right: var(--ui-padding-icon);
+    margin-right: var(--ui-panel-icon-spacing);
   }
 
   /* Cards ------------------------------ */
@@ -62,13 +62,13 @@
      hole its neighbours do not. `:not()` weighs its most specific argument, so
      naming `.empty` here leaves the dock override above this one. */
   .sub-section:not(.collapsed, .empty) .package-container {
-    padding-bottom: calc(var(--component-padding) * 3);
+    padding-bottom: calc(var(--ui-spacing) * 3);
   }
 
   .package-card {
-    padding: var(--ui-padding);
+    padding: var(--ui-panel-padding);
     .meta-controls .status-indicator {
-      width: calc(var(--ui-padding) / 4);
+      width: calc(var(--ui-panel-padding) / 4);
       &:before {
         content: "\00a0"; /* fixes 0 height */
       }
@@ -82,12 +82,12 @@
   }
 
   .editor-container {
-    margin: var(--ui-padding) 0;
+    margin: var(--ui-panel-padding) 0;
   }
 
   .form-control {
-    font-size: calc(var(--ui-size) * 1.25);
-    height: var(--ui-line-height);
+    font-size: calc(var(--ui-unit) * 1.25);
+    height: var(--ui-row-height);
     padding-top: 0;
     padding-bottom: 0;
   }
@@ -98,22 +98,22 @@
 
   /* The Install and Update buttons are a `btn btn-primary`, and that is the
      whole of their styling: `btn-primary` is the variant every theme paints
-     from `--accent-bg-color`, so they carry the accent colour by asking for
+     from `--accent-background-color`, so they carry the accent colour by asking for
      the accent variant rather than by a rule here that no theme could see. */
 
   input[type="checkbox"] {
     background-color: var(--background-color-selected);
     &:active,
     &:checked {
-      background-color: var(--accent-color);
+      background-color: var(--accent-indicator-color);
     }
     &:before,
     &:after {
-      background-color: var(--accent-text-color);
+      background-color: var(--accent-indicator-text-color);
     }
   }
 
   .search-container .btn {
-    font-size: var(--ui-input-size);
+    font-size: var(--ui-input-font-size);
   }
 }
