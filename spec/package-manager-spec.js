@@ -2,6 +2,7 @@ const fs = require("@lumine-code/fs-plus");
 const os = require("os");
 const path = require("path");
 const PackageManager = require("../lib/package-manager");
+const requireCore = require("../lib/require-core");
 
 describe("PackageManager", function () {
   let [packageManager] = [];
@@ -658,6 +659,161 @@ describe("PackageManager", function () {
   });
 
   describe("::installGitHubPackage()", function () {
+    function prepareLifecycleInstall() {
+      const root = fs.realpathSync(
+        fs.mkdtempSync(path.join(os.tmpdir(), "settings-view-rollback-")),
+      );
+      const name = "rollback-package";
+      const target = path.join(root, name);
+      const metadata = {
+        name,
+        version: "1.0.0",
+        repository: "owner/repo",
+        engines: { lumine: "*" },
+      };
+      fs.mkdirSync(target);
+      const originalManifest = JSON.stringify({ ...metadata, version: "0.9.0" });
+      fs.writeFileSync(path.join(target, "package.json"), originalManifest);
+      fs.writeFileSync(path.join(target, "old-marker"), "original files");
+      const InstallationService = requireCore("package-installation-service");
+      spyOn(InstallationService.prototype, "fetchPackageFiles").and.callFake(async (stage) => {
+        fs.writeFileSync(path.join(stage, "package.json"), JSON.stringify(metadata));
+        return "a".repeat(40);
+      });
+      spyOn(packageManager, "getLuminePackagesDirectory").and.returnValue(root);
+      spyOn(packageManager, "getGitCommand").and.returnValue("git");
+      spyOn(packageManager, "getNpmCommand").and.returnValue("npm");
+      spyOn(packageManager, "runProcess").and.returnValue(Promise.resolve({ stdout: "" }));
+      const original = { name, path: target, metadata: {} };
+      const fixture = {
+        root,
+        target,
+        name,
+        originalManifest,
+        original,
+        loaded: original,
+        lifecycleState: "loaded",
+        pack: {
+          name,
+          repository: "owner/repo",
+          installSource: "owner/repo",
+          resolvedSha: "a".repeat(40),
+        },
+      };
+      spyOn(lumine.packages, "getLoadedPackage").and.callFake(() => fixture.loaded);
+      spyOn(lumine.packages, "isPackageLoaded").and.callFake(() => fixture.loaded != null);
+      spyOn(lumine.packages, "getPackageLifecycleState").and.callFake(() => fixture.lifecycleState);
+      return fixture;
+    }
+
+    it("restores the original lifecycle when unload completes and beforeSwap rejects", async () => {
+      const fixture = prepareLifecycleInstall();
+      const failure = new Error("Unload observer failed after cleanup");
+      spyOn(lumine.packages, "unloadPackage").and.callFake(async () => {
+        fixture.loaded = null;
+        fixture.lifecycleState = undefined;
+        throw failure;
+      });
+      spyOn(lumine.packages, "reconcilePackage").and.callFake(async (_name, { lifecycleState }) => {
+        fixture.loaded = fixture.original;
+        fixture.lifecycleState = lifecycleState;
+        return fixture.original;
+      });
+      spyOn(packageManager, "activateInstalledPackage");
+
+      try {
+        await expectAsync(packageManager.installGitHubPackage(fixture.pack)).toBeRejectedWith(
+          failure,
+        );
+
+        expect(lumine.packages.unloadPackage).toHaveBeenCalledOnceWith(fixture.name, {
+          preserveModuleCache: false,
+        });
+        expect(lumine.packages.reconcilePackage).toHaveBeenCalledOnceWith(fixture.name, {
+          lifecycleState: "loaded",
+        });
+        expect(fixture.loaded).toBe(fixture.original);
+        expect(fixture.lifecycleState).toBe("loaded");
+        expect(packageManager.activateInstalledPackage).not.toHaveBeenCalled();
+        expect(fs.readFileSync(path.join(fixture.target, "package.json"), "utf8")).toBe(
+          fixture.originalManifest,
+        );
+        expect(fs.readFileSync(path.join(fixture.target, "old-marker"), "utf8")).toBe(
+          "original files",
+        );
+      } finally {
+        fs.removeSync(fixture.root);
+      }
+    });
+
+    for (const scenario of ["cleanup completed", "reconcile failed", "unload incomplete"]) {
+      it(`preserves rollback failures and the original snapshot when ${scenario}`, async () => {
+        const fixture = prepareLifecycleInstall();
+        const activationFailure = new Error("Replacement activation failed");
+        const unloadFailure = new Error("Rollback unload observer failed");
+        const reconcileFailure = new Error("Original lifecycle could not be restored");
+        let unloadCount = 0;
+        spyOn(lumine.packages, "unloadPackage").and.callFake(async () => {
+          unloadCount++;
+          if (unloadCount === 1 || scenario !== "unload incomplete") {
+            fixture.loaded = null;
+            fixture.lifecycleState = undefined;
+          }
+          if (unloadCount === 2) throw unloadFailure;
+        });
+        spyOn(packageManager, "activateInstalledPackage").and.callFake(async () => {
+          fixture.loaded = { name: fixture.name, path: fixture.target, metadata: {} };
+          fixture.lifecycleState = "active";
+          throw activationFailure;
+        });
+        spyOn(lumine.packages, "reconcilePackage").and.callFake(
+          async (_name, { lifecycleState }) => {
+            if (scenario === "reconcile failed") throw reconcileFailure;
+            fixture.loaded = fixture.original;
+            fixture.lifecycleState = lifecycleState;
+            return fixture.original;
+          },
+        );
+        let failure;
+
+        try {
+          await packageManager
+            .installGitHubPackage(fixture.pack)
+            .catch((error) => (failure = error));
+
+          expect(failure instanceof AggregateError).toBe(true);
+          expect(failure.errors[0]).toBe(activationFailure);
+          expect(failure.cause).toBe(activationFailure);
+          expect(lumine.packages.unloadPackage).toHaveBeenCalledTimes(2);
+          if (scenario === "unload incomplete") {
+            expect(lumine.packages.reconcilePackage).not.toHaveBeenCalled();
+            expect(failure.errors[1]).toBe(unloadFailure);
+          } else {
+            expect(lumine.packages.reconcilePackage).toHaveBeenCalledOnceWith(fixture.name, {
+              lifecycleState: "loaded",
+            });
+            if (scenario === "reconcile failed") {
+              expect(failure.errors[1] instanceof AggregateError).toBe(true);
+              expect(failure.errors[1].errors).toEqual([unloadFailure, reconcileFailure]);
+              expect(failure.errors[1].cause).toBe(unloadFailure);
+            } else {
+              expect(failure.errors[1]).toBe(unloadFailure);
+              expect(fixture.loaded).toBe(fixture.original);
+              expect(fixture.lifecycleState).toBe("loaded");
+            }
+          }
+          expect(fs.readFileSync(path.join(fixture.target, "package.json"), "utf8")).toBe(
+            fixture.originalManifest,
+          );
+          expect(fs.readFileSync(path.join(fixture.target, "old-marker"), "utf8")).toBe(
+            "original files",
+          );
+        } finally {
+          fs.removeSync(fixture.root);
+        }
+      });
+    }
+
     it("reinstalls an installed package from its recorded source, not the bare name", async () => {
       spyOn(packageManager, "resolvePackageSource").and.returnValue(
         Promise.reject(new Error("stop")),
