@@ -107,6 +107,54 @@ describe("PackageCard", function () {
     });
   });
 
+  for (const closeBeforeResponse of [false, true]) {
+    it(`${closeBeforeResponse ? "ignores a delayed avatar after destroying" : "loads a delayed avatar into"} its package card`, async () => {
+      setPackageStatusSpies({ installed: false, disabled: false, hasSettings: false });
+      let completeResponse, delivered;
+      const response = new Promise((resolve) => (completeResponse = resolve));
+      const avatarCache = {
+        avatar: jasmine.createSpy("avatar").and.callFake((_owner, callback) => {
+          delivered = response.then((avatarPath) => callback(null, avatarPath));
+        }),
+      };
+      spyOn(packageManager, "getAvatarCache").and.returnValue(avatarCache);
+      card = new PackageCard(
+        {
+          name: "sample-package",
+          repository: "owner/sample-package",
+          originKey: "github.com/owner/sample-package",
+          status: "ready",
+        },
+        new SettingsView(),
+        packageManager,
+      );
+      const avatar = card.refs.avatar;
+      const initialSource = avatar.getAttribute("src");
+      const avatarPath = path.join(
+        lumine.application.getResourcePath(),
+        "resources",
+        "app-icons",
+        "lumine.png",
+      );
+      try {
+        if (closeBeforeResponse) {
+          await card.destroy();
+          expect(card.refs.avatar).toBeUndefined();
+        }
+        completeResponse(avatarPath);
+        await expectAsync(delivered).toBeResolved();
+
+        expect(avatarCache.avatar.calls.mostRecent().args[0]).toBe("owner");
+        expect(avatar.getAttribute("src")).toBe(
+          closeBeforeResponse ? initialSource : `file://${avatarPath}`,
+        );
+      } finally {
+        if (!card.destroyed) await card.destroy();
+        completeResponse(avatarPath);
+      }
+    });
+  }
+
   it("loads the author avatar for a hydrated installed card", function () {
     setPackageStatusSpies({ installed: false, disabled: false });
     const avatarCache = { avatar: jasmine.createSpy("avatar") };

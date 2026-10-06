@@ -855,7 +855,7 @@ module.exports = class PackageCard {
       const owner = ownerFromRepository(this.pack.repository);
       if (!owner) return;
       this.avatarCache.avatar(owner, (err, avatarPath) => {
-        if (!err && avatarPath) {
+        if (!this.destroyed && !err && avatarPath && this.refs.avatar) {
           this.refs.avatar.src = `file://${avatarPath}`;
         }
       });
