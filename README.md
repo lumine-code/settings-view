@@ -2,6 +2,8 @@
 
 Edit config settings, install packages, and change themes.
 
+Fork of [pulsar-edit/pulsar](https://github.com/pulsar-edit/pulsar) (`packages/settings-view`).
+
 ## Features
 
 - **Settings editor**: browse and change core, editor, and package settings globally or only in this window.
