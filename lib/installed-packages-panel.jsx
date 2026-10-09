@@ -128,12 +128,14 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
   }
 
   destroy() {
+    if (this.destroyed) return this.destruction;
     this.destroyed = true;
     clearTimeout(this.loadPackagesTimeout);
     this.loadPackagesTimeout = null;
     this.packageLoadRequestGeneration = (this.packageLoadRequestGeneration || 0) + 1;
     this.subscriptions.dispose();
-    return etch.destroy(this);
+    for (const list of Object.values(this.itemViews)) list.destroy();
+    return (this.destruction = etch.destroy(this));
   }
 
   update() {}

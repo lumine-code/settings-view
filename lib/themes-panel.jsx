@@ -20,6 +20,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
 
   constructor(settingsView, packageManager) {
     super();
+    this.destroyed = false;
 
     this.settingsView = settingsView;
     this.packageManager = packageManager;
@@ -69,11 +70,13 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
     );
     this.loadPackages();
 
-    let loadPackagesTimeout;
     this.disposables.add(
       this.packageManager.on("theme-installed theme-uninstalled", () => {
-        clearTimeout(loadPackagesTimeout);
-        loadPackagesTimeout = setTimeout(() => {
+        if (this.destroyed) return;
+        clearTimeout(this.loadPackagesTimeout);
+        this.loadPackagesTimeout = setTimeout(() => {
+          this.loadPackagesTimeout = null;
+          if (this.destroyed) return;
           this.populateThemeMenus();
           this.loadPackages();
         }, ThemesPanel.loadPackagesDelay());
@@ -118,8 +121,14 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
   }
 
   destroy() {
+    if (this.destroyed) return this.destruction;
+    this.destroyed = true;
+    this.packageLoadGeneration = (this.packageLoadGeneration || 0) + 1;
+    clearTimeout(this.loadPackagesTimeout);
+    clearTimeout(this.themeConfigTimeout);
     this.disposables.dispose();
-    return etch.destroy(this);
+    for (const list of Object.values(this.itemViews)) list.destroy();
+    return (this.destruction = etch.destroy(this));
   }
 
   render() {
@@ -370,10 +379,13 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
   }
 
   loadPackages() {
+    if (this.destroyed) return;
+    const generation = (this.packageLoadGeneration = (this.packageLoadGeneration || 0) + 1);
     this.packageViews = [];
-    this.packageManager
+    return this.packageManager
       .getInstalled()
       .then((packages) => {
+        if (this.destroyed || generation !== this.packageLoadGeneration) return;
         this.packages = this.sortThemes(this.filterThemes(packages));
 
         this.refs.devLoadingArea.remove();
@@ -390,6 +402,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
         this.updateSectionCounts();
       })
       .catch((error) => {
+        if (this.destroyed || generation !== this.packageLoadGeneration) return;
         notifyPackageError(this.packageManager, error, "Failed to load the installed themes.");
       });
   }
@@ -479,8 +492,11 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
   }
 
   scheduleUpdateThemeConfig() {
-    setTimeout(() => {
-      this.updateThemeConfig();
+    if (this.destroyed) return;
+    clearTimeout(this.themeConfigTimeout);
+    this.themeConfigTimeout = setTimeout(() => {
+      this.themeConfigTimeout = null;
+      if (!this.destroyed) this.updateThemeConfig();
     }, 100);
   }
 

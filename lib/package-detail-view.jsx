@@ -162,6 +162,7 @@ module.exports = class PackageDetailView {
   }
 
   completeInitialization() {
+    if (this.destroyed) return;
     this.hideLoadingMessage();
     if (this.refs.packageCard) {
       this.packageCard = this.refs.packageCard.packageCard;
@@ -240,6 +241,9 @@ module.exports = class PackageDetailView {
   }
 
   destroy() {
+    if (this.destroyed) return this.destruction;
+    this.destroyed = true;
+    this.readmeRequest = null;
     this.settingsPanel = this.destroySection(this.settingsPanel);
     this.keymapView = this.destroySection(this.keymapView);
     this.grammarsView = this.destroySection(this.grammarsView);
@@ -257,7 +261,7 @@ module.exports = class PackageDetailView {
     }
 
     this.disposables.dispose();
-    return etch.destroy(this);
+    return (this.destruction = etch.destroy(this));
   }
 
   setupSections() {
@@ -685,6 +689,7 @@ module.exports = class PackageDetailView {
   }
 
   renderReadme() {
+    if (this.destroyed) return;
     let readme;
     if (
       this.pack.metadata.readme &&
@@ -702,13 +707,25 @@ module.exports = class PackageDetailView {
       this.pack.metadata.resolvedSha
     ) {
       this.readmeRequested = true;
+      const metadata = this.pack.metadata;
+      const sha = metadata.resolvedSha;
+      const origin = metadata.originKey;
+      const request = (this.readmeRequest = {});
       this.packageManager
         .getCatalogClient()
         .loadReadme(this.pack.metadata)
         .then((entry) => {
-          if (!entry) return;
-          this.pack.metadata.readme = entry.body;
-          this.pack.metadata.readmeSource = entry.source;
+          if (
+            !entry ||
+            this.destroyed ||
+            this.readmeRequest !== request ||
+            this.pack.metadata !== metadata ||
+            metadata.resolvedSha !== sha ||
+            metadata.originKey !== origin
+          )
+            return;
+          metadata.readme = entry.body;
+          metadata.readmeSource = entry.source;
           this.renderReadme();
         })
         .catch(() => {});
@@ -808,8 +825,11 @@ module.exports = class PackageDetailView {
   }
 
   subscribeToPackageManager() {
+    if (this.destroyed || this.packageManagerSubscribed) return;
+    this.packageManagerSubscribed = true;
     this.disposables.add(
       this.packageManager.on("theme-installed package-installed", ({ pack }) => {
+        if (this.destroyed) return;
         if (this.isSamePackage(pack)) {
           this.loadPackage();
           this.updateInstalledState();
@@ -819,6 +839,7 @@ module.exports = class PackageDetailView {
 
     this.disposables.add(
       this.packageManager.on("theme-uninstalled package-uninstalled", ({ pack }) => {
+        if (this.destroyed) return;
         if (this.isSamePackage(pack)) {
           return this.updateInstalledState();
         }
@@ -827,6 +848,7 @@ module.exports = class PackageDetailView {
 
     this.disposables.add(
       this.packageManager.on("theme-updated package-updated", ({ pack }) => {
+        if (this.destroyed) return;
         if (this.isSamePackage(pack)) {
           this.loadPackage();
           this.updateFileButtons();

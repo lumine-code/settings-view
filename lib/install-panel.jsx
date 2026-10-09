@@ -19,6 +19,7 @@ const PackageNameRegex = /config\/install\/(?:package|theme):([a-z0-9-_]+)/i;
 
 module.exports = class InstallPanel {
   constructor(settingsView, packageManager) {
+    this.destroyed = false;
     this.settingsView = settingsView;
     this.packageManager = packageManager;
     this.disposables = new CompositeDisposable();
@@ -125,14 +126,21 @@ module.exports = class InstallPanel {
   }
 
   destroy() {
+    if (this.destroyed) return this.destruction;
+    this.destroyed = true;
+    this.searchGeneration = (this.searchGeneration || 0) + 1;
+    this.catalogGeneration = (this.catalogGeneration || 0) + 1;
+    this.cancelCatalogRender?.();
+    const gitCard = this.currentGitPackageCard;
+    this.currentGitPackageCard = null;
     this.clearSourceEditors();
     this.sourceDisposables.dispose();
     this.clearPackageCards(this.catalogPackageCards);
     this.clearPackageCards(this.browsePackageCards);
-    if (this.currentGitPackageCard) this.currentGitPackageCard.destroy();
+    gitCard?.destroy();
     if (this.catalogProgressTooltip) this.catalogProgressTooltip.dispose();
     this.disposables.dispose();
-    return etch.destroy(this);
+    return (this.destruction = etch.destroy(this));
   }
 
   update() {}
@@ -377,11 +385,12 @@ module.exports = class InstallPanel {
   }
 
   clearSearchResults() {
-    if (this.currentGitPackageCard) {
-      this.currentGitPackageCard.destroy();
-      this.currentGitPackageCard = null;
-    }
+    const generation = (this.searchGeneration = (this.searchGeneration || 0) + 1);
+    const card = this.currentGitPackageCard;
+    this.currentGitPackageCard = null;
+    card?.destroy();
     this.clearPackageCards(this.catalogPackageCards);
+    if (this.destroyed || generation !== this.searchGeneration) return;
     this.refs.resultsContainer.innerHTML = "";
     this.refs.searchMessage.style.display = "none";
   }
@@ -399,11 +408,15 @@ module.exports = class InstallPanel {
   }
 
   showGitInstallPackageCard(pack) {
+    if (this.destroyed) return;
+    const generation = (this.searchGeneration = (this.searchGeneration || 0) + 1);
     this.clearPackageCards(this.catalogPackageCards);
     this.refs.searchMessage.style.display = "none";
-    if (this.currentGitPackageCard) {
-      this.currentGitPackageCard.destroy();
-    }
+    const previous = this.currentGitPackageCard;
+    this.currentGitPackageCard = null;
+    previous?.destroy();
+    const current = () => !this.destroyed && generation === this.searchGeneration;
+    if (!current()) return;
 
     const pendingPack = {
       ...pack,
@@ -411,15 +424,25 @@ module.exports = class InstallPanel {
       status: "validating",
       refs: { tags: [], branches: null },
     };
-    this.currentGitPackageCard = this.getPackageCardView(pendingPack);
+    const card = this.getPackageCardView(pendingPack);
+    if (!current()) {
+      card.destroy();
+      return;
+    }
+    this.currentGitPackageCard = card;
     this.updatePagination(0);
     this.currentGitPackageCard.displayGitPackageInstallInformation();
     this.replaceCurrentGitPackageCardView();
 
     if (typeof this.catalogClient.hydrateManualSource === "function") {
       this.catalogClient.hydrateManualSource(pack.installSource).then(
-        (hydrated) => this.updateGitPackageCard({ ...pack, ...hydrated }),
+        (hydrated) => {
+          if (current() && this.currentGitPackageCard === card)
+            this.updateGitPackageCard({ ...pack, ...hydrated });
+        },
         (error) =>
+          current() &&
+          this.currentGitPackageCard === card &&
           this.updateGitPackageCard({
             ...pendingPack,
             status: "error",
@@ -430,18 +453,34 @@ module.exports = class InstallPanel {
   }
 
   updateGitPackageCard(pack) {
-    if (this.currentGitPackageCard) {
-      this.currentGitPackageCard.destroy();
-    }
+    if (this.destroyed) return;
+    const generation = this.searchGeneration;
+    const previous = this.currentGitPackageCard;
+    this.currentGitPackageCard = null;
+    previous?.destroy();
+    if (this.destroyed || generation !== this.searchGeneration) return;
 
-    this.currentGitPackageCard = this.getPackageCardView(pack);
+    const card = this.getPackageCardView(pack);
+    if (this.destroyed || generation !== this.searchGeneration) {
+      card.destroy();
+      return;
+    }
+    this.currentGitPackageCard = card;
     this.replaceCurrentGitPackageCardView();
   }
 
   replaceCurrentGitPackageCardView() {
+    const card = this.currentGitPackageCard;
+    const generation = this.searchGeneration;
     this.clearPackageCards(this.catalogPackageCards);
+    if (
+      this.destroyed ||
+      generation !== this.searchGeneration ||
+      card !== this.currentGitPackageCard
+    )
+      return;
     this.refs.resultsContainer.innerHTML = "";
-    this.addPackageCardView(this.refs.resultsContainer, this.currentGitPackageCard);
+    this.addPackageCardView(this.refs.resultsContainer, card);
   }
 
   async search(query) {
@@ -479,8 +518,11 @@ module.exports = class InstallPanel {
   }
 
   async loadCatalog({ refresh = false, cacheOnly = false } = {}) {
+    if (this.destroyed) return { packages: this.catalogPackages };
+    this.cancelCatalogRender?.();
     if (!cacheOnly) this.catalogFetched = true;
     const generation = (this.catalogGeneration = (this.catalogGeneration || 0) + 1);
+    const current = () => !this.destroyed && generation === this.catalogGeneration;
     if (!cacheOnly) this.catalogIndexing = true;
     const sources = this.getCatalogSources();
     this.dismissCatalogFetchNotifications();
@@ -498,16 +540,21 @@ module.exports = class InstallPanel {
     const progressive = new Map(this.catalogPackages.map((pack) => [packageOrigin(pack), pack]));
     let renderTimer = null;
     let pendingRecords = 0;
-    const flushRender = () => {
+    const cancelRender = () => {
       if (renderTimer) {
         clearTimeout(renderTimer);
         renderTimer = null;
       }
+    };
+    this.cancelCatalogRender = cancelRender;
+    const flushRender = () => {
+      cancelRender();
       pendingRecords = 0;
-      if (generation !== this.catalogGeneration) return;
+      if (!current()) return;
       this.catalogPackages = Array.from(progressive.values());
       const query = this.refs.searchEditor.getText().trim();
-      if (query && this.catalogIndexing) this.renderIncompleteSearch(query);
+      if (query && this.catalogIndexing && !this.currentGitPackageCard)
+        this.renderIncompleteSearch(query);
       else this.renderBrowseList();
     };
     const scheduleRender = () => {
@@ -525,19 +572,17 @@ module.exports = class InstallPanel {
         refresh,
         cacheOnly,
         onProgress: ({ processed, total, errors }) => {
-          if (generation !== this.catalogGeneration) return;
+          if (!current()) return;
           this.refs.catalogProgress.textContent = `${processed} / ${total} processed · ${errors} error(s)`;
         },
         onRecord: (pack) => {
+          if (!current()) return;
           progressive.set(packageOrigin(pack), pack);
           scheduleRender();
         },
       });
-      if (generation !== this.catalogGeneration) return { packages: this.catalogPackages };
-      if (renderTimer) {
-        clearTimeout(renderTimer);
-        renderTimer = null;
-      }
+      if (!current()) return { packages: this.catalogPackages };
+      cancelRender();
       this.catalogPackages = result.packages;
       if (
         !cacheOnly &&
@@ -547,12 +592,15 @@ module.exports = class InstallPanel {
       ) {
         this.packageManager.mergeCatalogUpdates(result.packages);
       }
+      if (!current()) return { packages: this.catalogPackages };
       this.updateCatalogProgressTooltip(result.packages);
+      if (!current()) return { packages: this.catalogPackages };
       this.page = Math.min(
         this.page,
         Math.max(1, Math.ceil(this.catalogPackages.length / this.pageSize)),
       );
       this.renderBrowseList();
+      if (!current()) return { packages: this.catalogPackages };
       const stamp = result.lastFetch ? new Date(result.lastFetch).toLocaleString() : "never";
       this.refs.catalogProgress.textContent = `${result.packages.length} package(s) · last Fetch ${stamp}${
         result.cancelled ? " · cancelled" : ""
@@ -574,14 +622,16 @@ module.exports = class InstallPanel {
       }
       return { schemaVersion: 2, packages: this.catalogPackages };
     } catch (error) {
-      if (generation === this.catalogGeneration) {
+      if (current()) {
         this.catalogFetchNotifications.push(
           notifyPackageError(this.packageManager, error, "Failed to load the package catalog."),
         );
       }
       return { schemaVersion: 2, packages: this.catalogPackages };
     } finally {
-      if (generation === this.catalogGeneration) {
+      cancelRender();
+      if (this.cancelCatalogRender === cancelRender) this.cancelCatalogRender = null;
+      if (current()) {
         this.catalogIndexing = false;
         this.refs.fetchButton.classList.remove("is-checking");
         this.refs.cancelFetchButton.style.display = "none";
@@ -621,12 +671,32 @@ module.exports = class InstallPanel {
   // so only those cards rebuild. This keeps switching "All"/"Packages" and
   // paging cheap instead of destroying and recreating up to 50 cards each time.
   renderCardList(container, cards, packs) {
+    if (this.destroyed) return Promise.resolve();
+    this.cardRenderOwners ??= new WeakMap();
+    const owner = {};
+    this.cardRenderOwners.set(cards, owner);
+    const searchGeneration = this.searchGeneration;
+    const catalogGeneration = this.catalogGeneration;
+    const current = () =>
+      !this.destroyed &&
+      this.cardRenderOwners.get(cards) === owner &&
+      this.searchGeneration === searchGeneration &&
+      this.catalogGeneration === catalogGeneration;
+    const previous = cards.slice();
     const pool = new Map();
-    for (const card of cards) {
+    for (const card of previous) {
       const key = packageOrigin(card.pack) || card.pack.name;
       if (!pool.has(key)) pool.set(key, card);
     }
     const next = [];
+    const allocated = [];
+    let published = false;
+    const retire = () => {
+      if (!published) {
+        for (const card of allocated) if (!cards.includes(card)) card.destroy();
+      }
+      return Promise.resolve();
+    };
     const reused = new Set();
     for (const pack of packs) {
       const key = packageOrigin(pack) || pack.name;
@@ -635,23 +705,28 @@ module.exports = class InstallPanel {
         reused.add(pooled);
         next.push(pooled);
       } else {
-        next.push(this.getPackageCardView(pack));
+        const card = this.getPackageCardView(pack);
+        allocated.push(card);
+        if (!current()) return retire();
+        next.push(card);
       }
     }
-    for (const card of cards) {
-      if (!reused.has(card)) card.destroy();
+    cards.splice(0, cards.length, ...next);
+    published = true;
+    for (const card of previous) {
+      if (!reused.has(card) && !cards.includes(card)) card.destroy();
     }
+    if (!current()) return retire();
     const fragment = document.createDocumentFragment();
     for (const card of next) {
       this.addPackageCardView(fragment, card);
     }
     container.replaceChildren(fragment);
-    cards.length = 0;
-    cards.push(...next);
     return Promise.resolve();
   }
 
   renderBrowseList() {
+    if (this.destroyed) return Promise.resolve();
     const origins = new Set();
     const packages = this.catalogPackages
       .filter((pack) => this.matchesFilter(pack))
@@ -673,7 +748,7 @@ module.exports = class InstallPanel {
       this.browsePackageCards,
       packages.slice(start, start + this.pageSize),
     );
-    this.updatePagination(packages.length);
+    if (!this.destroyed) this.updatePagination(packages.length);
     return rendering;
   }
 
@@ -777,13 +852,14 @@ module.exports = class InstallPanel {
   }
 
   renderSearchList(packages) {
+    if (this.destroyed) return Promise.resolve();
     const start = (this.page - 1) * this.pageSize;
     const rendering = this.renderCardList(
       this.refs.resultsContainer,
       this.catalogPackageCards,
       packages.slice(start, start + this.pageSize),
     );
-    this.updatePagination(packages.length);
+    if (!this.destroyed) this.updatePagination(packages.length);
     return rendering;
   }
 
@@ -802,18 +878,20 @@ module.exports = class InstallPanel {
   }
 
   async searchCatalog(query) {
+    if (this.destroyed) return [];
     const generation = (this.searchGeneration = (this.searchGeneration || 0) + 1);
-    if (this.currentGitPackageCard) {
-      this.currentGitPackageCard.destroy();
-      this.currentGitPackageCard = null;
-    }
+    const gitCard = this.currentGitPackageCard;
+    this.currentGitPackageCard = null;
+    gitCard?.destroy();
+    if (this.destroyed || generation !== this.searchGeneration) return [];
     this.clearPackageCards(this.catalogPackageCards);
+    if (this.destroyed || generation !== this.searchGeneration) return [];
     this.refs.resultsContainer.innerHTML = "";
     this.refs.searchMessage.style.display = "none";
 
     if (this.catalogIndexing) this.renderIncompleteSearch(query);
     await this.catalogPromise;
-    if (generation !== this.searchGeneration) return [];
+    if (this.destroyed || generation !== this.searchGeneration) return [];
     this.refs.searchMessage.style.display = "none";
 
     // Catalog results, deduplicated by repository.
@@ -835,7 +913,7 @@ module.exports = class InstallPanel {
   }
 
   clearPackageCards(cards) {
-    while (cards.length) cards.pop().destroy();
+    for (const card of cards.splice(0)) card.destroy();
   }
 
   getCatalogSources() {
