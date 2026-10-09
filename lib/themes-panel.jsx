@@ -284,7 +284,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
             <div className="section-heading icon icon-paintcan">
               Installed Themes
               <span ref="totalPackages" className="section-heading-count badge badge-flexible">
-                â€¦
+                …
               </span>
               <button
                 type="button"
@@ -301,7 +301,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
               <h3 ref="installedThemesHeader" className="sub-section-heading icon icon-paintcan">
                 Installed Themes
                 <span ref="installedCount" className="section-heading-count badge badge-flexible">
-                  â€¦
+                  …
                 </span>
               </h3>
               <div ref="installedPackages" className="container package-container">
@@ -309,7 +309,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
                   ref="installedLoadingArea"
                   className="alert alert-info loading-area icon icon-hourglass"
                 >
-                  Loading themesâ€¦
+                  Loading themes…
                 </div>
               </div>
             </section>
@@ -318,7 +318,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
               <h3 ref="coreThemesHeader" className="sub-section-heading icon icon-paintcan">
                 Bundled Themes
                 <span ref="coreCount" className="section-heading-count badge badge-flexible">
-                  â€¦
+                  …
                 </span>
               </h3>
               <div ref="corePackages" className="container package-container">
@@ -326,7 +326,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
                   ref="coreLoadingArea"
                   className="alert alert-info loading-area icon icon-hourglass"
                 >
-                  Loading themesâ€¦
+                  Loading themes…
                 </div>
               </div>
             </section>
@@ -335,7 +335,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
               <h3 ref="developmentThemesHeader" className="sub-section-heading icon icon-paintcan">
                 Development Themes
                 <span ref="devCount" className="section-heading-count badge badge-flexible">
-                  â€¦
+                  …
                 </span>
               </h3>
               <div ref="devPackages" className="container package-container">
@@ -343,7 +343,7 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
                   ref="devLoadingArea"
                   className="alert alert-info loading-area icon icon-hourglass"
                 >
-                  Loading themesâ€¦
+                  Loading themes…
                 </div>
               </div>
             </section>

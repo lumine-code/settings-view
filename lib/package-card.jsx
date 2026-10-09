@@ -1264,6 +1264,7 @@ module.exports = class PackageCard {
         });
       }
     } else {
+      this.hasCompatibleVersion = true;
       this.setNotInstalledStateButtons();
     }
   }

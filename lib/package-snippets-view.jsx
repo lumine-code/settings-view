@@ -258,44 +258,19 @@ module.exports = class PackageSnippetsView {
   }
 
   writeSnippetToClipboard({ scope, body, name, prefix, command }) {
-    let content;
     const extension = path.extname(this.snippetsProvider.getUserSnippetsPath());
-    body = body.replace(/\n/g, "\\n").replace(/\t/g, "\\t");
-    // Either `prefix` or `command` will be present, or else both. Only copy
-    // the values that are present.
-    let triggers = [];
-    if (extension === ".cson") {
-      if (prefix) {
-        triggers.push(`    'prefix': '${prefix}'`);
-      }
-      if (command) {
-        triggers.push(`    'command': '${command}'`);
-      }
-      body = body.replace(/'/g, `\\'`);
-      content = `
-'${scope}':
-  '${name}':
-${triggers.join("\n")}
-    'body': '${body}'
-`;
-    } else {
-      if (prefix) {
-        triggers.push(`    "prefix": "${prefix}"`);
-      }
-      if (command) {
-        triggers.push(`    "command": "${command}"`);
-      }
-      body = body.replace(/"/g, `\\"`);
-      content = `
-  "${scope}": {
-    "${name}": {
-${triggers.join(",\n")}
-      "body": "${body}"
-    }
-  }
-`;
-    }
-
+    const snippet = {
+      ...(prefix ? { prefix } : {}),
+      ...(command ? { command } : {}),
+      body,
+    };
+    const properties = { [scope]: { [name]: snippet } };
+    // Serializers preserve the literal template and escape every field. JSON
+    // contributes a property fragment to the user's existing root object.
+    const content =
+      extension === ".cson"
+        ? require("@lumine-code/season").stringify(properties)
+        : JSON.stringify(properties, null, 2).slice(1, -1);
     lumine.clipboard.write(content);
   }
 };
