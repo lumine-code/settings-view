@@ -1,3 +1,4 @@
+const windowService = require("./helpers/window-service");
 describe("Settings status service edge ownership", () => {
   let main, hub, bars, leases, connection, connections;
   beforeEach(async () => {
@@ -13,7 +14,7 @@ describe("Settings status service edge ownership", () => {
     for (const bar of bars) jasmine.attachToDOM(bar.element);
     leases = [];
     hub = new lumine.packages.serviceHub.constructor();
-    connection = hub.consume("status-bar", "^1.0.0", (payload) => main.consumeStatusBar(payload));
+    connection = hub.consume("status-bar", "^2.0.0", (payload) => main.consumeStatusBar(payload));
     connections = [connection];
   });
   afterEach(async () => {
@@ -24,14 +25,14 @@ describe("Settings status service edge ownership", () => {
     await lumine.packages.deactivatePackage("status-bar");
   });
   function provide(bar) {
-    const lease = hub.provide("status-bar", "1.0.0", bar);
+    const lease = hub.provide("status-bar", "2.0.0", windowService(bar));
     leases.push(lease);
     return lease;
   }
   it("keeps its actual settings icon after one shared raw payload edge withdraws", () => {
     provide(bars[0]);
     connections.push(
-      hub.consume("status-bar", "^1.0.0", (payload) => main.consumeStatusBar(payload)),
+      hub.consume("status-bar", "^2.0.0", (payload) => main.consumeStatusBar(payload)),
     );
     connection.dispose();
     expect(bars[0].element.querySelectorAll(".settings-icon").length).toBe(1);
@@ -47,10 +48,10 @@ describe("Settings status service edge ownership", () => {
     expect(bars[0].element.querySelectorAll(".settings-icon").length).toBe(0);
   });
   it("keeps the new Package generation when an old manual lease withdraws", async () => {
-    const oldLease = main.consumeStatusBar(bars[0]);
+    const oldLease = main.consumeStatusBar(windowService(bars[0]));
     await lumine.packages.deactivatePackage("settings-view");
     main = (await lumine.packages.activatePackage("settings-view")).mainModule;
-    leases.push(main.consumeStatusBar(bars[0]));
+    leases.push(main.consumeStatusBar(windowService(bars[0])));
     oldLease.dispose();
     expect(bars[0].element.querySelectorAll(".settings-icon").length).toBe(1);
   });
