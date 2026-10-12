@@ -34,6 +34,10 @@ function uriWithScope(uri, selector) {
 }
 
 module.exports = class SettingsView {
+  isSingleton() {
+    return true;
+  }
+
   constructor({ uri, packageManager, snippetsProvider, activePanel, scopeSelector } = {}) {
     this.uri = uri;
     scopeContext.set(scopeSelector ?? scopeSelectorFromURI(uri) ?? null);
