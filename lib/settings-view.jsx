@@ -34,8 +34,12 @@ function uriWithScope(uri, selector) {
 }
 
 module.exports = class SettingsView {
-  isSingleton() {
-    return true;
+  canCopy() {
+    return false;
+  }
+
+  getSingletonKey() {
+    return "settings-view:main";
   }
 
   constructor({ uri, packageManager, snippetsProvider, activePanel, scopeSelector } = {}) {
