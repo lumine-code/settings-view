@@ -11,7 +11,7 @@ Fork of [pulsar-edit/pulsar](https://github.com/pulsar-edit/pulsar) (`packages/s
 - **Theme management**: install, uninstall, and switch between UI and syntax themes.
 - **Keybinding browser**: view all active keybindings in one place.
 - **Settings search**: find individual settings by name across every panel, with the ones you opened most recently listed first.
-- **Status bar integration**: open settings from the status bar and see when package updates are available.
+- **Status bar integration**: open settings from the status bar, choose a settings panel from its context menu, and see when package updates are available.
 
 ## Installation
 

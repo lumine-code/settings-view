@@ -51,12 +51,15 @@ describe("PackageUpdatesStatusView", function () {
   });
 
   it("opens the Update panel when clicked", function () {
-    const open = spyOn(lumine.workspace, "open").and.returnValue(Promise.resolve());
+    const dispatch = spyOn(lumine.commands, "dispatch");
     changeHandler([{ name: "one" }]);
 
     view.element.click();
 
-    expect(open).toHaveBeenCalledWith("lumine://config/update");
+    expect(dispatch).toHaveBeenCalledWith(
+      lumine.workspace.getElement(),
+      "settings-view:check-updates",
+    );
   });
 
   it("destroys its tile and update-state subscription", function () {
