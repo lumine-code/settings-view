@@ -13,6 +13,8 @@ Fork of [pulsar-edit/pulsar](https://github.com/pulsar-edit/pulsar) (`packages/s
 - **Settings search**: find individual settings by name across every panel, with the ones you opened most recently listed first.
 - **Status bar integration**: open settings from the status bar, choose a settings panel from its context menu, and see when package updates are available.
 
+![Find installed Jupyter packages in the package manager.](.github/demo.png)
+
 ## Installation
 
 To install `settings-view` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/settings-view`.

@@ -1,0 +1,17 @@
+{
+  "title": "settings-view",
+  "description": "Find installed Jupyter packages in the package manager.",
+  "recordedOn": "2026-10-13",
+  "sourceRevision": "21cadfcd8eb8f6ee51a280cce868a072dd4f57e3",
+  "mode": "normal",
+  "fontSettings": "default",
+  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
+  "images": [
+    {
+      "file": "demo.png",
+      "label": "Find installed Jupyter packages in the package manager.",
+      "width": 1100,
+      "height": 730
+    }
+  ]
+}
