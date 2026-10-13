@@ -20,6 +20,7 @@
     "status-bar"
   ],
   "files": [
+    "docs",
     "keymaps",
     "lib",
     "menus",

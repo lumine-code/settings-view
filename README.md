@@ -19,7 +19,7 @@ To install `settings-view` search for it in the Install pane of the Lumine setti
 
 ## Package catalogs
 
-The `settings-view.packageCatalogs` setting accepts ordered catalog repositories or `index.json` URLs. Each index is a JSON array containing Git source strings, pre-resolved package snapshots, or both; source-only entries are resolved and fetched by Lumine, while valid snapshots provide the same metadata and ref information without per-repository requests.
+See [Packages and themes](docs/packages.md) for install sources, catalogs, package precedence and update policies.
 
 ## Commands
 
@@ -43,11 +43,7 @@ Commands available in `lumine-workspace`:
 
 ## Usage
 
-Configuration panels have a checkbox immediately to the left of the scope field. Leave it unchecked to save changes globally in your config file and share them with every window. Check it to create temporary overrides only in this window without saving them; they expire when the window is reloaded or closed. Scope selectors work independently in either target, and project settings keep their existing priority.
-
-When editing only this window, check a setting's override checkbox to copy its inherited value, then edit it. Unchecking that setting's checkbox removes its exact local override and reveals the latest inherited value. A checked override checkbox means an override exists even when it equals the inherited value. Settings that require global configuration are disabled with an explanation.
-
-Changing the same setting globally in this window removes its local override. Config file updates arriving from another window preserve local overrides. Existing commands, the Themes panel, package installation, and system integration retain their global behavior. The checkbox beside the scope field is unchecked after a window reload; closing Settings alone does not remove local overrides.
+See [Configuration and scoped settings](docs/configuration.md) for saved settings, temporary window overrides, scope selectors and config files. These guides are also available under Settings → the package → Documentation.
 
 ## Services
 
