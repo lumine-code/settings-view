@@ -1,6 +1,33 @@
 {
   "menu": [
     {
+      "label": "View",
+      "submenu": [
+        {
+          "label": "Editor",
+          "submenu": [
+            {
+              "label": "Appearance",
+              "submenu": [
+                {
+                  "label": "Use Light Mode",
+                  "command": "settings-view:use-light-mode"
+                },
+                {
+                  "label": "Use Dark Mode",
+                  "command": "settings-view:use-dark-mode"
+                },
+                {
+                  "label": "Use System Mode",
+                  "command": "settings-view:use-system-mode"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "label": "Packages",
       "submenu": [
         {
@@ -13,6 +40,26 @@
             {
               "label": "Show Keybindings",
               "command": "settings-view:show-keybindings"
+            },
+            {
+              "label": "Appearance",
+              "submenu": [
+                {
+                  "label": "Use Light Mode",
+                  "command": "settings-view:use-light-mode"
+                },
+                {
+                  "label": "Use Dark Mode",
+                  "command": "settings-view:use-dark-mode"
+                },
+                {
+                  "label": "Use System Mode",
+                  "command": "settings-view:use-system-mode"
+                }
+              ]
+            },
+            {
+              "type": "separator"
             },
             {
               "label": "Install Packages/Themes",
@@ -37,22 +84,48 @@
   ],
   "context-menu": {
     "status-bar-tile.settings-icon": [
-      { "type": "separator" },
-      { "label": "Settings", "command": "settings-view:open" },
-      { "label": "Keybindings", "command": "settings-view:show-keybindings" },
-      { "label": "Install", "command": "settings-view:install-packages-and-themes" },
-      { "label": "Updates", "command": "settings-view:check-updates" },
-      { "label": "Installed Packages", "command": "settings-view:view-installed-packages" },
-      { "label": "Themes", "command": "settings-view:view-installed-themes" },
-      { "type": "separator" }
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Settings",
+        "command": "settings-view:open"
+      },
+      {
+        "label": "Keybindings",
+        "command": "settings-view:show-keybindings"
+      },
+      {
+        "label": "Install",
+        "command": "settings-view:install-packages-and-themes"
+      },
+      {
+        "label": "Updates",
+        "command": "settings-view:check-updates"
+      },
+      {
+        "label": "Installed Packages",
+        "command": "settings-view:view-installed-packages"
+      },
+      {
+        "label": "Themes",
+        "command": "settings-view:view-installed-themes"
+      },
+      {
+        "type": "separator"
+      }
     ],
     "status-bar-tile.package-updates-status": [
-      { "type": "separator" },
+      {
+        "type": "separator"
+      },
       {
         "label": "Open Updates",
         "command": "settings-view:check-updates"
       },
-      { "type": "separator" }
+      {
+        "type": "separator"
+      }
     ]
   }
 }
