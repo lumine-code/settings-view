@@ -44,15 +44,32 @@ jobs:
         run: npm run lint
       - name: Check formatting
         run: npm run format:check
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+      - name: Check package contents
+        run: npm pack --dry-run
 
   integration:
-    # Run the Jasmine spec suite inside a real Lumine build; the specs exercise
-    # the editor runtime (text editors, config, and service wiring).
-    name: Lumine integration specs
-    runs-on: ubuntu-latest
+    name: Lumine integration specs on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
     env:
       LUMINE_JASMINE_REPORTER: list
+      LUMINE_DISABLE_SHELLING_OUT_FOR_ENVIRONMENT: "true"
+      LUMINE_HOME: ${{ github.workspace }}/settings-view-spec-home
+      HOME: ${{ github.workspace }}/settings-view-spec-home
+      XDG_CONFIG_HOME: ${{ github.workspace }}/settings-view-spec-home
+      USERPROFILE: ${{ github.workspace }}/settings-view-spec-home
+      TEMP: ${{ github.workspace }}/settings-view-spec-tmp
+      TMP: ${{ github.workspace }}/settings-view-spec-tmp
+      TMPDIR: ${{ github.workspace }}/settings-view-spec-tmp
     steps:
       - uses: actions/checkout@v7
         with:
@@ -61,20 +78,18 @@ jobs:
         with:
           repository: lumine-code/lumine
           path: lumine
+      - name: Create the private home and temporary directory
+        run: mkdir -p "$TEMP" "$LUMINE_HOME/electronUserData"
       - uses: actions/setup-node@v7
         with:
           node-version-file: lumine/.nvmrc
           cache: npm
           cache-dependency-path: lumine/package-lock.json
       - name: Install Linux build and headless-display dependencies
+        if: runner.os == 'Linux'
         run: |
-          # A third-party repository on the runner image answering 403 must not
-          # fail the job: the lists this actually needs still fetched, and the
-          # install below stays strict, so a missing package still stops us.
           sudo apt-get update || true
           sudo apt-get install -y xvfb libx11-dev libxkbfile-dev libsecret-1-dev
-      # npm records the @lumine-code git forks with ssh URLs, but the runner has
-      # no ssh key, so rewrite them to anonymous HTTPS (the forks are public).
       - name: Use HTTPS for GitHub git dependencies
         run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
       - name: Install package dependencies
@@ -85,16 +100,21 @@ jobs:
         run: |
           install() { npm ci --ignore-scripts; }
           install || install || install
-      - name: Install declared spec packages
-        working-directory: lumine
-        run: node script/install-spec-packages.js --package ../settings-view --home "$RUNNER_TEMP/spec-home" --github-env "$GITHUB_ENV"
       - name: Download the Electron binary
         working-directory: lumine
         run: node ./node_modules/electron/install.js
       - name: Rebuild native modules for Electron
         working-directory: lumine
         run: npm run build
+      - name: Install declared spec packages
+        working-directory: lumine
+        run: node script/install-spec-packages.js --package ../settings-view --home "$LUMINE_HOME" --github-env "$GITHUB_ENV"
       - name: Run the Jasmine spec suite
         working-directory: lumine
         timeout-minutes: 20
-        run: xvfb-run --auto-servernum npm start -- --test ../settings-view/spec
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            xvfb-run --auto-servernum npm start -- --test ../settings-view/spec
+          else
+            npm start -- --test ../settings-view/spec
+          fi
