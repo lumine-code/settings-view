@@ -11,7 +11,7 @@ const SnippetsProvider = {
 const wait = timeoutPromise;
 
 describe("SettingsView", function () {
-  let main, recentSettings, settingsView;
+  let main, recentSettings, settingsView, requireActive;
   const packageManager = new PackageManager();
 
   beforeEach(async () => {
@@ -19,7 +19,7 @@ describe("SettingsView", function () {
     const pack = await lumine.packages.activatePackage("settings-view");
     // Most cases exercise Core; the Search cases opt in explicitly below.
     lumine.config.set("settings-view.enableSettingsSearch", false);
-    const requireActive = createRequire(path.join(pack.path, "package.json"));
+    requireActive = createRequire(path.join(pack.path, "package.json"));
     main = pack.mainModule;
     scopeContext = requireActive("./lib/scope-context");
     scopeContext.setTarget("global");
@@ -689,7 +689,7 @@ describe("SettingsView", function () {
       });
 
       it("passes the URI to a pane's beforeShow() method on settings view initialization", async () => {
-        const InstallPanel = require("../lib/install-panel");
+        const InstallPanel = requireActive("./lib/install-panel");
         spyOn(InstallPanel.prototype, "beforeShow");
 
         settingsView = await lumine.workspace.open("lumine://config/install/package:something");
@@ -710,7 +710,7 @@ describe("SettingsView", function () {
       });
 
       it("passes the URI to a pane's beforeShow() method after initialization", async () => {
-        const InstallPanel = require("../lib/install-panel");
+        const InstallPanel = requireActive("./lib/install-panel");
         spyOn(InstallPanel.prototype, "beforeShow");
 
         settingsView = await lumine.workspace.open("lumine://config");
