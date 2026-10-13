@@ -230,7 +230,7 @@ module.exports = class SettingsView {
       this.showPanel(this.panelCreateCallbacks["Search"] ? "Search" : "Core");
     }
 
-    if (document.body.contains(this.element)) {
+    if (this.element.ownerDocument.body.contains(this.element)) {
       this.refs.sidebar.style.width = this.refs.sidebar.offsetWidth;
       // Panels are initialized on the next tick. Their first `focus()` call can
       // therefore happen before the view is attached, where the browser drops
@@ -639,11 +639,11 @@ module.exports = class SettingsView {
   }
 
   scrollUp() {
-    this.element.scrollTop -= document.body.offsetHeight / 20;
+    this.element.scrollTop -= this.element.ownerDocument.body.offsetHeight / 20;
   }
 
   scrollDown() {
-    this.element.scrollTop += document.body.offsetHeight / 20;
+    this.element.scrollTop += this.element.ownerDocument.body.offsetHeight / 20;
   }
 
   pageUp() {

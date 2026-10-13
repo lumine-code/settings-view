@@ -36,7 +36,9 @@ module.exports = class KeybindingsPanel {
     }
     this.updateSourceFilterButtons();
 
-    this.disposables = new CompositeDisposable();
+    this.disposables = new CompositeDisposable(
+      lumine.views.addWindowParticipant(this.element, this),
+    );
     this.disposables.add(this.handlePanelEvents());
     this.disposables.add(
       lumine.commands.add(this.element, {
@@ -247,7 +249,7 @@ module.exports = class KeybindingsPanel {
     if (this.resumeKeyBindingRender && this.pendingKeyBindingRender == null) {
       const resume = this.resumeKeyBindingRender;
       this.resumeKeyBindingRender = null;
-      this.pendingKeyBindingRender = requestAnimationFrame(resume);
+      this.pendingKeyBindingRender = this.requestRenderFrame(resume);
     }
   }
 
@@ -339,19 +341,39 @@ module.exports = class KeybindingsPanel {
         this.resumeKeyBindingRender = null;
         appendBatch();
         if (index < bindings.length) {
-          this.pendingKeyBindingRender = requestAnimationFrame(renderNextBatch);
+          this.pendingKeyBindingRender = this.requestRenderFrame(renderNextBatch);
         }
       };
-      this.pendingKeyBindingRender = requestAnimationFrame(renderNextBatch);
+      this.pendingKeyBindingRender = this.requestRenderFrame(renderNextBatch);
+    }
+  }
+
+  requestRenderFrame(callback) {
+    this.renderFrameWindow = this.element.ownerDocument.defaultView;
+    this.pendingRenderCallback = callback;
+    return this.renderFrameWindow.requestAnimationFrame(() => {
+      this.pendingRenderCallback = null;
+      callback();
+    });
+  }
+
+  didAttachToWindow() {
+    if (
+      this.pendingKeyBindingRender != null &&
+      this.renderFrameWindow !== this.element.ownerDocument.defaultView
+    ) {
+      this.renderFrameWindow?.cancelAnimationFrame(this.pendingKeyBindingRender);
+      this.pendingKeyBindingRender = this.requestRenderFrame(this.pendingRenderCallback);
     }
   }
 
   cancelPendingKeyBindingRender() {
     if (this.pendingKeyBindingRender != null) {
-      cancelAnimationFrame(this.pendingKeyBindingRender);
+      this.renderFrameWindow?.cancelAnimationFrame(this.pendingKeyBindingRender);
       this.pendingKeyBindingRender = null;
     }
     this.resumeKeyBindingRender = null;
+    this.pendingRenderCallback = null;
   }
 
   fieldMatches(field, keyword) {
@@ -485,11 +507,11 @@ module.exports = class KeybindingsPanel {
   }
 
   scrollUp() {
-    this.element.scrollTop -= document.body.offsetHeight / 20;
+    this.element.scrollTop -= this.element.ownerDocument.body.offsetHeight / 20;
   }
 
   scrollDown() {
-    this.element.scrollTop += document.body.offsetHeight / 20;
+    this.element.scrollTop += this.element.ownerDocument.body.offsetHeight / 20;
   }
 
   pageUp() {
