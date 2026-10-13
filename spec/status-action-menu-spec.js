@@ -30,6 +30,13 @@ describe("settings-view status action menus", () => {
       "settings-view:view-installed-packages",
       "settings-view:view-installed-themes",
     ]);
+    expect(gearMenu[0].mouseBindingLabel).toBe("LMB");
+    expect(lumine.contextMenu.templateForElement(updates.element)[0].mouseBindingLabel).toBe("LMB");
+    for (const element of [gear.element, updates.element]) {
+      const [tooltip] = lumine.tooltips.findTooltips(element);
+      expect(tooltip.options.keyBindingCommand).toBeUndefined();
+      expect(tooltip.getTitle()).toContain("Click to open");
+    }
     expect(
       lumine.contextMenu.templateForElement(updates.element).map((item) => item.command),
     ).toEqual(["settings-view:check-updates"]);

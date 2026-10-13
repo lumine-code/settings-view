@@ -38,7 +38,7 @@
   "context-menu": {
     "status-bar-tile.settings-icon": [
       { "type": "separator" },
-      { "label": "Settings", "command": "settings-view:open" },
+      { "label": "Settings", "command": "settings-view:open", "mouseBindingLabel": "LMB" },
       { "label": "Keybindings", "command": "settings-view:show-keybindings" },
       { "label": "Install", "command": "settings-view:install-packages-and-themes" },
       { "label": "Updates", "command": "settings-view:check-updates" },
@@ -48,7 +48,11 @@
     ],
     "status-bar-tile.package-updates-status": [
       { "type": "separator" },
-      { "label": "Open Updates", "command": "settings-view:check-updates" },
+      {
+        "label": "Open Updates",
+        "command": "settings-view:check-updates",
+        "mouseBindingLabel": "LMB"
+      },
       { "type": "separator" }
     ]
   }

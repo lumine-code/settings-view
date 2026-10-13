@@ -43,11 +43,11 @@ describe("PackageUpdatesStatusView", function () {
     changeHandler([{ name: "one" }]);
     expect(view.element.style.display).toBe("");
     expect(view.countElement.textContent).toBe("1");
-    expect(tooltip.getTitle()).toBe("1 package update available");
+    expect(tooltip.getTitle()).toBe("1 package update available. Click to open Updates.");
 
     changeHandler([{ name: "one" }, { name: "two" }]);
     expect(view.countElement.textContent).toBe("2");
-    expect(tooltip.getTitle()).toBe("2 package updates available");
+    expect(tooltip.getTitle()).toBe("2 package updates available. Click to open Updates.");
   });
 
   it("opens the Update panel when clicked", function () {

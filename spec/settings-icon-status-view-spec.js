@@ -11,10 +11,10 @@ describe("SettingsIconStatusView", function () {
 
   afterEach(() => view.destroy());
 
-  it("resolves the settings-view:open keybinding in its tooltip", function () {
+  it("shows only the primary action in its tooltip", function () {
     const [tooltip] = lumine.tooltips.findTooltips(view.element);
 
-    expect(tooltip.getTitle()).toContain("Settings");
-    expect(tooltip.options.keyBindingCommand).toBe("settings-view:open");
+    expect(tooltip.getTitle()).toBe("Click to open Settings.");
+    expect(tooltip.options.keyBindingCommand).toBeUndefined();
   });
 });
