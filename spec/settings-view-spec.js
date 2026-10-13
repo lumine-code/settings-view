@@ -1,4 +1,5 @@
 const path = require("path");
+const { createRequire } = require("node:module");
 const PackageManager = require("../lib/package-manager");
 let scopeContext;
 const SnippetsProvider = {
@@ -14,12 +15,15 @@ describe("SettingsView", function () {
   const packageManager = new PackageManager();
 
   beforeEach(async () => {
-    // Package unload deliberately evicts its module tree. Resolve the current
-    // main-module instance instead of retaining the pre-unload singleton.
-    main = require("../lib/main");
-    scopeContext = require("../lib/scope-context");
+    // The opener and these fixtures must use the same package generation.
+    const pack = await lumine.packages.activatePackage("settings-view");
+    // Most cases exercise Core; the Search cases opt in explicitly below.
+    lumine.config.set("settings-view.enableSettingsSearch", false);
+    const requireActive = createRequire(path.join(pack.path, "package.json"));
+    main = pack.mainModule;
+    scopeContext = requireActive("./lib/scope-context");
     scopeContext.setTarget("global");
-    recentSettings = require("../lib/recent-settings");
+    recentSettings = requireActive("./lib/recent-settings");
     // `openSetting` records into a module singleton, so specs below would
     // otherwise seed the Search panel for every later spec in the run.
     recentSettings.clear();
@@ -826,7 +830,10 @@ describe("SettingsView", function () {
       panelElement.appendChild(section);
       jasmine.attachToDOM(panelElement);
 
-      settingsView.panelsByName.Example = { element: panelElement };
+      settingsView.panelsByName.Example = {
+        element: panelElement,
+        destroy: () => panelElement.remove(),
+      };
       settingsView.activePanel = { name: "Example", options: {} };
 
       expect(settingsView.revealSetting("example.group.enabled")).toBe(true);
