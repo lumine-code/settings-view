@@ -30,8 +30,7 @@ describe("settings-view status action menus", () => {
       "settings-view:view-installed-packages",
       "settings-view:view-installed-themes",
     ]);
-    expect(gearMenu[0].mouseBindingLabel).toBe("LMB");
-    expect(lumine.contextMenu.templateForElement(updates.element)[0].mouseBindingLabel).toBe("LMB");
+    const dispatch = spyOn(lumine.commands, "dispatch").and.callThrough();
     for (const [element, command] of [
       [gear.element, "settings-view:open"],
       [updates.element, "settings-view:check-updates"],
@@ -48,9 +47,14 @@ describe("settings-view status action menus", () => {
     for (const element of [gear.element, updates.element])
       element.dispatchEvent(new MouseEvent("click", { button: 2 }));
     expect(open).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalled();
     gear.element.click();
     expect(open).toHaveBeenCalledWith("lumine://config");
     updates.element.click();
+    expect(dispatch.calls.allArgs().map(([, command]) => command)).toEqual([
+      gearMenu[0].command,
+      lumine.contextMenu.templateForElement(updates.element)[0].command,
+    ]);
     expect(open).toHaveBeenCalledWith("lumine://config/update");
     lumine.commands.dispatch(gear.element, gearMenu[4].command);
     expect(open).toHaveBeenCalledWith("lumine://config/packages");

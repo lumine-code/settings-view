@@ -45,6 +45,10 @@ Commands available in `lumine-workspace`:
 
 See [Configuration and scoped settings](docs/configuration.md) for saved settings, temporary window overrides, scope selectors and config files. These guides are also available under Settings → the package → Documentation.
 
+## Usage
+
+Left-click the status bar gear to open Settings, or the updates indicator to open Updates. Right-click the gear to choose a settings panel; right-click the updates indicator to open its action menu.
+
 ## Services
 
 - `status-bar`: consumed to add a settings icon and a package-updates indicator to the status bar.
