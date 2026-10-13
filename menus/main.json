@@ -21,7 +21,9 @@
                   "label": "Use System Mode",
                   "command": "settings-view:use-system-mode"
                 }
-              ]
+              ],
+              "group": "appearance",
+              "order": 10
             }
           ]
         }
