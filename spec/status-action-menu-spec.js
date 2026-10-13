@@ -32,9 +32,13 @@ describe("settings-view status action menus", () => {
     ]);
     expect(gearMenu[0].mouseBindingLabel).toBe("LMB");
     expect(lumine.contextMenu.templateForElement(updates.element)[0].mouseBindingLabel).toBe("LMB");
-    for (const element of [gear.element, updates.element]) {
+    for (const [element, command] of [
+      [gear.element, "settings-view:open"],
+      [updates.element, "settings-view:check-updates"],
+    ]) {
       const [tooltip] = lumine.tooltips.findTooltips(element);
-      expect(tooltip.options.keyBindingCommand).toBeUndefined();
+      expect(tooltip.options.keyBindingCommand).toBe(command);
+      expect(tooltip.options.keyBindingExtra).toBeUndefined();
       expect(tooltip.getTitle()).toContain("Click to open");
     }
     expect(

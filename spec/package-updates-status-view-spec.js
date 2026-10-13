@@ -39,6 +39,8 @@ describe("PackageUpdatesStatusView", function () {
 
   it("shows the count and a singular or plural tooltip", function () {
     const [tooltip] = lumine.tooltips.findTooltips(view.element);
+    expect(tooltip.options.keyBindingCommand).toBe("settings-view:check-updates");
+    expect(tooltip.options.keyBindingExtra).toBeUndefined();
 
     changeHandler([{ name: "one" }]);
     expect(view.element.style.display).toBe("");
