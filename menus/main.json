@@ -4,26 +4,25 @@
       "label": "View",
       "submenu": [
         {
-          "label": "Editor",
+          "label": "Appearance",
           "submenu": [
             {
-              "label": "Appearance",
-              "submenu": [
-                {
-                  "label": "Use Light Mode",
-                  "command": "settings-view:use-light-mode"
-                },
-                {
-                  "label": "Use Dark Mode",
-                  "command": "settings-view:use-dark-mode"
-                },
-                {
-                  "label": "Use System Mode",
-                  "command": "settings-view:use-system-mode"
-                }
-              ],
-              "group": "appearance",
+              "label": "Use System Mode",
+              "command": "settings-view:use-system-mode",
+              "group": "mode",
               "order": 10
+            },
+            {
+              "label": "Use Light Mode",
+              "command": "settings-view:use-light-mode",
+              "group": "mode",
+              "order": 20
+            },
+            {
+              "label": "Use Dark Mode",
+              "command": "settings-view:use-dark-mode",
+              "group": "mode",
+              "order": 30
             }
           ]
         }
@@ -47,16 +46,16 @@
               "label": "Appearance",
               "submenu": [
                 {
+                  "label": "Use System Mode",
+                  "command": "settings-view:use-system-mode"
+                },
+                {
                   "label": "Use Light Mode",
                   "command": "settings-view:use-light-mode"
                 },
                 {
                   "label": "Use Dark Mode",
                   "command": "settings-view:use-dark-mode"
-                },
-                {
-                  "label": "Use System Mode",
-                  "command": "settings-view:use-system-mode"
                 }
               ]
             },
