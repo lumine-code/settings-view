@@ -317,6 +317,15 @@ module.exports = class InstallPanel {
   }
 
   extractQueryFromURI(uri) {
+    try {
+      const url = new URL(uri);
+      if (url.searchParams.has("source")) {
+        if (url.searchParams.getAll("source").length !== 1) return null;
+        return require("./install-uri")(url.searchParams.get("source"));
+      }
+    } catch {
+      return null;
+    }
     const matches = PackageNameRegex.exec(uri);
     if (matches) {
       return matches[1];

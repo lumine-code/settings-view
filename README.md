@@ -47,9 +47,9 @@ Commands available in `lumine-workspace`:
 
 See [Configuration and scoped settings](docs/configuration.md) for saved settings, temporary window overrides, scope selectors and config files. These guides are also available under Settings → the package → Documentation.
 
-## Usage
-
 Left-click the status bar gear to open Settings, or the updates indicator to open Updates. Right-click the gear to choose a settings panel; right-click the updates indicator to open its action menu.
+
+Links in the form `lumine://settings-view/install?source=lumine-code%2Fjupyter-view` open the Install panel with a public repository selected. Encode the complete source, including any tag, branch or commit selector, as the `source` argument. The link only prepares the package card; confirm installation inside the editor.
 
 ## Services
 

@@ -54,6 +54,31 @@ describe("InstallPanel", function () {
     );
   });
 
+  it("opens a complete repository source from an install link", function () {
+    const source = "https://github.com/lumine-code/jupyter-view.git#branch:master";
+    const uri = `lumine://config/install?source=${encodeURIComponent(source)}`;
+    expect(panel.extractQueryFromURI(uri)).toBe(source);
+    spyOn(panel, "performSearch");
+    panel.beforeShow({ uri });
+    expect(panel.refs.searchEditor.getText()).toBe(source);
+    expect(panel.performSearch).toHaveBeenCalled();
+  });
+
+  it("rejects unsafe and ambiguous install link sources", function () {
+    for (const source of [
+      "file:///tmp/package",
+      "https://user:pass@github.com/org/repo",
+      "https://127.0.0.1/org/repo",
+    ]) {
+      expect(
+        panel.extractQueryFromURI(`lumine://config/install?source=${encodeURIComponent(source)}`),
+      ).toBeNull();
+    }
+    expect(
+      panel.extractQueryFromURI("lumine://config/install?source=org/a&source=org/b"),
+    ).toBeNull();
+  });
+
   it("adds and removes catalog repository sources", function () {
     expect(panel.refs.catalogSourcesList.children.length).toBe(1);
     expect(panel.sourceEditors.length).toBe(1);

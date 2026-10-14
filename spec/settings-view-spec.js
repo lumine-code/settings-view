@@ -33,6 +33,33 @@ describe("SettingsView", function () {
     await conditionPromise(() => settingsView.initializePanels.calls.count() > 0);
   });
 
+  describe("external install links", () => {
+    it("prepares the Install panel without installing the package", async () => {
+      spyOn(lumine.workspace, "open").and.returnValue(Promise.resolve());
+      await lumine.uriHandlers.handleURI(
+        "lumine://settings-view/install?source=lumine-code%2Fjupyter-view%40v1.0.0",
+      );
+      expect(lumine.workspace.open).toHaveBeenCalledWith(
+        "lumine://config/install?source=lumine-code%2Fjupyter-view%40v1.0.0",
+      );
+    });
+
+    it("refuses missing, repeated and unsafe repository sources", () => {
+      spyOn(lumine.workspace, "open");
+      spyOn(lumine.notifications, "addWarning");
+      for (const source of [
+        undefined,
+        ["org/a", "org/b"],
+        "file:///tmp/package",
+        "https://user:pass@github.com/org/repo",
+      ]) {
+        main.handleURI({ pathname: "/install", query: { source } });
+      }
+      expect(lumine.workspace.open).not.toHaveBeenCalled();
+      expect(lumine.notifications.addWarning.calls.count()).toBe(4);
+    });
+  });
+
   describe("destruction", () => {
     beforeEach(async () => {
       await settingsView.destroy();
