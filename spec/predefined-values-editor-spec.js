@@ -56,4 +56,27 @@ describe("PredefinedValuesEditor", () => {
     expect(editor.select.value).toBe(".custom.scope");
     expect(editor.select.items.find((item) => item.value === ".custom.scope").disabled).toBe(true);
   });
+
+  it("does not commit when an auxiliary input keeps focus after a deferred focus-out", async () => {
+    jasmine.attachToDOM(lumine.workspace.getElement());
+    const item = {
+      element: editor.element,
+      getTitle: () => "Predefined value",
+      canCopy: () => false,
+    };
+    await lumine.workspace.open(item);
+    const extra = await lumine.workspace.detachItem(item);
+    try {
+      editor.focus();
+      const committed = jasmine.createSpy("local commit");
+      editor.onDidCommit(committed);
+      editor.element.dispatchEvent(
+        new (extra.getDOMWindow().FocusEvent)("focusout", { bubbles: true }),
+      );
+      await Promise.resolve();
+      expect(committed).not.toHaveBeenCalled();
+    } finally {
+      await lumine.workspace.discardEditorWindows();
+    }
+  });
 });
