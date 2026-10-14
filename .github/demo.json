@@ -1,17 +1,81 @@
 {
   "title": "settings-view",
   "description": "Find installed Jupyter packages in the package manager.",
-  "recordedOn": "2026-10-13",
-  "sourceRevision": "21cadfcd8eb8f6ee51a280cce868a072dd4f57e3",
+  "recordedOn": "2026-10-14",
+  "sourceRevision": "d6b14152cf57e98291a2f8d97345d749c4301d7c",
+  "themeSourceRevision": "14a69683b0e3238e2bc128fbfae3866c1e4ee9c6",
   "mode": "normal",
   "fontSettings": "default",
-  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
+  "scenario": "demo.js",
+  "recipeHash": "8c9a509ab7fb37439bd69ca94f6d67f504c3bf4a0252ceae36324a04b6c692c8",
+  "environment": {
+    "platform": "win32",
+    "arch": "x64",
+    "electron": "44.7.0",
+    "chrome": "152.0.7977.130",
+    "devicePixelRatio": 1,
+    "locale": "en-GB",
+    "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
+    "fontSize": 14,
+    "themes": ["one-day-syntax", "one-day-ui"]
+  },
+  "viewport": { "width": 1100, "height": 730 },
+  "cornerRadius": 10,
+  "sources": {
+    "editor": {
+      "revision": "385bd1b3ac2db600f1c7e077474d9da4d6deebc4",
+      "dirty": true,
+      "workingTreeHash": "08ba420fdc2c3d9a27ae9973c15f1efb7ccd57a582986958a8f1049bc8f34d60"
+    },
+    "package": {
+      "revision": "d6b14152cf57e98291a2f8d97345d749c4301d7c",
+      "dirty": true,
+      "workingTreeHash": "761c722a019d737455c78014fa0f489466e808e6a406060181616035f0e3904d"
+    },
+    "settings-view": {
+      "revision": "d6b14152cf57e98291a2f8d97345d749c4301d7c",
+      "dirty": true,
+      "workingTreeHash": "761c722a019d737455c78014fa0f489466e808e6a406060181616035f0e3904d"
+    },
+    "jupyter-explorer": {
+      "revision": "db2dbd230546489bf195bab66d3f7cb4be123278",
+      "dirty": true,
+      "workingTreeHash": "b70aea12333638cb52b232ccb3388a7aa6fb0ec9a19932f28ece70b24ebbd79e"
+    },
+    "jupyter-repl": {
+      "revision": "9196830bb0bda11558cbf454bee0c91c2650246a",
+      "dirty": true,
+      "workingTreeHash": "4d15b1ae4b1bb3d7c4e882f9697f5545c800fb5262399f0ae153106105f21c79"
+    },
+    "jupyter-view": {
+      "revision": "ccbc109919d6f529e0b63924ec06ea67d56aa97b",
+      "dirty": true,
+      "workingTreeHash": "52c2ff5d3234d4ab5a41f0fd035dffa23b1d5ec71ddfdceba48f515ce64d6a11"
+    },
+    "language-javascript": {
+      "revision": "c6a745ba9ccb455cda2c4a477e2226c2b0c2e226",
+      "dirty": true,
+      "workingTreeHash": "e322b897ac398752e3fd858e4eb000a297e55b1c28f4b7f14a696184916e232c"
+    },
+    "one-theme": {
+      "revision": "14a69683b0e3238e2bc128fbfae3866c1e4ee9c6",
+      "dirty": true,
+      "workingTreeHash": "50ec2f83a6347dd8113870992ec4eb2be4014f3d9e12213c2f51b543f1eca793"
+    }
+  },
+  "fixtures": [
+    {
+      "file": "editing/signal.js",
+      "sha256": "2a36953daadd1ae53070d0ff7ceab4624395fdb957104aa6e8ec92d785cadf1d"
+    }
+  ],
   "images": [
     {
       "file": "demo.png",
       "label": "Find installed Jupyter packages in the package manager.",
       "width": 1100,
-      "height": 730
+      "height": 730,
+      "sha256": "8dccd529eb847a484ce8beeda6aabffeaa849e8c9fa8a470604cdc2aeaf16d38"
     }
   ]
 }
