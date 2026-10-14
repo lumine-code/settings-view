@@ -36,8 +36,31 @@ describe("Settings status service edge ownership", () => {
     );
     connection.dispose();
     expect(bars[0].element.querySelectorAll(".settings-icon").length).toBe(1);
-    main.createSettingsView({});
+    const manager = main.createSettingsView({}).packageManager;
+    expect(bars[0].element.querySelectorAll(".package-updates-status").length).toBe(0);
+    manager.setAvailableUpdateMap(new Map([["lumine-code/example", { name: "example" }]]));
     expect(bars[0].element.querySelectorAll(".package-updates-status").length).toBe(1);
+  });
+
+  it("creates the hidden update counter only when an update arrives and keeps its view after clearing", () => {
+    provide(bars[0]);
+    const manager = main.createSettingsView({}).packageManager;
+    expect(bars[0].element.querySelector(".package-updates-status")).toBeNull();
+    manager.setAvailableUpdateMap(new Map([["lumine-code/example", { name: "example" }]]));
+    const counter = bars[0].element.querySelector(".package-updates-status");
+    expect(counter).not.toBeNull();
+    expect(counter.style.display).toBe("");
+    manager.setAvailableUpdateMap(new Map());
+    expect(bars[0].element.querySelector(".package-updates-status")).toBe(counter);
+    expect(counter.style.display).toBe("none");
+  });
+
+  it("does not create a late update counter after its status service withdraws", () => {
+    const service = provide(bars[0]);
+    const manager = main.createSettingsView({}).packageManager;
+    service.dispose();
+    manager.setAvailableUpdateMap(new Map([["lumine-code/example", { name: "example" }]]));
+    expect(bars[0].element.querySelector(".package-updates-status")).toBeNull();
   });
   it("restores the latest surviving actual bar in A-B-A edge order", () => {
     provide(bars[0]);
