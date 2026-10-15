@@ -35,11 +35,11 @@
           "label": "Settings View",
           "submenu": [
             {
-              "label": "Open",
+              "label": "Open Settings",
               "command": "settings-view:open"
             },
             {
-              "label": "Show Keybindings",
+              "label": "Show Keyboard Shortcuts",
               "command": "settings-view:show-keybindings"
             },
             {
@@ -63,19 +63,19 @@
               "type": "separator"
             },
             {
-              "label": "Install Packages/Themes",
+              "label": "Install Packages and Themes",
               "command": "settings-view:install-packages-and-themes"
             },
             {
-              "label": "Update Packages/Themes",
+              "label": "Check for Package Updates",
               "command": "settings-view:check-updates"
             },
             {
-              "label": "Manage Packages",
+              "label": "Manage Installed Packages",
               "command": "settings-view:uninstall-packages"
             },
             {
-              "label": "Manage Themes",
+              "label": "Manage Installed Themes",
               "command": "settings-view:uninstall-themes"
             }
           ]
