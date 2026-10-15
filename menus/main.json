@@ -85,6 +85,7 @@
   ],
   "context-menu": {
     "status-bar-tile.settings-icon": {
+      "commandTarget": "focus",
       "groupOrder": ["navigation", "packages", "extensions"],
       "items": [
         {
@@ -131,17 +132,20 @@
         }
       ]
     },
-    "status-bar-tile.package-updates-status": [
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Open Package Updates",
-        "command": "settings-view:check-updates"
-      },
-      {
-        "type": "separator"
-      }
-    ]
+    "status-bar-tile.package-updates-status": {
+      "commandTarget": "focus",
+      "items": [
+        {
+          "type": "separator"
+        },
+        {
+          "label": "Open Package Updates",
+          "command": "settings-view:check-updates"
+        },
+        {
+          "type": "separator"
+        }
+      ]
+    }
   }
 }
