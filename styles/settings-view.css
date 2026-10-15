@@ -488,6 +488,7 @@
   }
 
   .config-menu {
+    cursor: default;
     flex: 1.6;
     min-width: 180px;
     max-width: 240px;
@@ -501,6 +502,10 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+
+    a {
+      cursor: default;
+    }
 
     .panels-menu,
     .button-area {
