@@ -84,44 +84,59 @@
     }
   ],
   "context-menu": {
-    "status-bar-tile.settings-icon": [
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Settings",
-        "command": "settings-view:open"
-      },
-      {
-        "label": "Keybindings",
-        "command": "settings-view:show-keybindings"
-      },
-      {
-        "label": "Install",
-        "command": "settings-view:install-packages-and-themes"
-      },
-      {
-        "label": "Updates",
-        "command": "settings-view:check-updates"
-      },
-      {
-        "label": "Installed Packages",
-        "command": "settings-view:view-installed-packages"
-      },
-      {
-        "label": "Themes",
-        "command": "settings-view:view-installed-themes"
-      },
-      {
-        "type": "separator"
-      }
-    ],
+    "status-bar-tile.settings-icon": {
+      "groupOrder": ["navigation", "packages", "extensions"],
+      "items": [
+        {
+          "type": "separator"
+        },
+        {
+          "label": "Open Settings",
+          "command": "settings-view:open",
+          "group": "navigation",
+          "order": 10
+        },
+        {
+          "label": "Keyboard Shortcuts",
+          "command": "settings-view:show-keybindings",
+          "group": "navigation",
+          "order": 20
+        },
+        {
+          "label": "Install Packages and Themes",
+          "command": "settings-view:install-packages-and-themes",
+          "group": "packages",
+          "order": 30
+        },
+        {
+          "label": "Open Package Updates",
+          "command": "settings-view:check-updates",
+          "group": "packages",
+          "order": 40
+        },
+        {
+          "label": "Manage Installed Packages",
+          "command": "settings-view:view-installed-packages",
+          "group": "packages",
+          "order": 50
+        },
+        {
+          "label": "Manage Installed Themes",
+          "command": "settings-view:view-installed-themes",
+          "group": "packages",
+          "order": 60
+        },
+        {
+          "type": "separator"
+        }
+      ]
+    },
     "status-bar-tile.package-updates-status": [
       {
         "type": "separator"
       },
       {
-        "label": "Open Updates",
+        "label": "Open Package Updates",
         "command": "settings-view:check-updates"
       },
       {

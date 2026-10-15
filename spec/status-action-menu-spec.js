@@ -21,7 +21,9 @@ describe("settings-view status action menus", () => {
     await lumine.packages.deactivatePackage("settings-view");
   });
   it("provides every settings panel and exposes the updates tile's primary action", () => {
-    const gearMenu = lumine.contextMenu.templateForElement(gear.element);
+    const gearMenu = lumine.contextMenu
+      .templateForElement(gear.element)
+      .filter((item) => item.command);
     expect(gearMenu.map((item) => item.command)).toEqual([
       "settings-view:open",
       "settings-view:show-keybindings",
