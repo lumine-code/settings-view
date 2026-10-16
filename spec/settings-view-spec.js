@@ -26,7 +26,7 @@ describe("SettingsView", function () {
     recentSettings = requireActive("./lib/recent-settings");
     // `openSetting` records into a module singleton, so specs below would
     // otherwise seed the Search panel for every later spec in the run.
-    recentSettings.clear();
+    await recentSettings.clear();
     settingsView = main.createSettingsView({ packageManager, snippetsProvider: SnippetsProvider });
     spyOn(settingsView, "initializePanels").and.callThrough();
     window.advanceClock(10000);
@@ -84,7 +84,7 @@ describe("SettingsView", function () {
     it("can close the pane after package deactivation has destroyed the search DOM", async () => {
       const pane = lumine.workspace.getActivePane().splitRight({ items: [settingsView] });
       const searchPanel = settingsView.panelsByName.Search;
-      recentSettings.add("editor.fontSize");
+      await recentSettings.add("editor.fontSize");
       searchPanel.renderRecentSettings();
       searchPanel.refs.searchEditor.setText("font");
       searchPanel.matchSettings();
@@ -813,33 +813,23 @@ describe("SettingsView", function () {
       });
     });
 
-    it("round-trips the recently opened list through the package state", async () => {
+    it("persists recently opened settings across package generations", async () => {
       spyOn(settingsView, "showPanel");
       spyOn(settingsView, "revealSetting");
-
-      settingsView.openSetting("editor.fontSize");
-      const state = main.serialize();
-      recentSettings.clear();
-
-      main.initialize(state);
-      expect(recentSettings.getPaths()).toEqual(["editor.fontSize"]);
-
-      // `initialize` runs again after a disable/enable cycle, and the package
-      // state is `{}` on a first run.
-      main.initialize(state);
-      expect(recentSettings.getPaths()).toEqual(["editor.fontSize"]);
-
-      main.initialize({});
-      expect(recentSettings.getPaths()).toEqual([]);
+      await settingsView.openSetting("editor.fontSize");
+      await lumine.packages.deactivatePackage("settings-view");
+      const pack = await lumine.packages.activatePackage("settings-view");
+      const requireCurrent = createRequire(path.join(pack.path, "package.json"));
+      expect(requireCurrent("./lib/recent-settings").getPaths()).toEqual(["editor.fontSize"]);
     });
 
     it("records the setting as recently opened, most recent first", async () => {
       spyOn(settingsView, "showPanel");
       spyOn(settingsView, "revealSetting");
 
-      settingsView.openSetting("editor.fontSize");
-      settingsView.openSetting("core.closeDeletedFileTabs");
-      settingsView.openSetting("editor.fontSize");
+      await settingsView.openSetting("editor.fontSize");
+      await settingsView.openSetting("core.closeDeletedFileTabs");
+      await settingsView.openSetting("editor.fontSize");
 
       expect(recentSettings.getPaths()).toEqual(["editor.fontSize", "core.closeDeletedFileTabs"]);
     });

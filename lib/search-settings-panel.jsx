@@ -34,6 +34,11 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
     this.updateFilterButtons();
 
     this.subscriptions = new CompositeDisposable();
+    this.subscriptions.add(
+      recentSettings.onDidChange(() => {
+        if (this.searchState === "initial") this.renderRecentSettings();
+      }),
+    );
     this.subscriptions.add(this.handleEvents());
     this.subscriptions.add(this.handlePanelEvents());
     this.subscriptions.add(

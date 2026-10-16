@@ -1,13 +1,18 @@
-const SearchSettingsPanel = require("../lib/search-settings-panel");
-const recentSettings = require("../lib/recent-settings");
+const { createRequire } = require("node:module");
+const path = require("node:path");
+let SearchSettingsPanel, recentSettings;
 
 describe("SearchSettingsPanel", () => {
   let searchSettingsPanel;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    const pack = await lumine.packages.activatePackage("settings-view");
+    const requireActive = createRequire(path.join(pack.path, "package.json"));
+    SearchSettingsPanel = requireActive("./lib/search-settings-panel");
+    recentSettings = requireActive("./lib/recent-settings");
     // The store is a module singleton, so anything an earlier spec opened would
     // otherwise still be listed here.
-    recentSettings.clear();
+    await recentSettings.clear();
     searchSettingsPanel = new SearchSettingsPanel(null);
   });
 
@@ -16,23 +21,23 @@ describe("SearchSettingsPanel", () => {
   });
 
   describe("handleSettingsString", () => {
-    it("handles null values", () => {
+    it("handles null values", async () => {
       expect(searchSettingsPanel.handleSettingsString(null)).toBe("");
     });
 
-    it("converts uppercase to lowercase", () => {
+    it("converts uppercase to lowercase", async () => {
       expect(searchSettingsPanel.handleSettingsString("Hello World")).toBe("hello world");
     });
   });
 
   describe("getScore", () => {
-    it("returns a positive score and match indexes for a matching query", () => {
+    it("returns a positive score and match indexes for a matching query", async () => {
       const result = searchSettingsPanel.getScore("hello world", "hello");
       expect(result.score).toBeGreaterThan(0);
       expect(result.matchIndexes.length).toBeGreaterThan(0);
     });
 
-    it("returns zero for non-matching and empty inputs", () => {
+    it("returns zero for non-matching and empty inputs", async () => {
       expect(searchSettingsPanel.getScore("hello", "xyz")).toEqual({
         score: 0,
         matchIndexes: [],
@@ -45,7 +50,7 @@ describe("SearchSettingsPanel", () => {
   });
 
   describe("generateRanks", () => {
-    it("ranks primary fields", () => {
+    it("ranks primary fields", async () => {
       const result = searchSettingsPanel.generateRanks(
         "tab",
         "Tab Setting",
@@ -57,7 +62,7 @@ describe("SearchSettingsPanel", () => {
       expect(result.matchIndexes.length).toBeGreaterThan(0);
     });
 
-    it("allows description-only matches with a lower weight", () => {
+    it("allows description-only matches with a lower weight", async () => {
       const result = searchSettingsPanel.generateRanks(
         "indentation",
         "Width",
@@ -70,7 +75,7 @@ describe("SearchSettingsPanel", () => {
   });
 
   describe("schema collection", () => {
-    it("recursively indexes nested settings without mutating their schemas", () => {
+    it("recursively indexes nested settings without mutating their schemas", async () => {
       const schema = {
         example: {
           type: "object",
@@ -99,7 +104,7 @@ describe("SearchSettingsPanel", () => {
       expect(schema.example.properties.group.rank).not.toBeDefined();
     });
 
-    it("omits settings that have no editable destination", () => {
+    it("omits settings that have no editable destination", async () => {
       const results = searchSettingsPanel.collectSettings({
         core: {
           type: "object",
@@ -114,7 +119,7 @@ describe("SearchSettingsPanel", () => {
   });
 
   describe("query filters", () => {
-    it("switches the active filter when a filter button is clicked", () => {
+    it("switches the active filter when a filter button is clicked", async () => {
       const editorButton = searchSettingsPanel.refs.filterGroup.querySelector(
         '[data-search-filter="editor"]',
       );
@@ -128,14 +133,14 @@ describe("SearchSettingsPanel", () => {
       ).not.toHaveClass("selected");
     });
 
-    it("supports case-insensitive namespace prefixes", () => {
+    it("supports case-insensitive namespace prefixes", async () => {
       expect(searchSettingsPanel.parseQuery("Editor: font size")).toEqual({
         filter: "editor",
         searchTerm: "font size",
       });
     });
 
-    it("uses the selected filter when no prefix is present", () => {
+    it("uses the selected filter when no prefix is present", async () => {
       searchSettingsPanel.activeFilter = "packages";
       expect(searchSettingsPanel.parseQuery("spell check")).toEqual({
         filter: "packages",
@@ -145,7 +150,7 @@ describe("SearchSettingsPanel", () => {
   });
 
   describe("search states", () => {
-    it("shows guidance before a query and a useful empty result message", () => {
+    it("shows guidance before a query and a useful empty result message", async () => {
       expect(searchSettingsPanel.refs.resultsSection).toBeHidden();
       expect(searchSettingsPanel.refs.searchStatus.textContent).toContain("Type a setting name");
 
@@ -165,14 +170,14 @@ describe("SearchSettingsPanel", () => {
     // trivially true, so assert on the property the panel actually sets.
     const sectionDisplay = (panel) => panel.refs.recentSection.style.display;
 
-    it("hides the section when nothing has been opened yet", () => {
+    it("hides the section when nothing has been opened yet", async () => {
       expect(sectionDisplay(searchSettingsPanel)).toBe("none");
       expect(searchSettingsPanel.refs.recentResults.children.length).toBe(0);
     });
 
-    it("lists the opened settings most recent first", () => {
-      recentSettings.add("editor.fontSize");
-      recentSettings.add("core.closeDeletedFileTabs");
+    it("lists the opened settings most recent first", async () => {
+      await recentSettings.add("editor.fontSize");
+      await recentSettings.add("core.closeDeletedFileTabs");
       searchSettingsPanel.renderRecentSettings();
 
       expect(sectionDisplay(searchSettingsPanel)).toBe("");
@@ -182,33 +187,33 @@ describe("SearchSettingsPanel", () => {
       ]);
     });
 
-    it("skips a setting that is no longer in the schema", () => {
-      recentSettings.add("no-such-package.someSetting");
-      recentSettings.add("editor.fontSize");
+    it("skips a setting that is no longer in the schema", async () => {
+      await recentSettings.add("no-such-package.someSetting");
+      await recentSettings.add("editor.fontSize");
       searchSettingsPanel.renderRecentSettings();
 
       expect(cardKeys(searchSettingsPanel)).toEqual(["editor.fontSize"]);
     });
 
-    it("renders a card even when search metadata is enabled", () => {
+    it("renders a card even when search metadata is enabled", async () => {
       // Recent entries carry no search score, so the card must not reach for one.
       lumine.config.set("settings-view.searchSettingsMetadata", true);
-      recentSettings.add("editor.fontSize");
+      await recentSettings.add("editor.fontSize");
       searchSettingsPanel.renderRecentSettings();
 
       expect(cardKeys(searchSettingsPanel)).toEqual(["editor.fontSize"]);
     });
 
-    it("replaces the list rather than appending to it on a rebuild", () => {
-      recentSettings.add("editor.fontSize");
+    it("replaces the list rather than appending to it on a rebuild", async () => {
+      await recentSettings.add("editor.fontSize");
       searchSettingsPanel.renderRecentSettings();
       searchSettingsPanel.renderRecentSettings();
 
       expect(searchSettingsPanel.refs.recentResults.children.length).toBe(1);
     });
 
-    it("hides the section once a query is being shown", () => {
-      recentSettings.add("editor.fontSize");
+    it("hides the section once a query is being shown", async () => {
+      await recentSettings.add("editor.fontSize");
       searchSettingsPanel.renderRecentSettings();
       expect(sectionDisplay(searchSettingsPanel)).toBe("");
 

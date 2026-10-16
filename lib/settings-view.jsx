@@ -469,7 +469,11 @@ module.exports = class SettingsView {
   }
 
   openSetting(path) {
-    recentSettings.add(path);
+    const saving = recentSettings
+      .add(path)
+      .catch((error) =>
+        lumine.notifications.addError("Unable to save recent settings", { detail: error.message }),
+      );
 
     const namespace = path.split(".")[0];
     let panelName;
@@ -504,6 +508,7 @@ module.exports = class SettingsView {
 
     this.showPanel(panelName, options);
     process.nextTick(() => this.revealSetting(path));
+    return saving;
   }
 
   revealSetting(path) {
