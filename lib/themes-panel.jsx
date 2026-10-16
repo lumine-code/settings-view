@@ -1,4 +1,5 @@
 /** @jsx etch.dom */
+const stopCommandPropagation = require("./stop-command-propagation");
 const etch = require("@lumine-code/etch");
 const _ = require("@lumine-code/underscore-plus");
 const { CompositeDisposable, TextEditor } = require("lumine");
@@ -47,26 +48,29 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
     this.disposables = new CompositeDisposable();
     this.disposables.add(this.handleEvents());
     this.disposables.add(
-      lumine.commands.add(this.element, {
-        "core:move-up": () => {
-          this.scrollUp();
-        },
-        "core:move-down": () => {
-          this.scrollDown();
-        },
-        "core:page-up": () => {
-          this.pageUp();
-        },
-        "core:page-down": () => {
-          this.pageDown();
-        },
-        "core:move-to-top": () => {
-          this.scrollToTop();
-        },
-        "core:move-to-bottom": () => {
-          this.scrollToBottom();
-        },
-      }),
+      lumine.commands.add(
+        this.element,
+        stopCommandPropagation({
+          "core:move-up": () => {
+            this.scrollUp();
+          },
+          "core:move-down": () => {
+            this.scrollDown();
+          },
+          "core:page-up": () => {
+            this.pageUp();
+          },
+          "core:page-down": () => {
+            this.pageDown();
+          },
+          "core:move-to-top": () => {
+            this.scrollToTop();
+          },
+          "core:move-to-bottom": () => {
+            this.scrollToBottom();
+          },
+        }),
+      ),
     );
     this.loadPackages();
 

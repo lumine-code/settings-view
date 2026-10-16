@@ -1,4 +1,5 @@
 /** @jsx etch.dom */
+const stopCommandPropagation = require("./stop-command-propagation");
 const path = require("path");
 
 const _ = require("@lumine-code/underscore-plus");
@@ -62,26 +63,29 @@ module.exports = class PackageDetailView {
     this.subscribeToPackageEnablement();
 
     this.disposables.add(
-      lumine.commands.add(this.element, {
-        "core:move-up": () => {
-          this.scrollUp();
-        },
-        "core:move-down": () => {
-          this.scrollDown();
-        },
-        "core:page-up": () => {
-          this.pageUp();
-        },
-        "core:page-down": () => {
-          this.pageDown();
-        },
-        "core:move-to-top": () => {
-          this.scrollToTop();
-        },
-        "core:move-to-bottom": () => {
-          this.scrollToBottom();
-        },
-      }),
+      lumine.commands.add(
+        this.element,
+        stopCommandPropagation({
+          "core:move-up": () => {
+            this.scrollUp();
+          },
+          "core:move-down": () => {
+            this.scrollDown();
+          },
+          "core:page-up": () => {
+            this.pageUp();
+          },
+          "core:page-down": () => {
+            this.pageDown();
+          },
+          "core:move-to-top": () => {
+            this.scrollToTop();
+          },
+          "core:move-to-bottom": () => {
+            this.scrollToBottom();
+          },
+        }),
+      ),
     );
 
     const issueButtonClickHandler = (event) => {

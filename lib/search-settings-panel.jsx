@@ -1,4 +1,5 @@
 /** @jsx etch.dom */
+const stopCommandPropagation = require("./stop-command-propagation");
 const { TextEditor, CompositeDisposable, Disposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 const CollapsibleSectionPanel = require("./collapsible-section-panel");
@@ -36,15 +37,18 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
     this.subscriptions.add(this.handleEvents());
     this.subscriptions.add(this.handlePanelEvents());
     this.subscriptions.add(
-      lumine.commands.add(this.element, {
-        "core:move-up": () => this.scrollUp(),
-        "core:move-down": () => this.scrollDown(),
-        "core:page-up": () => this.pageUp(),
-        "core:page-down": () => this.pageDown(),
-        "core:move-to-top": () => this.scrollToTop(),
-        "core:move-to-bottom": () => this.scrollToBottom(),
-        "core:cancel": () => this.clearSearch(),
-      }),
+      lumine.commands.add(
+        this.element,
+        stopCommandPropagation({
+          "core:move-up": () => this.scrollUp(),
+          "core:move-down": () => this.scrollDown(),
+          "core:page-up": () => this.pageUp(),
+          "core:page-down": () => this.pageDown(),
+          "core:move-to-top": () => this.scrollToTop(),
+          "core:move-to-bottom": () => this.scrollToBottom(),
+          "core:cancel": () => this.clearSearch(),
+        }),
+      ),
     );
 
     this.subscriptions.add(

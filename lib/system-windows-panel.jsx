@@ -1,4 +1,5 @@
 /** @jsx etch.dom */
+const stopCommandPropagation = require("./stop-command-propagation");
 const { WinShell, CompositeDisposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 
@@ -7,26 +8,29 @@ module.exports = class SystemPanel {
     etch.initialize(this);
     this.subscriptions = new CompositeDisposable();
     this.subscriptions.add(
-      lumine.commands.add(this.element, {
-        "core:move-up": () => {
-          this.scrollUp();
-        },
-        "core:move-down": () => {
-          this.scrollDown();
-        },
-        "core:page-up": () => {
-          this.pageUp();
-        },
-        "core:page-down": () => {
-          this.pageDown();
-        },
-        "core:move-to-top": () => {
-          this.scrollToTop();
-        },
-        "core:move-to-bottom": () => {
-          this.scrollToBottom();
-        },
-      }),
+      lumine.commands.add(
+        this.element,
+        stopCommandPropagation({
+          "core:move-up": () => {
+            this.scrollUp();
+          },
+          "core:move-down": () => {
+            this.scrollDown();
+          },
+          "core:page-up": () => {
+            this.pageUp();
+          },
+          "core:page-down": () => {
+            this.pageDown();
+          },
+          "core:move-to-top": () => {
+            this.scrollToTop();
+          },
+          "core:move-to-bottom": () => {
+            this.scrollToBottom();
+          },
+        }),
+      ),
     );
 
     WinShell.fileHandler.isRegistered((isRegistered) => {

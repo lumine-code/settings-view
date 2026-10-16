@@ -1,4 +1,5 @@
 /** @jsx etch.dom */
+const stopCommandPropagation = require("./stop-command-propagation");
 const { CompositeDisposable, Disposable, TextEditor } = require("lumine");
 const etch = require("@lumine-code/etch");
 const _ = require("@lumine-code/underscore-plus");
@@ -41,15 +42,18 @@ module.exports = class KeybindingsPanel {
     );
     this.disposables.add(this.handlePanelEvents());
     this.disposables.add(
-      lumine.commands.add(this.element, {
-        "core:move-up": () => this.scrollUp(),
-        "core:move-down": () => this.scrollDown(),
-        "core:page-up": () => this.pageUp(),
-        "core:page-down": () => this.pageDown(),
-        "core:move-to-top": () => this.scrollToTop(),
-        "core:move-to-bottom": () => this.scrollToBottom(),
-        "core:cancel": () => this.clearSearch(),
-      }),
+      lumine.commands.add(
+        this.element,
+        stopCommandPropagation({
+          "core:move-up": () => this.scrollUp(),
+          "core:move-down": () => this.scrollDown(),
+          "core:page-up": () => this.pageUp(),
+          "core:page-down": () => this.pageDown(),
+          "core:move-to-top": () => this.scrollToTop(),
+          "core:move-to-bottom": () => this.scrollToBottom(),
+          "core:cancel": () => this.clearSearch(),
+        }),
+      ),
     );
 
     this.otherPlatformPattern = new RegExp(
