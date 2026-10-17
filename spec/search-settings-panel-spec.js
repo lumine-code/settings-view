@@ -187,6 +187,37 @@ describe("SearchSettingsPanel", () => {
       ]);
     });
 
+    it("keeps concurrent recent additions and refreshes an already open initial panel", async () => {
+      await Promise.all([
+        recentSettings.add("editor.fontSize"),
+        recentSettings.add("core.closeDeletedFileTabs"),
+      ]);
+
+      expect(recentSettings.getPaths()).toEqual(["core.closeDeletedFileTabs", "editor.fontSize"]);
+      expect(cardKeys(searchSettingsPanel)).toEqual([
+        "core.closeDeletedFileTabs",
+        "editor.fontSize",
+      ]);
+      await recentSettings.clear();
+      expect(cardKeys(searchSettingsPanel)).toEqual([]);
+      expect(sectionDisplay(searchSettingsPanel)).toBe("none");
+    });
+
+    it("keeps the active search query and result cards when recent settings change", async () => {
+      searchSettingsPanel.refs.searchEditor.setText("font");
+      searchSettingsPanel.matchSettings();
+      const results = searchSettingsPanel.searchResults.slice();
+      expect(results.length).toBeGreaterThan(0);
+      const renderRecent = spyOn(searchSettingsPanel, "renderRecentSettings").and.callThrough();
+
+      await recentSettings.add("editor.fontSize");
+      await recentSettings.clear();
+
+      expect(searchSettingsPanel.refs.searchEditor.getText()).toBe("font");
+      expect(searchSettingsPanel.searchResults).toEqual(results);
+      expect(renderRecent).not.toHaveBeenCalled();
+    });
+
     it("skips a setting that is no longer in the schema", async () => {
       await recentSettings.add("no-such-package.someSetting");
       await recentSettings.add("editor.fontSize");
