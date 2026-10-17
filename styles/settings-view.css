@@ -28,12 +28,6 @@
   initial-value: black;
 }
 
-@property --settings-view-input-background-dark-flag {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: black;
-}
-
 .settings-view {
   --section-padding: calc(2 * var(--ui-spacing));
   --breadcrumb-padding: calc(2 * var(--ui-spacing));
@@ -54,10 +48,6 @@
     from color-mix(in srgb, var(--background-color-error) 10%, var(--base-background-color)) 0 0
       calc((50 - l) * infinity) / 1
   );
-  --settings-view-input-background-dark-flag: hsl(
-    from var(--input-background-color) 0 0 calc((50 - l) * infinity) / 1
-  );
-
   display: flex;
 
   .breadcrumb {
@@ -279,26 +269,14 @@
     }
 
     lumine-text-editor[mini] {
-      opacity: 0.75;
       .selection .region {
-        /* contrast(@input-background-color, lighten(…, 8%), darken(…, 8%)) */
-        background-color: hsl(from var(--input-background-color) h s calc(l - 8));
-
-        @container style(--settings-view-input-background-dark-flag: white) {
-          background-color: hsl(from var(--input-background-color) h s calc(l + 8));
-        }
+        background-color: var(--input-selection-color);
       }
     }
 
     lumine-text-editor[mini].is-focused {
-      opacity: 1;
       .selection .region {
-        /* contrast(@input-background-color, lighten(…, 12%), darken(…, 12%)) */
-        background-color: hsl(from var(--input-background-color) h s calc(l - 12));
-
-        @container style(--settings-view-input-background-dark-flag: white) {
-          background-color: hsl(from var(--input-background-color) h s calc(l + 12));
-        }
+        background-color: var(--input-selection-color-focus);
       }
     }
   }
@@ -582,8 +560,6 @@
         padding: 12px 14px;
         font-weight: bold;
         line-height: 16px;
-        opacity: 0.85;
-        transition: opacity 0.1s ease-in;
         box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 7%);
 
         &:hover {
@@ -602,12 +578,11 @@
       li.active a,
       li.active a:hover {
         opacity: 1;
-        box-shadow: 0 0 0 1px #225cc4 !important; /* darken(#3c76dd, 10%) */
+        box-shadow: 0 0 0 1px var(--accent-indicator-color) !important;
 
         .package-author,
         .package-version {
-          color: #fff;
-          opacity: 0.6;
+          color: var(--text-color-selected);
         }
       }
 
@@ -615,13 +590,13 @@
         line-height: 16px;
         margin-left: 5px;
         font-weight: normal;
-        color: #999;
+        color: var(--text-color-subtle);
       }
 
       .package-author {
         font-weight: normal;
         display: block;
-        color: #999;
+        color: var(--text-color-subtle);
       }
     }
 
@@ -932,7 +907,7 @@
     padding-right: 2px;
 
     &:hover {
-      color: #2a6496;
+      color: var(--accent-link-color);
     }
   }
 
@@ -1461,7 +1436,7 @@
   }
   &::before,
   &::after {
-    background-color: white;
+    background-color: lch(from var(--scope-resolution-color) calc((49.44 - l) * infinity) 0 0);
   }
 }
 
@@ -1475,4 +1450,11 @@
 
 .settings-view .scope-inherited-editor-container {
   cursor: not-allowed;
+}
+
+/* Respect reduced motion while retaining visible status indicators. */
+@media (prefers-reduced-motion: reduce) {
+  .settings-view .setting-key {
+    transition: none;
+  }
 }

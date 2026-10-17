@@ -163,3 +163,11 @@
     transform: rotate(360deg);
   }
 }
+
+/* Respect reduced motion while retaining visible status indicators. */
+@media (prefers-reduced-motion: reduce) {
+  .settings-view .search-container .check-updates-button.is-checking::before,
+  .settings-view .package-version-spinner {
+    animation: none;
+  }
+}

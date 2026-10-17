@@ -356,3 +356,20 @@
     background-position: -10px 0px;
   }
 }
+
+/* Respect reduced motion while retaining visible status indicators. */
+@media (prefers-reduced-motion: reduce) {
+  .settings-view
+    .package-card
+    .meta-controls
+    :is(
+      .install-button.is-installing,
+      .replace-button.is-installing,
+      .uninstall-button.is-uninstalling
+    ) {
+    animation: none;
+  }
+  .settings-view .package-card .meta-controls .status-indicator {
+    transition: none;
+  }
+}
