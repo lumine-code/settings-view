@@ -125,6 +125,16 @@ module.exports = class PackageDetailView {
         this.refs.licenseButton.removeEventListener("click", licenseButtonClickHandler);
       }),
     );
+    const noticesButtonClickHandler = (event) => {
+      event.preventDefault();
+      this.openThirdPartyNotices();
+    };
+    this.refs.noticesButton.addEventListener("click", noticesButtonClickHandler);
+    this.disposables.add(
+      new Disposable(() => {
+        this.refs.noticesButton.removeEventListener("click", noticesButtonClickHandler);
+      }),
+    );
 
     const openButtonClickHandler = (event) => {
       event.preventDefault();
@@ -417,6 +427,9 @@ module.exports = class PackageDetailView {
                 <button ref="licenseButton" className="btn btn-default icon icon-law">
                   LICENSE
                 </button>
+                <button ref="noticesButton" className="btn btn-default icon icon-law">
+                  Third-Party Notices
+                </button>
                 <button ref="openButton" className="btn btn-default icon icon-link-external">
                   View Code
                 </button>
@@ -596,15 +609,28 @@ module.exports = class PackageDetailView {
   // on disk the file name is known, so the URL can be built directly. A package
   // with no GitHub origin (a bundled or local package) opens its local file.
   async openLicense() {
+    return this.openLegalFile("LICENSE", "licensePath", "licenseSource", "loadLicense");
+  }
+
+  async openThirdPartyNotices() {
+    return this.openLegalFile(
+      "THIRD_PARTY_NOTICES",
+      "noticesPath",
+      "noticesSource",
+      "loadThirdPartyNotices",
+    );
+  }
+
+  async openLegalFile(filename, pathField, sourceField, loader) {
     const meta = this.pack.metadata || {};
-    const known = meta.licenseSource || this.licenseBlobUrl();
+    const known = meta[sourceField] || this.licenseBlobUrl(this[pathField]);
     if (known) {
       void openExternal(known);
       return;
     }
 
-    if (this.licensePath) {
-      this.openMarkdownFile(this.licensePath);
+    if (this[pathField]) {
+      this.openMarkdownFile(this[pathField]);
       return;
     }
 
@@ -613,27 +639,27 @@ module.exports = class PackageDetailView {
     // reports where it found it.
     const entry = await this.packageManager
       .getCatalogClient()
-      .loadLicense(meta)
+      [loader](meta)
       .catch(() => null);
     if (entry && entry.source) {
-      meta.licenseSource = entry.source;
+      meta[sourceField] = entry.source;
       void openExternal(entry.source);
     } else {
       // The manifest names a license but the repository ships no file for it.
-      lumine.notifications.addWarning(`No LICENSE file found in ${this.pack.name}.`);
+      lumine.notifications.addWarning(`No ${filename} file found in ${this.pack.name}.`);
     }
   }
 
   // The GitHub blob URL of the local LICENSE file, at the commit the view shows.
-  licenseBlobUrl() {
-    if (!this.licensePath) return null;
+  licenseBlobUrl(file = this.licensePath) {
+    if (!file) return null;
     const meta = this.pack.metadata || {};
     const install = meta.apmInstallSource || {};
     const originKey = meta.originKey || install.origin || "";
     const sha = meta.resolvedSha || install.sha;
     if (!originKey.startsWith("github.com/") || !sha) return null;
     const repoPath = originKey.slice("github.com/".length);
-    return `https://github.com/${repoPath}/blob/${sha}/${path.basename(this.licensePath)}`;
+    return `https://github.com/${repoPath}/blob/${sha}/${path.basename(file)}`;
   }
 
   // The LICENSE button is only offered when it can lead somewhere: a local file,
@@ -646,6 +672,9 @@ module.exports = class PackageDetailView {
       meta.licenseSource ||
       (meta.license && meta.originKey && meta.resolvedSha);
     this.refs.licenseButton.style.display = available ? "" : "none";
+    const noticesAvailable =
+      this.noticesPath || meta.noticesSource || (meta.originKey && meta.resolvedSha);
+    this.refs.noticesButton.style.display = noticesAvailable ? "" : "none";
   }
 
   // The embedded card changed its selected ref. Reflect the new commit in the
@@ -679,6 +708,7 @@ module.exports = class PackageDetailView {
       this.readmeRequested = false;
       // The LICENSE belongs to its commit too, so drop the URL of the old one.
       meta.licenseSource = undefined;
+      meta.noticesSource = undefined;
       this.renderReadme();
     }
     this.updateLicenseButton();
@@ -877,6 +907,7 @@ module.exports = class PackageDetailView {
   updateFileButtons() {
     this.changelogPath = null;
     this.licensePath = null;
+    this.noticesPath = null;
     this.readmePath = null;
 
     const matchingLoadedPackage = this.getMatchingLoadedPackage();
@@ -901,12 +932,15 @@ module.exports = class PackageDetailView {
         case "licence":
           this.licensePath = child;
           break;
+        case "third_party_notices":
+          this.noticesPath = child;
+          break;
         case "readme":
           this.readmePath = child;
           break;
       }
 
-      if (this.readmePath && this.changelogPath && this.licensePath) {
+      if (this.readmePath && this.changelogPath && this.licensePath && this.noticesPath) {
         break;
       }
     }

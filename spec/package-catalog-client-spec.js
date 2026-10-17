@@ -872,6 +872,56 @@ describe("PackageCatalogClient", function () {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it("caches the own license and third-party notices separately at the exact commit", async () => {
+    const storage = createStorage();
+    const fetchImpl = jasmine
+      .createSpy("fetchImpl")
+      .and.callFake((url) =>
+        Promise.resolve(
+          textResponse(
+            200,
+            url.endsWith("/THIRD_PARTY_NOTICES") ? "Inherited terms" : "Own MIT terms",
+          ),
+        ),
+      );
+    const client = new PackageCatalogClient({ fetchImpl, storage });
+    const pack = {
+      originKey: "github.com/owner/package",
+      repository: "owner/package",
+      resolvedSha: SHA_1,
+    };
+    const license = await client.loadLicense(pack);
+    const notices = await client.loadThirdPartyNotices(pack);
+    expect(license.body).toBe("Own MIT terms");
+    expect(notices.body).toBe("Inherited terms");
+    expect(license.source).toBe(`https://github.com/owner/package/blob/${SHA_1}/LICENSE`);
+    expect(notices.source).toBe(
+      `https://github.com/owner/package/blob/${SHA_1}/THIRD_PARTY_NOTICES`,
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    fetchImpl.calls.reset();
+    expect((await client.loadLicense(pack)).body).toBe(license.body);
+    expect((await client.loadThirdPartyNotices(pack)).body).toBe(notices.body);
+    expect(fetchImpl).not.toHaveBeenCalled();
+    await client.loadThirdPartyNotices({ ...pack, resolvedSha: SHA_2 });
+    expect(fetchImpl.calls.mostRecent().args[0]).toContain(`/${SHA_2}/THIRD_PARTY_NOTICES`);
+  });
+
+  it("reports absent third-party notices without substituting the own license", async () => {
+    const fetchImpl = jasmine
+      .createSpy("fetchImpl")
+      .and.returnValue(Promise.resolve(textResponse(404, "")));
+    const client = new PackageCatalogClient({ fetchImpl, storage: createStorage() });
+    const notices = await client.loadThirdPartyNotices({
+      originKey: "github.com/owner/package",
+      repository: "owner/package",
+      resolvedSha: SHA_1,
+    });
+    expect(notices).toBeNull();
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl.calls.mostRecent().args[0]).toContain("/THIRD_PARTY_NOTICES");
+  });
+
   it("enforces queue and per-host concurrency", async () => {
     const queue = new TaskQueue(3, 2);
     let active = 0;

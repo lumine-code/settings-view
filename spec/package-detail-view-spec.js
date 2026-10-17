@@ -1,4 +1,5 @@
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 
 const PackageDetailView = require("../lib/package-detail-view");
@@ -446,6 +447,63 @@ describe("PackageDetailView", function () {
     await view.openLicense();
     expect(loadLicense).toHaveBeenCalled();
     expect(lumine.shell.openExternal).toHaveBeenCalledWith(source);
+  });
+
+  it("opens third-party notices lazily and forgets their URL when the selected ref changes", async () => {
+    const client = packageManager.getCatalogClient();
+    const source = `https://github.com/owner/pkg-notices/blob/${"b".repeat(40)}/THIRD_PARTY_NOTICES`;
+    const loadNotices = spyOn(client, "loadThirdPartyNotices").and.returnValue(
+      Promise.resolve({ body: "Inherited terms", source }),
+    );
+    spyOn(client, "loadReadme").and.returnValue(Promise.resolve(null));
+    spyOn(lumine.shell, "openExternal");
+    const metadata = {
+      name: "pkg-notices",
+      version: "1.0.0",
+      repository: "owner/pkg-notices",
+      owner: "owner",
+      engines: { lumine: "*" },
+      originKey: "github.com/owner/pkg-notices",
+      resolvedSha: "b".repeat(40),
+      readme: "# pkg-notices",
+      license: "MIT",
+    };
+    view = new PackageDetailView(
+      { ...metadata, metadata },
+      new SettingsView(),
+      packageManager,
+      SnippetsProvider,
+    );
+    expect(loadNotices).not.toHaveBeenCalled();
+    expect(view.refs.noticesButton.style.display).not.toBe("none");
+    await view.openThirdPartyNotices();
+    expect(loadNotices).toHaveBeenCalledWith(metadata);
+    expect(lumine.shell.openExternal).toHaveBeenCalledWith(source);
+    expect(metadata.noticesSource).toBe(source);
+    view.applySelectedRef({ resolvedSha: "c".repeat(40), previewVersion: true });
+    expect(metadata.noticesSource).toBeUndefined();
+  });
+
+  it("makes both local legal files accessible for packages without a remote origin", async () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "lumine-local-notices-"));
+    try {
+      fs.writeFileSync(path.join(directory, "LICENSE"), "Own license");
+      fs.writeFileSync(path.join(directory, "THIRD_PARTY_NOTICES"), "Inherited terms");
+      lumine.packages.loadPackage(path.join(__dirname, "fixtures", "package-with-config"));
+      const pack = lumine.packages.getLoadedPackage("package-with-config");
+      view = new PackageDetailView(pack, new SettingsView(), packageManager, SnippetsProvider);
+      view.pack = { ...pack, path: directory, metadata: { name: pack.name, license: "MIT" } };
+      view.updateFileButtons();
+      spyOn(view, "openMarkdownFile");
+      await view.openLicense();
+      await view.openThirdPartyNotices();
+      expect(view.openMarkdownFile).toHaveBeenCalledWith(path.join(directory, "LICENSE"));
+      expect(view.openMarkdownFile).toHaveBeenCalledWith(
+        path.join(directory, "THIRD_PARTY_NOTICES"),
+      );
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it("hides the LICENSE button for a package with no license at all", function () {
