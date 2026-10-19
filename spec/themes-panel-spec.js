@@ -8,7 +8,7 @@ const ThemesPanel = require("../lib/themes-panel");
 const wait = timeoutPromise;
 
 describe("ThemesPanel", function () {
-  let [panel, packageManager, reloadedHandler] = [];
+  let [panel, packageManager, reloadedHandler, themeSubscription] = [];
   const settingsView = null;
 
   beforeEach(async () => {
@@ -19,7 +19,7 @@ describe("ThemesPanel", function () {
     lumine.config.set("theme.light", ["one-day-ui", "one-day-syntax"]);
     lumine.config.set("theme.dark", ["one-night-ui", "one-night-syntax"]);
     reloadedHandler = jasmine.createSpy("reloadedHandler");
-    lumine.themes.onDidChangeActiveThemes(reloadedHandler);
+    themeSubscription = lumine.themes.onDidChangeActiveThemes(reloadedHandler);
     await lumine.themes.activatePackages();
 
     await conditionPromise(() => reloadedHandler.calls.count() === 1, "themes to be reloaded");
@@ -38,6 +38,9 @@ describe("ThemesPanel", function () {
   });
 
   afterEach(async () => {
+    await panel?.destroy();
+    panel = null;
+    themeSubscription?.dispose();
     if (lumine.packages.isPackageLoaded("a-theme")) {
       await lumine.packages.unloadPackage("a-theme");
     }
@@ -125,6 +128,7 @@ describe("ThemesPanel", function () {
       installed = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "installed.json")));
       spyOn(packageManager, "loadCompatiblePackageVersion").and.callFake(function () {});
       spyOn(packageManager, "getInstalled").and.returnValue(Promise.resolve(installed));
+      await panel.destroy();
       panel = new ThemesPanel(settingsView, packageManager);
 
       await conditionPromise(
@@ -293,6 +297,7 @@ describe("ThemesPanel", function () {
 
       spyOn(packageManager, "loadCompatiblePackageVersion").and.callFake(function () {});
       spyOn(packageManager, "getInstalled").and.returnValue(Promise.resolve(installed));
+      await panel.destroy();
       panel = new ThemesPanel(settingsView, packageManager);
 
       await conditionPromise(
@@ -301,10 +306,6 @@ describe("ThemesPanel", function () {
           panel.refs.installedCount.textContent.indexOf("…") < 0,
       );
     });
-
-    afterEach(async () => {
-      await Promise.resolve(lumine.themes.deactivateThemes());
-    }); // Ensure works on promise and non-promise versions
 
     it("has a count of zero in all headings", function () {
       for (let heading of Array.from(panel.element.querySelector(".section-heading-count"))) {

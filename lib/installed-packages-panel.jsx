@@ -266,7 +266,7 @@ module.exports = class InstalledPackagesPanel extends CollapsibleSectionPanel {
       this.displayPackageUpdates(packages);
     });
 
-    this.packageManager
+    return this.packageManager
       .getInstalled()
       .then((packages) => {
         if (this.destroyed || requestGeneration !== this.packageLoadRequestGeneration) return;

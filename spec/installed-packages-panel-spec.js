@@ -6,9 +6,13 @@ const PackageManager = require("../lib/package-manager");
 const SettingsView = require("../lib/settings-view");
 
 describe("InstalledPackagesPanel", function () {
+  afterEach(async function () {
+    await this.panel?.destroy();
+    await this.settingsView?.destroy();
+  });
   describe("when the packages are loading", () =>
     it("filters packages by name once they have loaded", async function () {
-      const settingsView = new SettingsView();
+      const settingsView = (this.settingsView = new SettingsView());
       this.packageManager = new PackageManager();
       this.installed = JSON.parse(
         fs.readFileSync(path.join(__dirname, "fixtures", "installed.json")),
@@ -45,7 +49,7 @@ describe("InstalledPackagesPanel", function () {
 
   describe("when the packages have finished loading", function () {
     beforeEach(async function () {
-      const settingsView = new SettingsView();
+      const settingsView = (this.settingsView = new SettingsView());
       this.packageManager = new PackageManager();
       this.installed = JSON.parse(
         fs.readFileSync(path.join(__dirname, "fixtures", "installed.json")),
@@ -109,8 +113,8 @@ describe("InstalledPackagesPanel", function () {
       this.packageManager.getInstalled.and.returnValue(Promise.resolve(packages));
       const setItems = spyOn(this.panel.items.installed, "setItems").and.callThrough();
 
-      this.panel.loadPackages();
-      await conditionPromise(() => this.panel.refs.installedCount.textContent.trim() === "21");
+      await this.panel.loadPackages();
+      expect(this.panel.refs.installedCount.textContent.trim()).toBe("21");
 
       expect(setItems).toHaveBeenCalledTimes(1);
       expect(setItems.calls.mostRecent().args[0]).toHaveLength(21);
@@ -227,7 +231,7 @@ describe("InstalledPackagesPanel", function () {
 
   describe("expanding and collapsing sub-sections", function () {
     beforeEach(async function () {
-      const settingsView = new SettingsView();
+      const settingsView = (this.settingsView = new SettingsView());
       this.packageManager = new PackageManager();
       this.installed = JSON.parse(
         fs.readFileSync(path.join(__dirname, "fixtures", "installed.json")),
@@ -338,7 +342,7 @@ describe("InstalledPackagesPanel", function () {
 
   describe("when there are no packages", function () {
     beforeEach(async function () {
-      const settingsView = new SettingsView();
+      const settingsView = (this.settingsView = new SettingsView());
       this.packageManager = new PackageManager();
       this.installed = {
         dev: [],
