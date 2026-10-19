@@ -1,6 +1,40 @@
 {
   "menu": [
     {
+      "label": "App",
+      "submenu": [
+        {
+          "label": "Keyboard Shortcuts",
+          "command": "settings-view:show-keybindings",
+          "group": "configuration",
+          "order": 30
+        },
+        {
+          "label": "Manage Packages and Themes",
+          "submenu": [
+            {
+              "label": "Install Packages and Themes",
+              "command": "settings-view:install-packages-and-themes"
+            },
+            {
+              "label": "Manage Installed Packages",
+              "command": "settings-view:view-installed-packages"
+            },
+            {
+              "label": "Manage Installed Themes",
+              "command": "settings-view:view-installed-themes"
+            },
+            {
+              "label": "Check for Package Updates",
+              "command": "settings-view:check-updates"
+            }
+          ],
+          "group": "management",
+          "order": 10
+        }
+      ]
+    },
+    {
       "label": "View",
       "submenu": [
         {
