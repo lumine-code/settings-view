@@ -880,16 +880,6 @@
     margin-left: var(--ui-spacing);
   }
 
-  .loading-area {
-    span {
-      &::before {
-        font-size: 1.1em;
-        width: 1.1em;
-        height: 1.1em;
-      }
-    }
-  }
-
   .error-view {
     margin: var(--ui-spacing) 0 var(--ui-spacing) 0;
   }
