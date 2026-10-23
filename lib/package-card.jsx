@@ -708,29 +708,35 @@ module.exports = class PackageCard {
       }
       const detail = oldVersion && newVersion ? `${oldVersion} -> ${newVersion}` : "";
 
-      this.update().then(() => {
-        const notification = lumine.notifications.addSuccess(
-          `Restart Lumine to complete the update of \`${this.pack.name}\`.`,
-          {
-            dismissable: true,
-            buttons: [
-              {
-                text: "Restart now",
-                onDidClick() {
-                  return lumine.application.restart();
+      this.update().then(
+        () => {
+          const notification = lumine.notifications.addSuccess(
+            `Restart Lumine to complete the update of \`${this.pack.name}\`.`,
+            {
+              dismissable: true,
+              buttons: [
+                {
+                  text: "Restart now",
+                  onDidClick() {
+                    return lumine.application.restart();
+                  },
                 },
-              },
-              {
-                text: "I'll do it later",
-                onDidClick() {
-                  notification.dismiss();
+                {
+                  text: "I'll do it later",
+                  onDidClick() {
+                    notification.dismiss();
+                  },
                 },
-              },
-            ],
-            detail,
-          },
-        );
-      });
+              ],
+              detail,
+            },
+          );
+        },
+        () => {
+          // SettingsView reports the package-update-failed event. The button has
+          // no caller to observe this rejection, unlike Update All.
+        },
+      );
     };
     this.refs.updateButton.addEventListener("click", updateButtonClickHandler);
     this.disposables.add(
@@ -1630,16 +1636,6 @@ module.exports = class PackageCard {
     return new Promise((resolve, reject) => {
       this.packageManager.update(pack, this.newVersion, (error) => {
         if (error != null) {
-          lumine.assert(false, "Package update failed", (assertionError) => {
-            assertionError.metadata = {
-              type: this.type,
-              name: pack.name,
-              version,
-              errorMessage: error.message,
-              errorStack: error.stack,
-              errorStderr: error.stderr,
-            };
-          });
           console.error(
             `Updating ${this.type} ${pack.name} to ${version} failed:\n`,
             error,

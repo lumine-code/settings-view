@@ -1381,40 +1381,67 @@ describe("PackageCard", function () {
       expect(card.refs.updateButton).not.toBeVisible();
     });
 
-    it("keeps the update button visible if the update failed", async () => {
-      const pack = lumine.packages.getLoadedPackage("package-with-config");
-      pack.latestVersion = "1.1.0";
-      pack.latestSha = "abcdef1234567890";
-      pack.apmInstallSource = {
-        type: "git",
-        source: "example/package-with-config",
-        sha: pack.latestSha,
-      };
-      let updateFailed = false;
+    for (const clickButton of [false, true]) {
+      it(`handles an update failure ${clickButton ? "from the update button" : "for an awaiting caller"}`, async () => {
+        jasmine.useRealClock();
+        const pack = lumine.packages.getLoadedPackage("package-with-config");
+        pack.latestVersion = "1.1.0";
+        pack.latestSha = "abcdef1234567890";
+        pack.apmInstallSource = {
+          type: "git",
+          source: "example/package-with-config",
+          sha: pack.latestSha,
+        };
+        let updateFailed = false;
 
-      packageManager.on("package-update-failed", () => (updateFailed = true));
-      spyOn(packageManager, "installGitHubPackage").and.returnValue(
-        Promise.reject(new Error("boom")),
-      );
+        packageManager.on("package-update-failed", () => (updateFailed = true));
+        const error = new Error("boom");
+        spyOn(packageManager, "installGitHubPackage").and.callFake(() => Promise.reject(error));
+        spyOn(packageManager, "checkNativeBuildTools").and.returnValue(Promise.resolve());
+        spyOn(lumine.notifications, "addError");
+        spyOn(lumine.notifications, "addSuccess");
+        spyOn(console, "error");
 
-      const originalLoadPackage = lumine.packages.loadPackage;
-      spyOn(lumine.packages, "loadPackage").and.callFake(() =>
-        originalLoadPackage.call(
-          lumine.packages,
-          path.join(__dirname, "fixtures", "package-with-config"),
-        ),
-      );
+        const originalLoadPackage = lumine.packages.loadPackage;
+        spyOn(lumine.packages, "loadPackage").and.callFake(() =>
+          originalLoadPackage.call(
+            lumine.packages,
+            path.join(__dirname, "fixtures", "package-with-config"),
+          ),
+        );
 
-      card = new PackageCard(pack, new SettingsView(), packageManager);
-      jasmine.attachToDOM(card.element);
-      expect(card.refs.updateButton).toBeVisible();
+        const settingsView = new SettingsView({ packageManager });
+        card = new PackageCard(pack, settingsView, packageManager);
+        jasmine.attachToDOM(card.element);
+        expect(card.refs.updateButton).toBeVisible();
 
-      card.update();
-
-      await conditionPromise(() => updateFailed);
-
-      expect(card.refs.updateButton).toBeVisible();
-    });
+        const unhandledRejections = [];
+        const onUnhandledRejection = (event) => unhandledRejections.push(event.reason);
+        window.addEventListener("unhandledrejection", onUnhandledRejection);
+        try {
+          if (clickButton) {
+            card.refs.updateButton.click();
+            await conditionPromise(() => updateFailed);
+          } else {
+            await expectAsync(card.update()).toBeRejectedWith(error);
+          }
+          // Let the browser report rejected promises that have no observer.
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          expect(unhandledRejections).toEqual([]);
+          expect(updateFailed).toBe(true);
+          expect(card.refs.updateButton).toBeVisible();
+          expect(card.refs.updateButton.disabled).toBe(false);
+          expect(lumine.notifications.addError).toHaveBeenCalledOnceWith("boom", {
+            dismissable: true,
+            detail: error.stack,
+          });
+          expect(lumine.notifications.addSuccess).not.toHaveBeenCalled();
+        } finally {
+          window.removeEventListener("unhandledrejection", onUnhandledRejection);
+          settingsView.destroy();
+        }
+      });
+    }
 
     it("does not error when attempting to update without any update available", async () => {
       // While this cannot be done through the package card UI,
