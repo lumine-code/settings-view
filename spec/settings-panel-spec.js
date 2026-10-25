@@ -744,7 +744,7 @@ describe("SettingsPanel", () => {
   });
 
   describe("known scope selectors", () => {
-    it("offers the plain-text grammar without exposing the null fallback", () => {
+    it("offers separate settings scopes for Plain Text and None", () => {
       spyOn(lumine.config, "getScopeSelectors").and.returnValue([]);
       spyOn(lumine.grammars, "getGrammars").and.returnValue([
         lumine.grammars.nullGrammar,
@@ -753,7 +753,11 @@ describe("SettingsPanel", () => {
 
       const panel = Object.create(SettingsPanel.prototype);
       expect(panel.getKnownScopeSelectors()).toContain(".text.plain");
-      expect(panel.getKnownScopeSelectors()).not.toContain(".text.plain.null-grammar");
+      expect(panel.getKnownScopeSelectors()).toContain(".text.plain.null-grammar");
+      expect(
+        panel.getKnownScopeSelectors().filter((selector) => selector === ".text.plain.null-grammar")
+          .length,
+      ).toBe(1);
     });
   });
 
