@@ -1,3 +1,4 @@
+const readInput = require("./read-input");
 /** @jsx etch.dom */
 const stopCommandPropagation = require("./stop-command-propagation");
 const { CompositeDisposable, Disposable, TextEditor } = require("lumine");
@@ -258,7 +259,7 @@ module.exports = class KeybindingsPanel {
   }
 
   clearSearch() {
-    if (this.refs.searchEditor.getText()) this.refs.searchEditor.setText("");
+    if (this.refs.searchEditor.getBuffer().getLength()) this.refs.searchEditor.setText("");
     this.filterKeyBindings();
     this.focus();
   }
@@ -279,8 +280,9 @@ module.exports = class KeybindingsPanel {
 
   filterKeyBindings(
     keyBindings = this.keyBindings,
-    filterString = this.refs.searchEditor.getText(),
+    filterString = readInput(this.refs.searchEditor),
   ) {
+    if (filterString === null) return this.renderKeyBindings([], "");
     const keywords = filterString.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const visibleBindings = keyBindings
       .filter((binding) => {

@@ -1,3 +1,4 @@
+const readInput = require("./read-input");
 /** @jsx etch.dom */
 const stopCommandPropagation = require("./stop-command-propagation");
 /** @jsxFrag etch.Fragment */
@@ -362,7 +363,13 @@ module.exports = class InstallPanel {
 
   performSearch() {
     // Git refs, and paths on some Git servers, are case-sensitive.
-    const query = this.refs.searchEditor.getText().trim();
+    const text = readInput(this.refs.searchEditor);
+    if (text === null) {
+      this.clearSearchResults();
+      this.refs.browseArea.style.display = "none";
+      return;
+    }
+    const query = text.trim();
     this.page = 1;
     if (query) {
       // Download the catalogs on the first search if the user never clicked
@@ -565,7 +572,9 @@ module.exports = class InstallPanel {
       pendingRecords = 0;
       if (!current()) return;
       this.catalogPackages = Array.from(progressive.values());
-      const query = this.refs.searchEditor.getText().trim();
+      const text = readInput(this.refs.searchEditor);
+      if (text === null) return;
+      const query = text.trim();
       if (query && this.catalogIndexing && !this.currentGitPackageCard)
         this.renderIncompleteSearch(query);
       else this.renderBrowseList();
@@ -790,14 +799,16 @@ module.exports = class InstallPanel {
   }
 
   scrollActivePackageListToTop() {
-    const container = this.refs.searchEditor.getText().trim()
-      ? this.refs.resultsContainer
-      : this.refs.browseContainer;
+    const text = readInput(this.refs.searchEditor);
+    if (text === null) return;
+    const container = text.trim() ? this.refs.resultsContainer : this.refs.browseContainer;
     container.scrollIntoView({ block: "start" });
   }
 
   renderActivePage() {
-    if (this.refs.searchEditor.getText().trim()) {
+    const text = readInput(this.refs.searchEditor);
+    if (text === null) return;
+    if (text.trim()) {
       return this.renderSearchList(this.searchPackages);
     }
     return this.renderBrowseList();
@@ -967,7 +978,9 @@ module.exports = class InstallPanel {
       this.sourceEditors.push(editor);
 
       const commit = () => {
-        const value = editor.getText().trim();
+        const text = readInput(editor, 32768, "Catalog URL");
+        if (text === null) return;
+        const value = text.trim();
         if (value !== source) this.updateCatalogSource(index, value);
       };
       this.sourceDisposables.add(lumine.commands.add(editor.element, "core:confirm", commit));
@@ -989,7 +1002,9 @@ module.exports = class InstallPanel {
   }
 
   didClickAddCatalog() {
-    const source = this.refs.catalogEditor.getText().trim();
+    const text = readInput(this.refs.catalogEditor, 32768, "Catalog URL");
+    if (text === null) return;
+    const source = text.trim();
     try {
       const normalized = normalizeCatalogSource(source);
       const sources = this.getCatalogSources();

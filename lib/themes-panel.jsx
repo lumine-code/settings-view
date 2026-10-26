@@ -1,3 +1,4 @@
+const readInput = require("./read-input");
 /** @jsx etch.dom */
 const stopCommandPropagation = require("./stop-command-propagation");
 const etch = require("@lumine-code/etch");
@@ -610,7 +611,14 @@ module.exports = class ThemesPanel extends CollapsibleSectionPanel {
   }
 
   matchPackages() {
-    this.filterPackageListByText(this.refs.filterEditor.getText());
+    const query = readInput(this.refs.filterEditor);
+    if (query === null) {
+      for (const card of this.element.querySelectorAll(".package-card"))
+        card.classList.add("hidden");
+      if (this.refs.totalPackages) this.refs.totalPackages.textContent = "Unavailable";
+      return;
+    }
+    this.filterPackageListByText(query);
   }
 
   didClickOpenUserStyleSheet(e) {

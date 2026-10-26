@@ -1,3 +1,4 @@
+const readInput = require("./read-input");
 /** @jsx etch.dom */
 const stopCommandPropagation = require("./stop-command-propagation");
 const { TextEditor, CompositeDisposable, Disposable } = require("lumine");
@@ -181,7 +182,7 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
   }
 
   clearSearch() {
-    if (this.refs.searchEditor.getText()) {
+    if (this.refs.searchEditor.getBuffer().getLength()) {
       this.refs.searchEditor.setText("");
     }
     this.clearSearchResults();
@@ -205,7 +206,13 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
 
   matchSettings() {
     this.clearSearchResults();
-    const query = this.refs.searchEditor.getText().trim();
+    const text = readInput(this.refs.searchEditor);
+    if (text === null) {
+      this.updateSearchState("unavailable");
+      this.refs.searchStatus.textContent = "Search is unavailable until the query is shortened.";
+      return;
+    }
+    const query = text.trim();
     if (!query) {
       this.updateSearchState("initial");
       return;
@@ -379,7 +386,7 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
     // panel with a result list; `renderRecentSettings` brings it back if the
     // list has anything in it.
     this.refs.recentSection.style.display = "none";
-    this.refs.clearButton.style.visibility = this.refs.searchEditor.getText()
+    this.refs.clearButton.style.visibility = this.refs.searchEditor.getBuffer().getLength()
       ? "visible"
       : "hidden";
 

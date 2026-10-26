@@ -66,6 +66,8 @@ Adjust the settings view to taste by adding CSS to your `styles.css`:
 }
 ```
 
+Query and selector controls accept at most 4096 UTF-16 units, catalog URLs 32768, and setting values 1048576. Larger drafts remain intact with an explicit unavailable message; they are neither truncated nor committed. Searching or committing resumes after the complete input fits, and oversized setting drafts survive blur and background configuration refresh.
+
 ## Contributing
 
 Got ideas to make this package better, found a bug, or want to help add new features? Just drop your thoughts on GitHub. Any feedback is welcome!
