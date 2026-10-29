@@ -177,8 +177,7 @@
     border-color: var(--button-border-color);
     background-color: var(--button-background-color);
     &:hover,
-    &:focus {
-      box-shadow: none;
+    &:focus-visible {
       background-color: var(--button-background-color-hover);
     }
   }
@@ -460,7 +459,7 @@
     color: var(--accent-link-color);
 
     &:hover,
-    &:focus {
+    &:focus-visible {
       color: hsl(from var(--accent-link-color) h s calc(l + 4));
     }
   }
@@ -1331,13 +1330,15 @@
   border-radius: 0 var(--ui-border-radius) var(--ui-border-radius) 0;
   color: var(--text-color);
   background: transparent;
-  box-shadow: none;
   cursor: default;
 }
 
 .settings-view .predefined-values-editor-button:hover,
-.settings-view .predefined-values-editor-button:focus {
+.settings-view .predefined-values-editor-button:focus-visible {
   background: transparent;
+}
+
+.settings-view .predefined-values-editor-button:not(:focus-visible) {
   box-shadow: none;
 }
 

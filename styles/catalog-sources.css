@@ -90,8 +90,11 @@
 }
 
 .settings-view .package-version-select:hover,
-.settings-view .package-version-select:focus {
+.settings-view .package-version-select:focus-visible {
   background-color: var(--button-background-color-hover);
+}
+
+.settings-view .package-version-select:hover:not(:focus-visible) {
   box-shadow: none;
   outline: none;
 }

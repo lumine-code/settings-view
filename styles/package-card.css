@@ -283,7 +283,7 @@
       .author {
         color: var(--text-color-subtle);
         margin-left: var(--ui-spacing);
-        &:focus {
+        &:focus:not(:focus-visible) {
           outline: none;
         }
       }

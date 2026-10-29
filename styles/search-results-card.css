@@ -45,7 +45,7 @@
     overflow: hidden;
 
     &:hover,
-    &:focus-within {
+    &:has(:focus-visible) {
       background-color: hsl(from var(--package-card-background-color) h s calc(l - 2));
 
       @container style(--settings-view-package-card-dark-flag: white) {
@@ -53,7 +53,7 @@
       }
     }
 
-    &:focus-within {
+    &:has(:focus-visible) {
       border-color: var(--accent-indicator-color);
       box-shadow: 0 0 0 1px var(--accent-indicator-color);
     }
