@@ -101,18 +101,6 @@
      from `--accent-background-color`, so they carry the accent colour by asking for
      the accent variant rather than by a rule here that no theme could see. */
 
-  input[type="checkbox"] {
-    background-color: var(--background-color-selected);
-    &:active,
-    &:checked {
-      background-color: var(--accent-indicator-color);
-    }
-    &:before,
-    &:after {
-      background-color: var(--accent-indicator-text-color);
-    }
-  }
-
   .search-container .btn {
     font-size: var(--ui-input-font-size);
   }
