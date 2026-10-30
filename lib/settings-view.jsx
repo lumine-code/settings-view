@@ -131,7 +131,7 @@ module.exports = class SettingsView {
 
   render() {
     return (
-      <div className="settings-view pane-item" tabIndex="-1">
+      <div className="settings-view pane-item" dataset={{ scrollbarKind: "panel" }} tabIndex="-1">
         <div className="config-menu" ref="sidebar">
           <ul className="panels-menu nav nav-pills nav-stacked" ref="panelMenu">
             <div className="panel-menu-separator" ref="menuSeparator" />
