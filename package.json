@@ -108,20 +108,28 @@
     "SettingsView": "createSettingsView"
   },
   "dependencies": {
-    "@lumine-code/etch": "github:lumine-code/etch#3e56e2460d890ab9b85e4f1d6bef236d34230530",
-    "@lumine-code/fs-plus": "github:lumine-code/fs-plus#f9f057b92fb8f7b608ef80f25c429981b6cf0800",
-    "@lumine-code/season": "github:lumine-code/season#7b60a343cea3c3efff81b44840eb6a4663b41ffd",
-    "@lumine-code/underscore-plus": "github:lumine-code/underscore-plus#a471a621ceab05e6ea001d4b84a80c62ab518789",
+    "@lumine-code/etch": "github:lumine-code/etch#a543b97d4b75e1a7e92251e4998b5425a9714765",
+    "@lumine-code/fs-plus": "github:lumine-code/fs-plus#07f93aa311ecb06bcf34a4dda51a2e5720652746",
+    "@lumine-code/season": "github:lumine-code/season#78cfc815801cd0ce5388dc9b0749da735d27f5cd",
+    "@lumine-code/underscore-plus": "github:lumine-code/underscore-plus#7a9ccd13ddd739347bbb9ac54048ddf9472f45ab",
     "jsonc-parser": "^3.3.1",
     "picomatch": "^4.0.7",
-    "semver": "^7.8.5"
+    "semver": "^7.8.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.13.0",
+    "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-n": "^18.5.0",
-    "globals": "^17.13.0",
+    "globals": "^17.14.0",
     "prettier": "^3.9.10"
+  },
+  "overrides": {
+    "eslint@^10.14.0": {
+      "minimatch": "11.0.4"
+    },
+    "@eslint/config-array@0.23.5": {
+      "minimatch": "11.0.4"
+    }
   }
 }
