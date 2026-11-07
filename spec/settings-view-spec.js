@@ -1,4 +1,6 @@
 const path = require("path");
+const fs = require("node:fs");
+const os = require("node:os");
 const { createRequire } = require("node:module");
 const PackageManager = require("../lib/package-manager");
 let scopeContext;
@@ -31,6 +33,47 @@ describe("SettingsView", function () {
     spyOn(settingsView, "initializePanels").and.callThrough();
     window.advanceClock(10000);
     await conditionPromise(() => settingsView.initializePanels.calls.count() > 0);
+  });
+
+  it("includes a disabled bundled package from baked metadata when its manifest is absent", () => {
+    const resourcePath = fs.mkdtempSync(path.join(os.tmpdir(), "settings-baked-resource-"));
+    const resourceMetadataPath = path.join(resourcePath, "package.json");
+    const packageName = "disabled-bundled-fixture";
+    const packagePath = path.join(resourcePath, "node_modules", packageName);
+    const metadata = { name: packageName, version: "1.0.0", description: "A disabled package." };
+    try {
+      fs.writeFileSync(
+        resourceMetadataPath,
+        JSON.stringify({
+          lumineMetadata: {
+            packages: { [packageName]: { metadata } },
+            menu: {},
+            keymaps: {},
+          },
+        }),
+      );
+      spyOn(lumine.application, "getResourcePath").and.returnValue(resourcePath);
+      spyOn(lumine.packages, "getLoadedPackages").and.callFake(() => []);
+      spyOn(lumine.packages, "resolvePackagePath").and.callFake((name) =>
+        name === packageName ? packagePath : null,
+      );
+      lumine.config.set("core.disabledPackages", [packageName]);
+      settingsView.packages = null;
+
+      expect(fs.existsSync(path.join(packagePath, "package.json"))).toBe(false);
+      expect(settingsView.getPackages()).toEqual([
+        { name: packageName, metadata, path: packagePath },
+      ]);
+    } finally {
+      lumine.application.getResourcePath.and?.callThrough();
+      lumine.packages.getLoadedPackages.and?.callThrough();
+      lumine.packages.resolvePackagePath.and?.callThrough();
+      if (fs.existsSync(resourceMetadataPath)) {
+        delete require.cache[require.resolve(resourceMetadataPath)];
+        fs.rmSync(resourceMetadataPath, { force: true });
+      }
+      fs.rmdirSync(resourcePath);
+    }
   });
 
   describe("external install links", () => {

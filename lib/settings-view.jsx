@@ -266,7 +266,7 @@ module.exports = class SettingsView {
       const packageMetadata = require(
         path.join(lumine.application.getResourcePath(), "package.json"),
       );
-      bundledPackageMetadataCache = packageMetadata ? packageMetadata._luminePackages : null;
+      bundledPackageMetadataCache = packageMetadata?.lumineMetadata?.packages;
     } catch {
       /* no bundled package metadata */
     }
