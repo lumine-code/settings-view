@@ -23,6 +23,8 @@ describe("Settings View scrollbar presentation", () => {
   it("uses transient overlays without a separator or reserved gutter in the center", () => {
     expect(view.element.dataset.scrollbarKind).toBe("panel");
     const panels = view.element.querySelector(".panels > .panels-item");
+    panels.style.height = "240px";
+    panels.style.flex = "none";
     const controller = lumine.scrollbars.attach(panels);
     controller.write(controller.read());
     expect(controller.geometry.layout).toBe("overlay");
@@ -30,13 +32,35 @@ describe("Settings View scrollbar presentation", () => {
     expect(controller.layer.classList.contains("is-persistent")).toBeFalse();
     expect(getComputedStyle(controller.vertical.element).boxShadow).toBe("none");
     expect(panels.offsetWidth - panels.clientWidth).toBe(0);
+    const content = document.createElement("div");
+    content.style.height = `${panels.clientHeight + 100}px`;
     const input = document.createElement("input");
-    panels.appendChild(input);
-    const before = panels.clientWidth;
-    input.focus();
-    controller.syncVisibility();
-    expect(controller.layer.classList.contains("is-revealed")).toBeTrue();
-    expect(panels.clientWidth).toBe(before);
-    input.remove();
+    panels.append(content, input);
+    try {
+      controller.write(controller.read());
+      expect(controller.geometry.canScrollVertically).toBeTrue();
+      for (const element of [controller.owner, controller.layer]) {
+        const matches = element.matches.bind(element);
+        spyOn(element, "matches").and.callFake((selector) =>
+          selector === ":hover" ? false : matches(selector),
+        );
+      }
+      controller.activity.clear();
+      const before = panels.clientWidth;
+      input.focus({ preventScroll: true });
+      expect(document.activeElement).toBe(input);
+      controller.syncVisibility();
+      expect(controller.layer.classList.contains("is-revealed")).toBeFalse();
+      expect(panels.clientWidth).toBe(before);
+      expect(lumine.scrollbars.reveal(panels)).toBeTrue();
+      expect(controller.layer.classList.contains("is-revealed")).toBeTrue();
+      expect(panels.clientWidth).toBe(before);
+      controller.activity.clear();
+      expect(document.activeElement).toBe(input);
+      expect(controller.layer.classList.contains("is-revealed")).toBeFalse();
+    } finally {
+      input.remove();
+      content.remove();
+    }
   });
 });
