@@ -108,10 +108,10 @@
     "SettingsView": "createSettingsView"
   },
   "dependencies": {
-    "@lumine-code/etch": "github:lumine-code/etch#096f2ad5cb3e7c2eca24df08670af77570abd4e7",
-    "@lumine-code/fs-plus": "github:lumine-code/fs-plus#8dc1244134105247e1a652edc22bb49ec97412e6",
-    "@lumine-code/season": "github:lumine-code/season#b7ebc3706a30bdb987e4be900d97ed3267d19a45",
-    "@lumine-code/underscore-plus": "github:lumine-code/underscore-plus#2579dbc084a5101baf5643652ef50c7a3fa8cd9f",
+    "@lumine-code/etch": "github:lumine-code/etch#269db77d200c94fad86d3e598095dc601d32ce2d",
+    "@lumine-code/fs-plus": "github:lumine-code/fs-plus#63eb7683f697a313fdb4e915c8d6f861eb1a3dc8",
+    "@lumine-code/season": "github:lumine-code/season#e4e2a6b77ebb16f59bb14003a7ecb07ea8dce341",
+    "@lumine-code/underscore-plus": "github:lumine-code/underscore-plus#b00be14b64a7ea2c93cb54429d6f01c03977ae2b",
     "jsonc-parser": "^3.3.1",
     "picomatch": "^4.0.7",
     "semver": "^7.8.6"
