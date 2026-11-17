@@ -113,7 +113,6 @@
     "@lumine-code/season": "github:lumine-code/season#e4e2a6b77ebb16f59bb14003a7ecb07ea8dce341",
     "@lumine-code/underscore-plus": "github:lumine-code/underscore-plus#b00be14b64a7ea2c93cb54429d6f01c03977ae2b",
     "jsonc-parser": "^3.3.1",
-    "picomatch": "^4.0.7",
     "semver": "^7.8.6"
   },
   "devDependencies": {
@@ -126,10 +125,10 @@
   },
   "overrides": {
     "eslint@^10.15.0": {
-      "minimatch": "11.0.8"
+      "minimatch": "11.0.9"
     },
     "@eslint/config-array@0.23.5": {
-      "minimatch": "11.0.8"
+      "minimatch": "11.0.9"
     }
   }
 }

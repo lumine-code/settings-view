@@ -17,10 +17,8 @@ describe("AvatarCache", () => {
     return cache.avatar("test-user", function () {});
   });
 
-  it("handles glob errors", async () => {
-    // The glob library no longer lists directories through the callback `fs`
-    // API, so inject the failure at the client's own glob seam.
-    spyOn(cache, "glob").and.returnValue(Promise.reject(new Error("readdir error")));
+  it("handles errors while reading the cache directory", async () => {
+    spyOn(cache, "listCachedAvatars").and.returnValue(Promise.reject(new Error("readdir error")));
 
     const callback = jasmine.createSpy("cacheAvatar callback");
     cache.cachedAvatar("fakeperson", callback);
@@ -28,6 +26,21 @@ describe("AvatarCache", () => {
     await conditionPromise(() => callback.calls.count() === 1);
 
     expect(callback.calls.argsFor(0)[0].message).toBe("readdir error");
+  });
+
+  it("matches the login literally and accepts only timestamp suffixes", async () => {
+    const cachePath = fs.mkdtempSync(path.join(os.tmpdir(), "lumine-avatar-cache-"));
+    spyOn(cache, "getCachePath").and.returnValue(cachePath);
+    const files = ["user[1]-100", "user[1]-200x", "user[1]-", "user1-300"];
+    try {
+      for (const name of files) fs.writeFileSync(path.join(cachePath, name), "");
+
+      expect(await cache.listCachedAvatars("user[1]")).toEqual([
+        path.join(cachePath, "user[1]-100"),
+      ]);
+    } finally {
+      fs.rmSync(cachePath, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    }
   });
 
   // "Correctly" means "remove all old items but one": a stale avatar is still
