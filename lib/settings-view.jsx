@@ -69,12 +69,20 @@ module.exports = class SettingsView {
     // panel that happens to be listening, and it can't be missed behind a
     // scrolled panel the way the old in-panel error boxes could.
     if (this.packageManager && typeof this.packageManager.on === "function") {
-      this.disposables.add(
-        this.packageManager.on(
-          "package-install-failed theme-install-failed package-uninstall-failed theme-uninstall-failed package-update-failed theme-update-failed",
-          ({ error }) => notifyPackageError(this.packageManager, error),
-        ),
-      );
+      for (const [event, message] of [
+        ["package-install-failed", "Package installation failed"],
+        ["theme-install-failed", "Theme installation failed"],
+        ["package-uninstall-failed", "Package removal failed"],
+        ["theme-uninstall-failed", "Theme removal failed"],
+        ["package-update-failed", "Package update failed"],
+        ["theme-update-failed", "Theme update failed"],
+      ]) {
+        this.disposables.add(
+          this.packageManager.on(event, ({ error }) =>
+            notifyPackageError(this.packageManager, error, message),
+          ),
+        );
+      }
     }
 
     // A package detail panel is deliberately NOT dropped from the cache when its

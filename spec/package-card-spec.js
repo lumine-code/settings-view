@@ -1431,9 +1431,9 @@ describe("PackageCard", function () {
           expect(updateFailed).toBe(true);
           expect(card.refs.updateButton).toBeVisible();
           expect(card.refs.updateButton.disabled).toBe(false);
-          expect(lumine.notifications.addError).toHaveBeenCalledOnceWith("boom", {
+          expect(lumine.notifications.addError).toHaveBeenCalledOnceWith("Package update failed", {
             dismissable: true,
-            detail: error.stack,
+            detail: `${error.message}\n\n${error.stack}`,
           });
           expect(lumine.notifications.addSuccess).not.toHaveBeenCalled();
         } finally {

@@ -158,7 +158,7 @@ describe("SettingsView", function () {
   });
 
   describe("when a package operation fails", function () {
-    it("surfaces the failure as a single editor notification with the stderr detail", async () => {
+    it("surfaces one operation summary with the complete literal diagnostic", async () => {
       spyOn(lumine.notifications, "addError").and.callThrough();
       const error = new Error("Installing “broken” failed.");
       error.stderr = "npm ERR! boom";
@@ -166,8 +166,8 @@ describe("SettingsView", function () {
 
       expect(lumine.notifications.addError.calls.count()).toBe(1);
       const [message, options] = lumine.notifications.addError.calls.mostRecent().args;
-      expect(message).toBe("Installing “broken” failed.");
-      expect(options.detail).toBe("npm ERR! boom");
+      expect(message).toBe("Package installation failed");
+      expect(options.detail).toBe(`${error.message}\n\n${error.stderr}\n\n${error.stack}`);
     });
   });
 

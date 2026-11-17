@@ -146,8 +146,9 @@ describe("InstallPanel", function () {
 
     await panel.catalogPromise;
     expect(lumine.notifications.addError).toHaveBeenCalled();
-    const [message] = lumine.notifications.addError.calls.mostRecent().args;
-    expect(message).toContain("boom");
+    const [message, options] = lumine.notifications.addError.calls.mostRecent().args;
+    expect(message).toBe("Failed to load the package catalog.");
+    expect(options.detail).toContain("boom");
   });
 
   it("restores the default catalog sources", function () {
