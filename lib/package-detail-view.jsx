@@ -621,7 +621,9 @@ module.exports = class PackageDetailView {
       void openExternal(entry.source);
     } else {
       // The manifest names a license but the repository ships no file for it.
-      lumine.notifications.addWarning(`No ${filename} file found in ${this.pack.name}.`);
+      lumine.notifications.addWarning("Package document not found", {
+        detail: `Package: ${this.pack.name}\nFile: ${filename}`,
+      });
     }
   }
 
