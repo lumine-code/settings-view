@@ -43,15 +43,10 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
     this.subscriptions.add(this.handleEvents());
     this.subscriptions.add(this.handlePanelEvents());
     this.subscriptions.add(
+      lumine.scrollbars.bindNavigation(this.element),
       lumine.commands.add(
         this.element,
         stopCommandPropagation({
-          "core:move-up": () => this.scrollUp(),
-          "core:move-down": () => this.scrollDown(),
-          "core:page-up": () => this.pageUp(),
-          "core:page-down": () => this.pageDown(),
-          "core:move-to-top": () => this.scrollToTop(),
-          "core:move-to-bottom": () => this.scrollToBottom(),
           "core:cancel": () => this.clearSearch(),
         }),
       ),
@@ -409,29 +404,5 @@ module.exports = class SearchSettingsPanel extends CollapsibleSectionPanel {
     return result
       ? { score: result.score, matchIndexes: result.matchIndexes }
       : { score: 0, matchIndexes: [] };
-  }
-
-  scrollUp() {
-    this.element.scrollTop -= document.body.offsetHeight / 20;
-  }
-
-  scrollDown() {
-    this.element.scrollTop += document.body.offsetHeight / 20;
-  }
-
-  pageUp() {
-    this.element.scrollTop -= this.element.offsetHeight;
-  }
-
-  pageDown() {
-    this.element.scrollTop += this.element.offsetHeight;
-  }
-
-  scrollToTop() {
-    this.element.scrollTop = 0;
-  }
-
-  scrollToBottom() {
-    this.element.scrollTop = this.element.scrollHeight;
   }
 };

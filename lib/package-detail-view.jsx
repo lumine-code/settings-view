@@ -1,5 +1,4 @@
 /** @jsx etch.dom */
-const stopCommandPropagation = require("./stop-command-propagation");
 const path = require("path");
 
 const _ = require("@lumine-code/underscore-plus");
@@ -62,31 +61,7 @@ module.exports = class PackageDetailView {
     this.loadPackage();
     this.subscribeToPackageEnablement();
 
-    this.disposables.add(
-      lumine.commands.add(
-        this.element,
-        stopCommandPropagation({
-          "core:move-up": () => {
-            this.scrollUp();
-          },
-          "core:move-down": () => {
-            this.scrollDown();
-          },
-          "core:page-up": () => {
-            this.pageUp();
-          },
-          "core:page-down": () => {
-            this.pageDown();
-          },
-          "core:move-to-top": () => {
-            this.scrollToTop();
-          },
-          "core:move-to-bottom": () => {
-            this.scrollToBottom();
-          },
-        }),
-      ),
-    );
+    this.disposables.add(lumine.scrollbars.bindNavigation(this.element));
 
     const issueButtonClickHandler = (event) => {
       event.preventDefault();
@@ -958,30 +933,6 @@ module.exports = class PackageDetailView {
     const loadTime = this.pack.loadTime != null ? this.pack.loadTime : 0;
     const activateTime = this.pack.activateTime != null ? this.pack.activateTime : 0;
     return loadTime + activateTime;
-  }
-
-  scrollUp() {
-    this.element.scrollTop -= document.body.offsetHeight / 20;
-  }
-
-  scrollDown() {
-    this.element.scrollTop += document.body.offsetHeight / 20;
-  }
-
-  pageUp() {
-    this.element.scrollTop -= this.element.offsetHeight;
-  }
-
-  pageDown() {
-    this.element.scrollTop += this.element.offsetHeight;
-  }
-
-  scrollToTop() {
-    this.element.scrollTop = 0;
-  }
-
-  scrollToBottom() {
-    this.element.scrollTop = this.element.scrollHeight;
   }
 };
 

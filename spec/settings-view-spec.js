@@ -579,12 +579,11 @@ describe("SettingsView", function () {
 
       const expectActivePanelToBeKeyboardScrollable = function () {
         const activePanel = settingsView.panelsByName[settingsView.activePanel.name];
-        spyOn(activePanel, "pageDown");
+        const scroll = spyOn(activePanel.element, "scrollTo").and.callThrough();
         lumine.commands.dispatch(activePanel.element, "core:page-down");
-        expect(activePanel.pageDown).toHaveBeenCalled();
-        spyOn(activePanel, "pageUp");
+        expect(scroll).toHaveBeenCalledTimes(1);
         lumine.commands.dispatch(activePanel.element, "core:page-up");
-        expect(activePanel.pageUp).toHaveBeenCalled();
+        expect(scroll).toHaveBeenCalledTimes(2);
       };
 
       beforeEach(() => (settingsView = null));

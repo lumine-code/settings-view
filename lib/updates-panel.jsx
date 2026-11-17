@@ -1,5 +1,4 @@
 /** @jsx etch.dom */
-const stopCommandPropagation = require("./stop-command-propagation");
 const { CompositeDisposable } = require("lumine");
 const etch = require("@lumine-code/etch");
 
@@ -22,19 +21,7 @@ module.exports = class UpdatesPanel {
       }),
     );
 
-    this.subscriptions.add(
-      lumine.commands.add(
-        this.element,
-        stopCommandPropagation({
-          "core:move-up": () => this.scrollUp(),
-          "core:move-down": () => this.scrollDown(),
-          "core:page-up": () => this.pageUp(),
-          "core:page-down": () => this.pageDown(),
-          "core:move-to-top": () => this.scrollToTop(),
-          "core:move-to-bottom": () => this.scrollToBottom(),
-        }),
-      ),
-    );
+    this.subscriptions.add(lumine.scrollbars.bindNavigation(this.element));
 
     this.loadPromise = this.loadUpdates();
   }
@@ -117,30 +104,6 @@ module.exports = class UpdatesPanel {
   }
 
   update() {}
-
-  scrollUp() {
-    this.element.scrollTop -= document.body.offsetHeight / 20;
-  }
-
-  scrollDown() {
-    this.element.scrollTop += document.body.offsetHeight / 20;
-  }
-
-  pageUp() {
-    this.element.scrollTop -= this.element.offsetHeight;
-  }
-
-  pageDown() {
-    this.element.scrollTop += this.element.offsetHeight;
-  }
-
-  scrollToTop() {
-    this.element.scrollTop = 0;
-  }
-
-  scrollToBottom() {
-    this.element.scrollTop = this.element.scrollHeight;
-  }
 
   destroy() {
     this.clearCards();

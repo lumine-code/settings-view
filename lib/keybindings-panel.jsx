@@ -43,15 +43,10 @@ module.exports = class KeybindingsPanel {
     );
     this.disposables.add(this.handlePanelEvents());
     this.disposables.add(
+      lumine.scrollbars.bindNavigation(this.element),
       lumine.commands.add(
         this.element,
         stopCommandPropagation({
-          "core:move-up": () => this.scrollUp(),
-          "core:move-down": () => this.scrollDown(),
-          "core:page-up": () => this.pageUp(),
-          "core:page-down": () => this.pageDown(),
-          "core:move-to-top": () => this.scrollToTop(),
-          "core:move-to-bottom": () => this.scrollToBottom(),
           "core:cancel": () => this.clearSearch(),
         }),
       ),
@@ -510,30 +505,6 @@ module.exports = class KeybindingsPanel {
       }
     }, 1200);
     this.copyFeedbackTimeouts.add(timeout);
-  }
-
-  scrollUp() {
-    this.element.scrollTop -= this.element.ownerDocument.body.offsetHeight / 20;
-  }
-
-  scrollDown() {
-    this.element.scrollTop += this.element.ownerDocument.body.offsetHeight / 20;
-  }
-
-  pageUp() {
-    this.element.scrollTop -= this.element.offsetHeight;
-  }
-
-  pageDown() {
-    this.element.scrollTop += this.element.offsetHeight;
-  }
-
-  scrollToTop() {
-    this.element.scrollTop = 0;
-  }
-
-  scrollToBottom() {
-    this.element.scrollTop = this.element.scrollHeight;
   }
 
   static determineSource(filePath) {

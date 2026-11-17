@@ -1,6 +1,5 @@
 const readInput = require("./read-input");
 /** @jsx etch.dom */
-const stopCommandPropagation = require("./stop-command-propagation");
 /** @jsxFrag etch.Fragment */
 const path = require("path");
 const etch = require("@lumine-code/etch");
@@ -91,31 +90,7 @@ module.exports = class InstallPanel {
         this.didClickAddCatalog();
       }),
     );
-    this.disposables.add(
-      lumine.commands.add(
-        this.element,
-        stopCommandPropagation({
-          "core:move-up": () => {
-            this.scrollUp();
-          },
-          "core:move-down": () => {
-            this.scrollDown();
-          },
-          "core:page-up": () => {
-            this.pageUp();
-          },
-          "core:page-down": () => {
-            this.pageDown();
-          },
-          "core:move-to-top": () => {
-            this.scrollToTop();
-          },
-          "core:move-to-bottom": () => {
-            this.scrollToBottom();
-          },
-        }),
-      ),
-    );
+    this.disposables.add(lumine.scrollbars.bindNavigation(this.element));
     this.disposables.add(
       lumine.config.onDidChange("settings-view.packageCatalogs", () => {
         this.renderCatalogSources();
@@ -1066,29 +1041,5 @@ module.exports = class InstallPanel {
   didClickOpenCatalog(event) {
     event.preventDefault();
     void openExternal(this.catalogURL);
-  }
-
-  scrollUp() {
-    this.element.scrollTop -= document.body.offsetHeight / 20;
-  }
-
-  scrollDown() {
-    this.element.scrollTop += document.body.offsetHeight / 20;
-  }
-
-  pageUp() {
-    this.element.scrollTop -= this.element.offsetHeight;
-  }
-
-  pageDown() {
-    this.element.scrollTop += this.element.offsetHeight;
-  }
-
-  scrollToTop() {
-    this.element.scrollTop = 0;
-  }
-
-  scrollToBottom() {
-    this.element.scrollTop = this.element.scrollHeight;
   }
 };
