@@ -21,7 +21,7 @@ describe("PackageManager", function () {
     });
 
     it("returns true when a package is disabled", function () {
-      spyOn(lumine.packages, "getAvailablePackageNames").and.returnValue(["some-package"]);
+      spyOn(lumine.packages, "getAvailablePackage").and.returnValue({ name: "some-package" });
       expect(packageManager.isPackageInstalled("some-package")).toBe(true);
     });
   });
@@ -179,6 +179,7 @@ describe("PackageManager", function () {
         });
       }
       spyOn(lumine.packages, "getAvailablePackages").and.returnValue(this.packs);
+      spyOn(lumine.packages, "loadAvailablePackageIndex").and.resolveTo({ copies: this.packs });
     });
 
     it("resolves to the same structure the synchronous getLocalPackages() returns", async () => {
@@ -219,6 +220,7 @@ describe("PackageManager", function () {
         "old-package-name",
       );
       expect(packageManager.findInstalledPackageByOrigin("github.com/owner/builtin")).toBe(null);
+      expect(packageManager.getLocalPackages).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -455,6 +457,7 @@ describe("PackageManager", function () {
       await packageManager.uninstall({ name: "search-panel", path: packagePath });
       expect(lumine.packages.reconcilePackage).toHaveBeenCalledWith("search-panel", {
         lifecycleState: "loaded",
+        packagePath,
       });
       expect(lumine.config.get("core.disabledPackages")).toContain("search-panel");
       fs.removeSync(root);
@@ -583,6 +586,7 @@ describe("PackageManager", function () {
 
       expect(lumine.packages.reconcilePackage).toHaveBeenCalledWith("stubborn-package", {
         lifecycleState: "loaded",
+        packagePath,
       });
       expect(uninstallCallback).toHaveBeenCalled();
       expect(uninstallCallback.calls.mostRecent().args[0].message).toBe("directory is locked");
@@ -731,6 +735,7 @@ describe("PackageManager", function () {
         });
         expect(lumine.packages.reconcilePackage).toHaveBeenCalledOnceWith(fixture.name, {
           lifecycleState: "loaded",
+          packagePath: fixture.target,
         });
         expect(fixture.loaded).toBe(fixture.original);
         expect(fixture.lifecycleState).toBe("loaded");
@@ -791,6 +796,7 @@ describe("PackageManager", function () {
           } else {
             expect(lumine.packages.reconcilePackage).toHaveBeenCalledOnceWith(fixture.name, {
               lifecycleState: "loaded",
+              packagePath: fixture.target,
             });
             if (scenario === "reconcile failed") {
               expect(failure.errors[1] instanceof AggregateError).toBe(true);
@@ -891,6 +897,7 @@ describe("PackageManager", function () {
 
       expect(lumine.packages.reconcilePackage).toHaveBeenCalledWith("new-package", {
         lifecycleState: "loaded",
+        packagePath: undefined,
       });
       expect(lumine.packages.startPackage).not.toHaveBeenCalled();
     });
@@ -903,6 +910,7 @@ describe("PackageManager", function () {
 
       expect(lumine.packages.reconcilePackage).toHaveBeenCalledWith("active-theme", {
         lifecycleState: "active",
+        packagePath: undefined,
       });
     });
   });
